@@ -55,10 +55,20 @@ async def makeadmin(ctx, discordid: str):
 		await ctx.send(embed=await permissions.ownererror())
 
 @client.command(name="restart", brief="Restart the bot", description="", pass_context=True)
-async def gitpull(ctx):
+async def restart(ctx):
 	if await permissions.check(ctx.message.author.id) :
 		await ctx.send("Restarting")
 		quit()
+	else :
+		await ctx.send(embed=await permissions.error())
+
+@client.command(name="gitpull", brief="Update the bot", description="it just does git pull", pass_context=True)
+async def gitpull(ctx):
+	if await permissions.check(ctx.message.author.id) :
+		await ctx.send("Updating.")
+		os.system('git pull')
+		quit()
+		#exit()
 	else :
 		await ctx.send(embed=await permissions.error())
 

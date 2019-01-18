@@ -19,7 +19,7 @@ from modules import feedchecker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190115"
+appversion = "b20190118"
 
 @client.event
 async def on_ready():
@@ -39,9 +39,6 @@ async def on_ready():
 		await dbhandler.query("CREATE TABLE rankfeedchannels (channelid)")
 		await dbhandler.query("CREATE TABLE feedjsondata (feedtype, contents)")
 		await dbhandler.insert('admins', (str(appinfo.owner.id), "1"))
-	client.loop.create_task(modchecker_background_loop())
-	client.loop.create_task(groupfeed_background_loop())
-	client.loop.create_task(send_restart_loop())
 
 @client.command(name="adminlist", brief="Show bot admin list", description="", pass_context=True)
 async def adminlist(ctx):
@@ -430,13 +427,9 @@ async def groupfeed_background_loop():
 			print(e)
 			await asyncio.sleep(3600)
 
-async def send_restart_loop():
-	await client.wait_until_ready()
-	while not client.is_closed():
-		await asyncio.sleep(43200)
-		quit()
-
 # TODO: add rankfeed
 # TODO: add background task to check user profiles every few hours. watch for username changes and also serve as mapping feed
 
+client.loop.create_task(modchecker_background_loop())
+client.loop.create_task(groupfeed_background_loop())
 client.run(open("data/token.txt", "r+").read(), bot=True)

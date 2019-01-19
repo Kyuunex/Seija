@@ -19,7 +19,7 @@ from modules import feedchecker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190118"
+appversion = "b20190119"
 
 @client.event
 async def on_ready():
@@ -67,6 +67,14 @@ async def gitpull(ctx):
 		os.system('git pull')
 		quit()
 		#exit()
+	else :
+		await ctx.send(embed=await permissions.error())
+
+@client.command(name="dbdump", brief="Database Dump", description="", pass_context=True)
+async def dbdump(ctx):
+	if await permissions.check(ctx.message.author.id) :
+		if ctx.message.channel.id == int((await dbhandler.select('config', 'value', [['setting', "dbdumpchannelid"],['parent', str(ctx.guild.id)]]))[0][0]):
+			await ctx.send(file=discord.File('data/maindb.sqlite3'))
 	else :
 		await ctx.send(embed=await permissions.error())
 

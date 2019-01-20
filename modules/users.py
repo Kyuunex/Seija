@@ -7,6 +7,12 @@ import asyncio
 
 async def legacyverify(channel, member, discordid, role, username, text, embed, sv):
 	# TODO: literally rewrite this section, account for mapset verification
+	osujoindate = ""
+	pp = "0"
+	country = ""
+	rankedmaps = "0"
+	args = "[]"
+
 	if sv:
 		osuusername = username
 		osuaccountid = sv
@@ -14,8 +20,11 @@ async def legacyverify(channel, member, discordid, role, username, text, embed, 
 	else:
 		osuprofile = await osuapi.get_user(username)
 		if osuprofile:
-			osuusername = osuprofile['username']
-			osuaccountid = osuprofile['user_id']
+			osuusername = str(osuprofile['username'])
+			osuaccountid = str(osuprofile['user_id'])
+			osujoindate = str(osuprofile['join_date'])
+			pp = str(osuprofile['pp_raw'])
+			country = str(osuprofile['country'])
 			verifypass = True
 		else:
 			await channel.send('<@%s> | Can\'t find your osu profile. If you are restricted, link any of your recently uploaded maps. Works with new website links only. (Preferably ranked map).' % (str(discordid)))
@@ -32,7 +41,6 @@ async def legacyverify(channel, member, discordid, role, username, text, embed, 
 				print("in users.verify")
 				print(e)
 
-
 		where = [
 			['discordid', discordid],
 		]
@@ -40,7 +48,7 @@ async def legacyverify(channel, member, discordid, role, username, text, embed, 
 			print("user %s already in database" % (discordid,))
 		else:
 			print("adding user %s in database" % (discordid,))
-			await dbhandler.insert('users', (discordid, osuaccountid, osuusername)) 
+			await dbhandler.insert('users', (discordid, osuaccountid, osuusername, osujoindate, pp, country, rankedmaps, args)) 
 
 		# Should message be sent with embed?
 		if embed == True:
@@ -54,22 +62,32 @@ async def legacyverify(channel, member, discordid, role, username, text, embed, 
 async def guildnamesync(ctx):
 	for member in ctx.guild.members:
 		if not member.bot:
-			wheres = [
-				['discordid', str(member.id)]
-			]
-			query = await dbhandler.select("users", "osuid", wheres)
+			# wheres = [
+			# 	['discordid', str(member.id)]
+			# ]
+			#query = await dbhandler.select("users", "osuid", wheres)
+			query = await dbhandler.query(["SELECT * FROM users WHERE discordid = ?", [str(member.id)]])
+			print(query)
 			if query:
-				osuprofile = await osuapi.get_user(query[0][0])
+				osuprofile = await osuapi.get_user(query[0][1])
 				if osuprofile:
 					osuusername = osuprofile['username']
-					try:
-						await member.edit(nick=osuusername)
-					except Exception as e:
-						await ctx.send(e)
-						await ctx.send("no perms to update %s" % (osuusername))
-					await ctx.send("updated %s" % (osuusername))
+					if member.display_name != osuusername:
+						if "nosync" in str(query[0][7]):
+							await ctx.send("did not update nickname of %s as requested" % (osuusername))
+						else:
+							try:
+								await member.edit(nick=osuusername)
+							except Exception as e:
+								await ctx.send(e)
+								await ctx.send("no perms to update %s" % (osuusername))
+							await ctx.send("updated %s" % (osuusername))
+					await dbhandler.query(["UPDATE users SET country = ? WHERE discordid = ?;", [str(osuprofile['country']),str(member.id)]])
+					await dbhandler.query(["UPDATE users SET pp = ? WHERE discordid = ?;", [str(osuprofile['pp_raw']),str(member.id)]])
+					await dbhandler.query(["UPDATE users SET osujoindate = ? WHERE discordid = ?;", [str(osuprofile['join_date']),str(member.id)]])
+					await dbhandler.query(["UPDATE users SET username = ? WHERE discordid = ?;", [str(osuprofile['username']),str(member.id)]])
 				else:
-					await ctx.send("restricted %s" % (str(query[0][0])))
+					await ctx.send("restricted %s" % (str(query[0][1])))
 			else:
 				await ctx.send("user %s not in db" % (member.name))
-		await asyncio.sleep(1)
+		#await asyncio.sleep(1)

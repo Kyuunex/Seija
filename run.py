@@ -19,7 +19,7 @@ from modules import feedchecker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190119"
+appversion = "b20190120"
 
 @client.event
 async def on_ready():
@@ -29,7 +29,7 @@ async def on_ready():
 	print('------')
 	if not os.path.exists('data/maindb.sqlite3'):
 		appinfo = await client.application_info()
-		await dbhandler.query("CREATE TABLE users (discordid, osuid, username)")
+		await dbhandler.query("CREATE TABLE users (discordid, osuid, username, osujoindate, pp, country, rankedmaps, args)")
 		await dbhandler.query("CREATE TABLE jsondata (mapsetid, contents)")
 		await dbhandler.query("CREATE TABLE config (setting, parent, value)")
 		await dbhandler.query("CREATE TABLE admins (discordid, permissions)")

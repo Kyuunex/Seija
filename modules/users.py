@@ -3,7 +3,9 @@ from modules import osuembed
 from modules import dbhandler
 import discord
 import time
+import datetime
 import asyncio
+import upsidedown
 
 async def legacyverify(channel, member, discordid, role, username, text, embed, sv):
 	# TODO: literally rewrite this section, account for mapset verification
@@ -67,11 +69,14 @@ async def guildnamesync(ctx):
 			# ]
 			#query = await dbhandler.select("users", "osuid", wheres)
 			query = await dbhandler.query(["SELECT * FROM users WHERE discordid = ?", [str(member.id)]])
-			print(query)
 			if query:
 				osuprofile = await osuapi.get_user(query[0][1])
 				if osuprofile:
-					osuusername = osuprofile['username']
+					now = datetime.datetime.now()
+					if "04-01T" in str(now.isoformat()):
+						osuusername = upsidedown.transform(osuprofile['username'])
+					else:
+						osuusername = osuprofile['username']
 					if member.display_name != osuusername:
 						if "nosync" in str(query[0][7]):
 							await ctx.send("did not update nickname of %s as requested" % (osuusername))

@@ -62,11 +62,16 @@ async def osuprofile(osuprofile):
 
 async def modpost(subpostobject, beatmapsetdiscussionobject, newevent, trackingtype):
 	if subpostobject:
-		footer = await modelements.modtype(newevent)
 		if trackingtype == "0":
 			title = str(await modelements.diffname(beatmapsetdiscussionobject, newevent))
 		elif trackingtype == "1":
 			title = "%s / %s" % (str(beatmapsetdiscussionobject["beatmapset"]["title"]), str(await modelements.diffname(beatmapsetdiscussionobject, newevent)))
+			if newevent['message_type'] == "hype":
+				return None
+			elif newevent['message_type'] == "praise":
+				return None
+		
+		footer = await modelements.modtype(newevent)
 		modpost=discord.Embed(
 			title=title, 
 			url="https://osu.ppy.sh/beatmapsets/%s/discussion#/%s" % (str(beatmapsetdiscussionobject["beatmapset"]["id"]), str(newevent['id'])), 

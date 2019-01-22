@@ -397,7 +397,9 @@ async def modchecker_background_loop():
 									if not subpostobject['system']:
 										if not await dbhandler.select('modposts', 'postid', [['postid', subpostobject['id']]]):
 											await dbhandler.insert('modposts', (subpostobject['id'], mapsetid, newevent["beatmap_id"], subpostobject['user_id'], subpostobject['message']))
-											await channel.send(embed=await osuembed.modpost(subpostobject, beatmapsetdiscussionobject, newevent, trackingtype))
+											modtopost = await osuembed.modpost(subpostobject, beatmapsetdiscussionobject, newevent, trackingtype)
+											if modtopost:
+												await channel.send(embed=modtopost)
 				else:
 					print(time.strftime('%X %x %Z')+" | Possible connection issues")
 					await asyncio.sleep(300)

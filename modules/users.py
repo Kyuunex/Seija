@@ -79,20 +79,20 @@ async def guildnamesync(ctx):
 						osuusername = osuprofile['username']
 					if member.display_name != osuusername:
 						if "nosync" in str(query[0][7]):
-							await ctx.send("did not update nickname of %s as requested" % (osuusername))
+							await ctx.send("did not update nickname of %s with `%s` as requested" % (member.mention, osuusername))
 						else:
 							try:
 								await member.edit(nick=osuusername)
 							except Exception as e:
 								await ctx.send(e)
-								await ctx.send("no perms to update %s" % (osuusername))
-							await ctx.send("updated %s" % (osuusername))
+								await ctx.send("no perms to update %s with name `%s`" % (member.mention, osuusername))
+							await ctx.send("updated %s with name `%s`" % (member.mention, osuusername))
 					await dbhandler.query(["UPDATE users SET country = ? WHERE discordid = ?;", [str(osuprofile['country']),str(member.id)]])
 					await dbhandler.query(["UPDATE users SET pp = ? WHERE discordid = ?;", [str(osuprofile['pp_raw']),str(member.id)]])
 					await dbhandler.query(["UPDATE users SET osujoindate = ? WHERE discordid = ?;", [str(osuprofile['join_date']),str(member.id)]])
 					await dbhandler.query(["UPDATE users SET username = ? WHERE discordid = ?;", [str(osuprofile['username']),str(member.id)]])
 				else:
-					await ctx.send("restricted %s" % (str(query[0][1])))
+					await ctx.send("user %s is restricted osuname = %s osuid = %s" % (str(member.mention), str(query[0][2]), str(query[0][1])))
 			else:
-				await ctx.send("user %s not in db" % (member.name))
+				await ctx.send("user %s not in db" % (member.mention))
 		#await asyncio.sleep(1)

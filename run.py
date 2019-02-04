@@ -337,7 +337,7 @@ async def requestchannel(ctx, requesttype: str = "help", mapsetid: int = 0, maps
 			else:
 				await ctx.send("You are not using this command correctly")
 		else:
-			await ctx.sent("Not enabled in this server yet.")
+			await ctx.send("Not enabled in this server yet.")
 	else:
 		await ctx.send("Help menu placeholder")
 

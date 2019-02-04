@@ -282,7 +282,7 @@ async def requestchannel(ctx, requesttype: str = "help", mapsetid: int = 0, maps
 		if guildqueuecategory:
 			await ctx.send("Queue placeholder")
 		else:
-			await ctx.sent("Not enabled in this server yet.")
+			await ctx.send("Not enabled in this server yet.")
 	elif requesttype == "mapset":
 		guildmapsetcategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildmapsetcategory", str(ctx.guild.id)]])
 		if guildmapsetcategory:

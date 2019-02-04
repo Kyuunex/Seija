@@ -38,7 +38,7 @@ async def on_ready():
 		await dbhandler.query("CREATE TABLE groupfeedchannels (channelid)")
 		await dbhandler.query("CREATE TABLE rankfeedchannels (channelid)")
 		await dbhandler.query("CREATE TABLE feedjsondata (feedtype, contents)")
-		await dbhandler.insert('admins', (str(appinfo.owner.id), "1"))
+		await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), "1"]])
 
 @client.command(name="adminlist", brief="Show bot admin list", description="", pass_context=True)
 async def adminlist(ctx):
@@ -258,32 +258,6 @@ async def userdb(ctx, command: str = None, mention: str = None):
 	else :
 		await ctx.send(embed=await permissions.ownererror())
 
-@client.command(name="request", brief="Request a channel", description="", pass_context=True)
-async def requestchannel(ctx, requesttype: str, mapsetid: str = None, mapsetname: str = None): # TODO: Add request
-	if await permissions.checkowner(ctx.message.author.id) :
-		if requesttype == "queue":
-			print("make a queue")
-		elif requesttype == "modchannel":
-			if mapsetid == 0:
-				print("make a mod channel for:"+mapsetname)
-			else:
-				print("make a mod channel for:"+mapsetid)
-		guild = ctx.message.guild
-		overwrites = {
-			guild.default_role: discord.PermissionOverwrite(read_messages=False),
-			guild.me: discord.PermissionOverwrite(read_messages=True)
-		}
-		channel = await guild.create_text_channel(mapsetname, overwrites=overwrites)
-	else :
-		await ctx.send(embed=await permissions.ownererror())
-
-@client.command(name="destroy", brief="Destroy a requested channel", description="", pass_context=True)
-async def destroy(ctx): # TODO: Add destroy
-	if await permissions.checkowner(ctx.message.author.id) :
-		await ctx.send("Not yet implemented")
-	else :
-		await ctx.send(embed=await permissions.ownererror())
-
 @client.command(name="groupfeed", brief="Make a user bot admin", description="", pass_context=True)
 async def groupfeed(ctx):
 	if await permissions.check(ctx.message.author.id) :
@@ -299,6 +273,62 @@ async def guildsync(ctx):
 		await users.guildnamesync(ctx)
 	else :
 		await ctx.send(embed=await permissions.error())
+
+@client.command(name="request", brief="Request a channel", description="", pass_context=True)
+async def requestchannel(ctx, requesttype: str = "help", mapsetid: int = 0, mapsetname: str = None): # TODO: Add request
+	if requesttype == "queue":
+		guildqueuecategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildqueuecategory", str(ctx.guild.id)]])
+		if guildqueuecategory:
+			await ctx.send("queue placeholder")
+	elif requesttype == "mapset":
+		guildmapsetcategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildmapsetcategory", str(ctx.guild.id)]])
+		if guildmapsetcategory:
+			await ctx.send("sure, gimme a moment")
+			if mapsetid == 0:
+				mapset = None
+			else:
+				mapset = await osuapi.get_beatmap(mapsetid)
+
+			if mapsetname:
+				discordfriendlychannelname = mapsetname.replace(" ", "_").lower()
+			elif mapset:
+				discordfriendlychannelname = mapset['title'].replace(" ", "_").lower()
+			else:
+				discordfriendlychannelname = None
+
+			if discordfriendlychannelname:
+				category = await utils.get_channel(client.get_all_channels(), int(guildmapsetcategory[0][0]))
+				guild = ctx.message.guild
+				overwrites = {
+					guild.default_role: discord.PermissionOverwrite(read_messages=True),
+					ctx.message.author: discord.PermissionOverwrite(
+						create_instant_invite=True,
+						manage_channels=True,
+						manage_roles=True,
+						manage_webhooks=True,
+						read_messages=True,
+						send_messages=True,
+						manage_messages=True,
+						embed_links=True,
+						attach_files=True,
+						read_message_history=True,
+						mention_everyone=False
+					)
+				}
+				channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=overwrites, category=category)
+				embed = await osuembed.mapset(mapset)
+				await channel.send("%s done!" % (ctx.message.author.mention), embed=embed)
+			else:
+				await ctx.send("you are not using this command correctly")
+	else:
+		await ctx.send("help menu placeholder")
+
+@client.command(name="nuke", brief="Nuke a requested channel", description="", pass_context=True)
+async def nuke(ctx): # TODO:
+	if await permissions.checkowner(ctx.message.author.id) :
+		await ctx.send("Not yet implemented")
+	else :
+		await ctx.send(embed=await permissions.ownererror())
 
 #####################################################################################################
 
@@ -339,7 +369,7 @@ async def on_message(message):
 @client.event
 async def on_member_join(member):
 	try:
-		guildverifychannel = await dbhandler.select('config', 'value', [['setting', "verifychannelid"],['parent', str(member.guild.id)]])
+		guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannelid", str(member.guild.id)]])
 		if guildverifychannel:
 			join_channel_object = await utils.get_channel(client.get_all_channels(), int((guildverifychannel)[0][0]))
 			where = [
@@ -365,7 +395,7 @@ async def on_member_join(member):
 @client.event
 async def on_member_remove(member):
 	try:
-		guildverifychannel = await dbhandler.select('config', 'value', [['setting', "verifychannelid"],['parent', str(member.guild.id)]])
+		guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannelid", str(member.guild.id)]])
 		if guildverifychannel:
 			join_channel_object = await utils.get_channel(client.get_all_channels(), int((guildverifychannel)[0][0]))
 			await join_channel_object.send("%s left this server. Godspeed!" % (str(member.name)))
@@ -379,7 +409,7 @@ async def modchecker_background_loop():
 	while not client.is_closed():
 		try:
 			await asyncio.sleep(120)
-			for oneentry in await dbhandler.select('modtracking', '*', None):
+			for oneentry in await dbhandler.query("SELECT * FROM modtracking"):
 				channel = await utils.get_channel(client.get_all_channels(), int(oneentry[1]))
 				mapsetid = oneentry[0]
 				trackingtype = str(oneentry[5])
@@ -417,7 +447,7 @@ async def groupfeed_background_loop():
 	while not client.is_closed():
 		try:
 			print(time.strftime('%X %x %Z')+' | groupfeed')
-			groupfeedchannellist = await dbhandler.select("groupfeedchannels", "channelid", None)
+			groupfeedchannellist = await dbhandler.query("SELECT channelid FROM groupfeedchannels")
 			if groupfeedchannellist:
 				await groupelements.groupcheck(client, groupfeedchannellist, "7", "Quality Assurance Team")
 				await asyncio.sleep(5)
@@ -439,6 +469,7 @@ async def groupfeed_background_loop():
 
 # TODO: add rankfeed
 # TODO: add background task to check user profiles every few hours. watch for username changes and also serve as mapping feed
+# TODO: detect when channel is deleted and automatically untrack
 
 client.loop.create_task(modchecker_background_loop())
 client.loop.create_task(groupfeed_background_loop())

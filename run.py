@@ -4,6 +4,7 @@ from discord.ext import commands
 import os
 import shutil
 import time
+import random
 
 from modules import permissions
 from modules import osuapi
@@ -279,7 +280,9 @@ async def requestchannel(ctx, requesttype: str = "help", mapsetid: int = 0, maps
 	if requesttype == "queue":
 		guildqueuecategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildqueuecategory", str(ctx.guild.id)]])
 		if guildqueuecategory:
-			await ctx.send("queue placeholder")
+			await ctx.send("Queue placeholder")
+		else:
+			await ctx.sent("Not enabled in this server yet.")
 	elif requesttype == "mapset":
 		guildmapsetcategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildmapsetcategory", str(ctx.guild.id)]])
 		if guildmapsetcategory:
@@ -291,16 +294,21 @@ async def requestchannel(ctx, requesttype: str = "help", mapsetid: int = 0, maps
 
 			if mapsetname:
 				discordfriendlychannelname = mapsetname.replace(" ", "_").lower()
+				rolename = mapsetname
 			elif mapset:
 				discordfriendlychannelname = mapset['title'].replace(" ", "_").lower()
+				rolename = mapset['title']
 			else:
 				discordfriendlychannelname = None
+				rolename = None
 
 			if discordfriendlychannelname:
-				category = await utils.get_channel(client.get_all_channels(), int(guildmapsetcategory[0][0]))
 				guild = ctx.message.guild
-				overwrites = {
-					guild.default_role: discord.PermissionOverwrite(read_messages=True),
+				rolecolor = discord.Colour(random.randint(1, 16777215))
+				mapsetrole = await guild.create_role(name=rolename, colour=rolecolor)
+				category = await utils.get_channel(client.get_all_channels(), int(guildmapsetcategory[0][0]))
+				channeloverwrites = {
+					guild.default_role: discord.PermissionOverwrite(read_messages=False),
 					ctx.message.author: discord.PermissionOverwrite(
 						create_instant_invite=True,
 						manage_channels=True,
@@ -313,15 +321,25 @@ async def requestchannel(ctx, requesttype: str = "help", mapsetid: int = 0, maps
 						attach_files=True,
 						read_message_history=True,
 						mention_everyone=False
+					),
+					mapsetrole: discord.PermissionOverwrite(read_messages=True),
+					guild.me: discord.PermissionOverwrite(
+						manage_channels=True,
+						read_messages=True,
+						send_messages=True,
+						embed_links=True
 					)
 				}
-				channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=overwrites, category=category)
+				channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category)
+				await ctx.message.author.add_roles(mapsetrole)
 				embed = await osuembed.mapset(mapset)
 				await channel.send("%s done!" % (ctx.message.author.mention), embed=embed)
 			else:
-				await ctx.send("you are not using this command correctly")
+				await ctx.send("You are not using this command correctly")
+		else:
+			await ctx.sent("Not enabled in this server yet.")
 	else:
-		await ctx.send("help menu placeholder")
+		await ctx.send("Help menu placeholder")
 
 @client.command(name="nuke", brief="Nuke a requested channel", description="", pass_context=True)
 async def nuke(ctx): # TODO:

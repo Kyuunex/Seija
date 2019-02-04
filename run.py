@@ -19,7 +19,7 @@ from modules import feedchecker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190131"
+appversion = "b20190204"
 
 @client.event
 async def on_ready():
@@ -31,7 +31,7 @@ async def on_ready():
 		appinfo = await client.application_info()
 		await dbhandler.query("CREATE TABLE users (discordid, osuid, username, osujoindate, pp, country, rankedmaps, args)")
 		await dbhandler.query("CREATE TABLE jsondata (mapsetid, contents)")
-		await dbhandler.query("CREATE TABLE config (setting, parent, value)")
+		await dbhandler.query("CREATE TABLE config (setting, parent, value, flag)")
 		await dbhandler.query("CREATE TABLE admins (discordid, permissions)")
 		await dbhandler.query("CREATE TABLE modposts (postid, mapsetid, mapid, userid, contents)")
 		await dbhandler.query("CREATE TABLE modtracking (mapsetid, channelid, mapsethostdiscordid, roleid, mapsethostosuid, type)")

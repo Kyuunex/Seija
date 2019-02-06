@@ -72,7 +72,7 @@ async def verify(channel, member, role, osulookup):
 
 	if "/" in osulookup:
 		osulookup = osulookup.split('/')
-		verificationtype = str(osulookup[1])
+		verificationtype = str(osulookup[0])
 		lookupstr = str(osulookup[1])
 	else:
 		verificationtype == None

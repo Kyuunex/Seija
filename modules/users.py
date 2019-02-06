@@ -40,7 +40,7 @@ async def legacyverify(channel, member, discordid, role, username, text, embed, 
 				await member.edit(nick=osuusername)
 			except Exception as e:
 				print(time.strftime('%X %x %Z'))
-				print("in users.verify")
+				print("in users.legacyverify")
 				print(e)
 
 		where = [
@@ -60,6 +60,62 @@ async def legacyverify(channel, member, discordid, role, username, text, embed, 
 			await channel.send(content=text)
 		elif embed:
 			await channel.send(content=text, embed=embed)
+
+async def verify(channel, member, role, osulookup):
+	# Defaults
+	osuusername = None
+	osujoindate = ""
+	pp = "0"
+	country = ""
+	rankedmaps = "0"
+	args = "[]"
+
+	if "/" in osulookup:
+		osulookup = osulookup.split('/')
+		verificationtype = str(osulookup[1])
+		lookupstr = str(osulookup[1])
+	else:
+		verificationtype == None
+
+	if verificationtype == "u":
+		osuprofile = await osuapi.get_user(lookupstr)
+		if osuprofile:
+			osuusername = str(osuprofile['username'])
+			osuaccountid = str(osuprofile['user_id'])
+			osujoindate = str(osuprofile['join_date'])
+			pp = str(osuprofile['pp_raw'])
+			country = str(osuprofile['country'])
+			embed = await osuembed.osuprofile(osuprofile)
+	elif verificationtype == "s":
+		authorsmapset = await osuapi.get_beatmap(lookupstr)
+		if authorsmapset:
+			osuusername = str(authorsmapset['creator'])
+			osuaccountid = str(authorsmapset['creator_id'])
+			embed = await osuembed.mapset(authorsmapset)
+
+	if osuusername:
+		if type(member) == "str":
+			discordid = member
+		else:
+			discordid = str(member.id)
+			try:
+				await member.add_roles(role)
+				await member.edit(nick=osuusername)
+			except Exception as e:
+				print(time.strftime('%X %x %Z'))
+				print("in users.verify")
+				print(e)
+
+		if await dbhandler.query(["SELECT discordid FROM users WHERE discordid = ?", [discordid,]]):
+			print("user %s already in database" % (discordid,))
+			# possibly force update the entry in future
+		else:
+			print("adding user %s in database" % (discordid,))
+			await dbhandler.insert('users', (discordid, osuaccountid, osuusername, osujoindate, pp, country, rankedmaps, args)) 
+
+		await channel.send(content="verified <@%s>" % (discordid), embed=embed)
+	else:
+		await channel.send("user not found")
 
 async def guildnamesync(ctx):
 	for member in ctx.guild.members:

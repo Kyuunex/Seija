@@ -197,13 +197,29 @@ async def verify(ctx, osuid: str, discordid: int, preverify: str = None):
 	if await permissions.check(ctx.message.author.id) :
 		try:
 			if preverify == "preverify":
+				await users.verify(ctx.message.channel, str(discordid), None, osuid)
+			else:
+				role = discord.utils.get(ctx.message.guild.roles, id=int((await dbhandler.select('config', 'value', [['setting', "verifyroleid"],['parent', str(ctx.guild.id)]]))[0][0]))
+				await users.verify(ctx.message.channel, ctx.guild.get_member(discordid), role, osuid)
+		except Exception as e:
+			print(time.strftime('%X %x %Z'))
+			print("in verify")
+			print(e)
+	else :
+		await ctx.send(embed=await permissions.error())
+
+@client.command(name="legacyverify", brief="Manual verification", description="", pass_context=True)
+async def legacyverify(ctx, osuid: str, discordid: int, preverify: str = None):
+	if await permissions.check(ctx.message.author.id) :
+		try:
+			if preverify == "preverify":
 				await users.legacyverify(ctx.message.channel, None, str(discordid), None, osuid, "Preverified: "+str(discordid), True, False)
 			else:
 				role = discord.utils.get(ctx.message.guild.roles, id=int((await dbhandler.select('config', 'value', [['setting', "verifyroleid"],['parent', str(ctx.guild.id)]]))[0][0]))
 				await users.legacyverify(ctx.message.channel, ctx.guild.get_member(discordid), str(discordid), role, osuid, "Manually Verified: "+ctx.guild.get_member(discordid).name, True, False)
 		except Exception as e:
 			print(time.strftime('%X %x %Z'))
-			print("in verify")
+			print("in legacyverify")
 			print(e)
 	else :
 		await ctx.send(embed=await permissions.error())

@@ -39,6 +39,7 @@ async def on_ready():
 		await dbhandler.query("CREATE TABLE groupfeedchannels (channelid)")
 		await dbhandler.query("CREATE TABLE rankfeedchannels (channelid)")
 		await dbhandler.query("CREATE TABLE feedjsondata (feedtype, contents)")
+		await dbhandler.query("CREATE TABLE queues (channelid, discordid)")
 		await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), "1"]])
 
 @client.command(name="adminlist", brief="Show bot admin list", description="", pass_context=True)
@@ -400,7 +401,7 @@ async def on_member_join(member):
 				if not verifyattempt:
 					await join_channel_object.send("Hello %s. It seems like you are in my database but the profile I know of you is restricted. If this is correct, please link any of your uploaded maps (new website only) and I'll verify you instantly. If this is not correct, tag Kyuunex." % (member.mention))
 			else:
-				await join_channel_object.send("Welcome %s! We have a verification system in this server so we know who you are, give you appropriate roles and keep raids/spam out. You can still post in mappers' queues without verification but for full access a verification is a must." % (member.mention))
+				await join_channel_object.send("Welcome %s! We have a verification system in this server so we know who you are, give you appropriate roles and keep raids/spam out." % (member.mention))
 				osuprofile = await osuapi.get_user(member.name)
 				if osuprofile:
 					await join_channel_object.send(content='Is this your osu profile? If yes, type `yes`, if not, link your profile.', embed=await osuembed.osuprofile(osuprofile))

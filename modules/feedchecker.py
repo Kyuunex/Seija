@@ -30,6 +30,7 @@ async def compare(result, lookupvalue, tablename, lookupkey, updatedb, reverse):
 			if comparison:
 				if updatedb:
 					await dbhandler.update(tablename, 'contents', json.dumps(result), lookupkey, lookupvalue)
+					print("db is updating for sure %s" % (lookupvalue))
 				return comparison
 			else:
 				return None

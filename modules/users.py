@@ -135,7 +135,7 @@ async def guildnamesync(ctx):
 						osuusername = osuprofile['username']
 					if member.display_name != osuusername:
 						if "nosync" in str(query[0][7]):
-							await ctx.send("%s | `%s` | `%s` |username not updated as `nosync` was set for this user" % (member.mention, osuusername, str(query[0][1])))
+							await ctx.send("%s | `%s` | `%s` | username not updated as `nosync` was set for this user" % (member.mention, osuusername, str(query[0][1])))
 						else:
 							try:
 								await member.edit(nick=osuusername)

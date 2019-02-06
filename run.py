@@ -74,7 +74,7 @@ async def gitpull(ctx):
 @client.command(name="dbdump", brief="Database Dump", description="", pass_context=True)
 async def dbdump(ctx):
 	if await permissions.check(ctx.message.author.id) :
-		if ctx.message.channel.id == int((await dbhandler.select('config', 'value', [['setting', "dbdumpchannelid"],['parent', str(ctx.guild.id)]]))[0][0]):
+		if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["dbdumpchannelid", str(ctx.guild.id)]]))[0][0]):
 			await ctx.send(file=discord.File('data/maindb.sqlite3'))
 	else :
 		await ctx.send(embed=await permissions.error())
@@ -121,7 +121,7 @@ async def help(ctx, admin: str = None): # TODO: rewrite help
 	
 	helpembed.add_field(name="'adminlist", value="Shows a list of bot admins", inline=True)
 	
-	if ctx.message.channel.id == int((await dbhandler.select('config', 'value', [['setting', "vetochannelid"],['parent', str(ctx.guild.id)]]))[0][0]) :
+	if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["vetochannelid", str(ctx.guild.id)]]))[0][0]) :
 		helpembed.add_field(name="'veto <mapsetid>", value="Track a mapset in this channel in veto mode", inline=True)
 		helpembed.add_field(name="'unveto <mapsetid>", value="Untrack a mapset in this channel in veto mode", inline=True)
 
@@ -148,7 +148,7 @@ async def track(ctx, mapsetid: str, mapsethostdiscordid: str = None):
 
 @client.command(name="veto", brief="Track a mapset in this channel in veto mode", description="", pass_context=True)
 async def veto(ctx, mapsetid: int, mapsethostdiscordid: int = None):
-	if ctx.message.channel.id == int((await dbhandler.select('config', 'value', [['setting', "vetochannelid"],['parent', str(ctx.guild.id)]]))[0][0]) :
+	if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["vetochannelid", str(ctx.guild.id)]]))[0][0]) :
 		if mapsethostdiscordid == None:
 			mapsethostdiscordid = ctx.message.author.id
 		await modchecker.track(ctx, str(mapsetid), str(mapsethostdiscordid), 1)
@@ -157,7 +157,7 @@ async def veto(ctx, mapsetid: int, mapsethostdiscordid: int = None):
 
 @client.command(name="unveto", brief="Untrack a mapset in this channel in veto mode", description="", pass_context=True)
 async def unveto(ctx, mapsetid: int):
-	if ctx.message.channel.id == int((await dbhandler.select('config', 'value', [['setting', "vetochannelid"],['parent', str(ctx.guild.id)]]))[0][0]) :
+	if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["vetochannelid", str(ctx.guild.id)]]))[0][0]) :
 		embed = await osuembed.mapset(await osuapi.get_beatmap(mapsetid))
 		await modchecker.untrack(ctx, mapsetid, embed, None)
 	else :
@@ -186,7 +186,7 @@ async def untrack(ctx, mapsetid: str, trackingtype: str = None):
 @client.command(name="sublist", brief="List Tracked mapsets", description="", pass_context=True)
 async def sublist(ctx):
 	if await permissions.check(ctx.message.author.id) :
-		for oneentry in await dbhandler.select('modtracking', '*', None):
+		for oneentry in await dbhandler.query("SELECT * FROM modtracking"):
 			embed = await osuembed.mapset(await osuapi.get_beatmap(str(oneentry[0])))
 			await ctx.send(content="mapsetid %s | channel <#%s> | mapsethostdiscordid %s \nroleid %s | mapsethostosuid %s | trackingtype %s" % (oneentry), embed=embed)
 	else :
@@ -197,29 +197,13 @@ async def verify(ctx, osuid: str, discordid: int, preverify: str = None):
 	if await permissions.check(ctx.message.author.id) :
 		try:
 			if preverify == "preverify":
-				await users.verify(ctx.message.channel, str(discordid), None, osuid)
+				await users.verify(ctx.message.channel, str(discordid), None, osuid, "Preverified: %s" % (str(discordid)))
 			else:
-				role = discord.utils.get(ctx.message.guild.roles, id=int((await dbhandler.select('config', 'value', [['setting', "verifyroleid"],['parent', str(ctx.guild.id)]]))[0][0]))
-				await users.verify(ctx.message.channel, ctx.guild.get_member(discordid), role, osuid)
+				role = discord.utils.get(ctx.message.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifyroleid", str(ctx.guild.id)]]))[0][0]))
+				await users.verify(ctx.message.channel, ctx.guild.get_member(discordid), role, osuid, "Manually Verified: %s" % (ctx.guild.get_member(discordid).name))
 		except Exception as e:
 			print(time.strftime('%X %x %Z'))
 			print("in verify")
-			print(e)
-	else :
-		await ctx.send(embed=await permissions.error())
-
-@client.command(name="legacyverify", brief="Manual verification", description="", pass_context=True)
-async def legacyverify(ctx, osuid: str, discordid: int, preverify: str = None):
-	if await permissions.check(ctx.message.author.id) :
-		try:
-			if preverify == "preverify":
-				await users.legacyverify(ctx.message.channel, None, str(discordid), None, osuid, "Preverified: "+str(discordid), True, False)
-			else:
-				role = discord.utils.get(ctx.message.guild.roles, id=int((await dbhandler.select('config', 'value', [['setting', "verifyroleid"],['parent', str(ctx.guild.id)]]))[0][0]))
-				await users.legacyverify(ctx.message.channel, ctx.guild.get_member(discordid), str(discordid), role, osuid, "Manually Verified: "+ctx.guild.get_member(discordid).name, True, False)
-		except Exception as e:
-			print(time.strftime('%X %x %Z'))
-			print("in legacyverify")
 			print(e)
 	else :
 		await ctx.send(embed=await permissions.error())
@@ -245,17 +229,14 @@ async def userdb(ctx, command: str = None, mention: str = None):
 					tag = "Preverified: %s"
 				for oneuser in userarray:
 					uzer = oneuser.split(',')
-					await users.legacyverify(ctx.message.channel, None, str(uzer[1]), None, uzer[0], tag % (str(uzer[1])), True, False)
+					await users.verify(ctx.message.channel, str(uzer[1]), None, "u/%s" % (uzer[0]), tag % (str(uzer[1])))
 					await asyncio.sleep(1)
 			elif command == "servercheck":
 				responce = "These users are not in my database:\n"
 				count = 0 
 				for member in ctx.guild.members:
 					if not member.bot:
-						wheres = [
-							['discordid', str(member.id)]
-						]
-						if not await dbhandler.select("users", "osuid", wheres):
+						if not await dbhandler.query(["SELECT osuid FROM users WHERE discordid = ?", [str(member.id),]]):
 							count += 1
 							if mention == "m":
 								responce += ("<@%s>\n" % (str(member.id)))
@@ -370,26 +351,29 @@ async def nuke(ctx): # TODO:
 async def on_message(message):
 	if message.author.id != client.user.id :
 		try:
-			verifychannelid = (await dbhandler.select('config', 'value', [['setting', "verifychannelid"],['parent', str(message.guild.id)]]))
+			verifychannelid = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannelid", str(message.guild.id)]])
 			if verifychannelid:
 				if message.channel.id == int(verifychannelid[0][0]) :
 					split_message = []
 					if '/' in message.content:
 						split_message = message.content.split('/')
-					
-					role = discord.utils.get(message.guild.roles, id=int((await dbhandler.select('config', 'value', [['setting', "verifyroleid"],['parent', str(message.guild.id)]]))[0][0]))
+					role = discord.utils.get(message.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifyroleid", str(message.guild.id)]]))[0][0]))
 
 					if 'https://osu.ppy.sh/u' in message.content:
-						await users.legacyverify(message.channel, message.author, str(message.author.id), role, split_message[4].split(' ')[0], "Verified: %s" % (message.author.name), True, False)
+						osulookup = "u/%s" % (split_message[4].split(' ')[0])
+						verifyattempt = await users.verify(message.channel, message.author, role, osulookup, "Verified: %s" % (message.author.name))
+						if not verifyattempt:
+							await message.channel.send('verification failure, I can\'t find any profile from that link. If you are restricted, link any of your recently uploaded maps (new website only).')
 					elif 'https://osu.ppy.sh/beatmapsets/' in message.content:
-
-						authorsmapset = await osuapi.get_beatmap(split_message[4].split('#')[0])
-						embed = await osuembed.mapset(authorsmapset)
-
-						await users.legacyverify(message.channel, message.author, str(message.author.id), role, authorsmapset['creator'], "Verified through mapset: %s" % (message.author.name), embed, str(authorsmapset['creator_id']))
-
+						osulookup = "s/%s" % (split_message[4].split('#')[0])
+						verifyattempt = await users.verify(message.channel, message.author, role, osulookup, "Verified through mapset: %s" % (message.author.name))
+						if not verifyattempt:
+							await message.channel.send('verification failure, I can\'t find any map with that link')
 					elif message.content.lower() == 'yes':
-						await users.legacyverify(message.channel, message.author, str(message.author.id), role, message.author.name, "Verified: "+message.author.name, False, False)
+						osulookup = "u/%s" % (message.author.name)
+						verifyattempt = await users.verify(message.channel, message.author, role, osulookup, "Verified: %s" % (message.author.name))
+						if not verifyattempt:
+							await message.channel.send('verification failure, your discord username does not match a username of any osu account. possible reason can be that you changed your discord username before typing `yes`. In this case, link your profile.')
 					elif 'https://ripple.moe/u' in message.content:
 						await message.channel.send('ugh, this bot does not do automatic verification from ripple, please ping Kyuunex')
 					elif 'https://osu.gatari.pw/u' in message.content:
@@ -406,21 +390,22 @@ async def on_member_join(member):
 		guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannelid", str(member.guild.id)]])
 		if guildverifychannel:
 			join_channel_object = await utils.get_channel(client.get_all_channels(), int((guildverifychannel)[0][0]))
-			where = [
-				['discordid', str(member.id)],
-			]
-			lookupuser = await dbhandler.select('users', 'osuid', where)
+			lookupuser = await dbhandler.query(["SELECT osuid FROM users WHERE discordid = ?", [str(member.id),]])
 			if lookupuser:
 				print("user %s joined with osuid %s" % (str(member.id),str(lookupuser[0][0])))
-				role = discord.utils.get(member.guild.roles, id=int((await dbhandler.select('config', 'value', [['setting', "verifyroleid"],['parent', str(member.guild.id)]]))[0][0]))
-				await users.legacyverify(join_channel_object, member, str(member.id), role, lookupuser[0][0], "Welcome aboard <@%s>! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.id), True, False)
+				role = discord.utils.get(member.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifyroleid", str(member.guild.id)]]))[0][0]))
+				osulookup = "u/%s" % (lookupuser[0][0])
+				verifyattempt = await users.verify(join_channel_object, member, role, osulookup, "Welcome aboard %s! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.mention))
+
+				if not verifyattempt:
+					await join_channel_object.send("Hello %s. It seems like you are in my database but the profile I know of you is restricted. If this is correct, please link any of your uploaded maps (new website only) and I'll verify you instantly. If this is not correct, tag Kyuunex." % (member.mention))
 			else:
-				await join_channel_object.send("Welcome <@%s>! We have a verification system in this server so we know who you are, give you appropriate roles and keep raids/spam out. You can still post in mappers' queues without verification but for full access a verification is a must." % (str(member.id)))
+				await join_channel_object.send("Welcome %s! We have a verification system in this server so we know who you are, give you appropriate roles and keep raids/spam out. You can still post in mappers' queues without verification but for full access a verification is a must." % (member.mention))
 				osuprofile = await osuapi.get_user(member.name)
 				if osuprofile:
-					await join_channel_object.send(content='Is this your osu profile? If yes, type `yes`, if no, link your profile.', embed=await osuembed.osuprofile(osuprofile))
+					await join_channel_object.send(content='Is this your osu profile? If yes, type `yes`, if not, link your profile.', embed=await osuembed.osuprofile(osuprofile))
 				else :
-					await join_channel_object.send('Please post a link to your profile and I will verify you instantly. If you are restricted, link your latest map, preferably ranked if any.')
+					await join_channel_object.send('Please post a link to your osu profile and I will verify you instantly.')
 	except Exception as e:
 		print(time.strftime('%X %x %Z'))
 		print("in on_member_join")
@@ -459,7 +444,7 @@ async def modchecker_background_loop():
 							if newevent:
 								for subpostobject in newevent['posts']:
 									if not subpostobject['system']:
-										if not await dbhandler.select('modposts', 'postid', [['postid', subpostobject['id']]]):
+										if not await dbhandler.query(["SELECT postid FROM modposts WHERE postid = ?", [subpostobject['id'],]]):
 											await dbhandler.insert('modposts', (subpostobject['id'], mapsetid, newevent["beatmap_id"], subpostobject['user_id'], subpostobject['message']))
 											modtopost = await osuembed.modpost(subpostobject, beatmapsetdiscussionobject, newevent, trackingtype)
 											if modtopost:

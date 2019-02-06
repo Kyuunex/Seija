@@ -20,7 +20,7 @@ from modules import feedchecker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190204"
+appversion = "b20190206"
 
 @client.event
 async def on_ready():

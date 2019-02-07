@@ -58,6 +58,7 @@ async def mapsetchannel(client, ctx, mapsetid, mapsetname):
                 await ctx.message.author.add_roles(mapsetrole)
                 embed = await osuembed.mapset(mapset)
                 await channel.send("%s done!" % (ctx.message.author.mention), embed=embed)
+                await dbhandler.query(["INSERT INTO modchannels VALUES (?, ?, ?, ?)", [str(channel.id), str(mapsetrole.id), str(ctx.message.author.id), str(ctx.guild.id)]])
             else:
                 await ctx.send("You are not using this command correctly")
         except Exception as e:
@@ -126,20 +127,21 @@ async def queuesettings(client, ctx, action):
         await ctx.send("not your queue")
 
 async def modchannelsettings(client, ctx, action, discordid):
-    #if await dbhandler.query(["SELECT discordid FROM queues WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]]):
-    if False:
+    roleidlist = await dbhandler.query(["SELECT roleid FROM modchannels WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])
+    if roleidlist:
         try:
             discorduser = client.get_user(int(discordid))
+            role = discord.utils.get(ctx.guild.roles, id=int(roleidlist[0][0]))
             if action == "add":
-                await ctx.message.channel.set_permissions(discorduser, read_messages=True, send_messages=True)
-                await ctx.send("added user placeholder message!")
+                await discorduser.add_roles(role, reason="added to mapset")
+                await ctx.send("added %s in this channel" % (discorduser.mention))
             elif action == "remove":
-                await ctx.message.channel.set_permissions(discorduser, read_messages=False, send_messages=False)
-                await ctx.send("remove person placeholder message!")
+                await discorduser.remove_roles(role, reason="removed from mapset")
+                await ctx.send("removed %s from this channel" % (discorduser.mention))
         except Exception as e:
             await ctx.send(e)
     else:
-        await ctx.send("not yet working")
+        await ctx.send("not your mapset channel")
 
 async def mapsetnuke(client, ctx):
     try:

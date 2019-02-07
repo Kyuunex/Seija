@@ -265,10 +265,10 @@ async def requestchannel(ctx, requesttype: str = "help", arg1: str = None, arg2:
 
 @client.command(name="nuke", brief="Nuke a requested channel", description="", pass_context=True)
 async def nuke(ctx): # TODO:
-	if await permissions.checkowner(ctx.message.author.id) :
-		await ctx.send("Not yet implemented")
+	if await permissions.check(ctx.message.author.id) :
+		await requests.mapsetnuke(client, ctx)
 	else :
-		await ctx.send(embed=await permissions.ownererror())
+		await ctx.send(embed=await permissions.error())
 
 @client.command(name="open", brief="open a queue", description="", pass_context=True)
 async def openq(ctx):
@@ -281,6 +281,19 @@ async def closeq(ctx):
 @client.command(name="hide", brief="hide a queue", description="", pass_context=True)
 async def hideq(ctx):
 	await requests.queuesettings(client, ctx, "hide")
+
+@client.command(name="add", brief="open a queue", description="", pass_context=True)
+async def addm(ctx, discordid: int):
+	await requests.modchannelsettings(client, ctx, "add", discordid)
+
+@client.command(name="remove", brief="remove a user from mapset channel", description="", pass_context=True)
+async def removem(ctx, discordid: int):
+	await requests.modchannelsettings(client, ctx, "remove", discordid)
+
+@client.command(name="abandon", brief="abandon and untrack the set", description="", pass_context=True)
+async def abandon(ctx):
+	await ctx.send("not yet added")
+
 
 #####################################################################################################
 

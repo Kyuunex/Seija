@@ -4,6 +4,7 @@ from modules import osuembed
 from modules import utils
 import discord
 import random
+import asyncio
 
 async def mapsetchannel(client, ctx, mapsetid, mapsetname):
     guildmapsetcategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildmapsetcategory", str(ctx.guild.id)]])
@@ -123,3 +124,27 @@ async def queuesettings(client, ctx, action):
             await ctx.send(e)
     else:
         await ctx.send("not your queue")
+
+async def modchannelsettings(client, ctx, action, discordid):
+    #if await dbhandler.query(["SELECT discordid FROM queues WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]]):
+    if False:
+        try:
+            discorduser = client.get_user(int(discordid))
+            if action == "add":
+                await ctx.message.channel.set_permissions(discorduser, read_messages=True, send_messages=True)
+                await ctx.send("added user placeholder message!")
+            elif action == "remove":
+                await ctx.message.channel.set_permissions(discorduser, read_messages=False, send_messages=False)
+                await ctx.send("remove person placeholder message!")
+        except Exception as e:
+            await ctx.send(e)
+    else:
+        await ctx.send("not yet working")
+
+async def mapsetnuke(client, ctx):
+    try:
+        await ctx.send("nuking channel in 2 seconds!")
+        await asyncio.sleep(2)
+        await ctx.message.channel.delete("Manually nuked the channel due to abuse")
+    except Exception as e:
+        await ctx.send(e)

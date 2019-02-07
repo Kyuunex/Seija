@@ -40,7 +40,9 @@ async def request(ctx):
 `'hide` - hide the queue, only admins can see the queue. nobody else can see and post in it.
 
 **Available commands for mapset channels**: 
-**(this functionality is not enabled yet, i'm just writing all the instructions in one go)**
+**(this functionality is incomplete, i'm just writing all the instructions in one go)**
+**don't use without tagging kyuunex first**
+**also, no single mapper sets allowed**
 `'request mapset (mapset id) (song name)` - this is the general command to create a channel.
 (song name) is an optional argument that is not required. But it must be written in quotes if supplied.
 If the mapset is not yet uploaded, (mapset id) can be set to `0` but in that case, (song name) argument is required.

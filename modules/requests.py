@@ -130,14 +130,14 @@ async def modchannelsettings(client, ctx, action, discordid):
     roleidlist = await dbhandler.query(["SELECT roleid FROM modchannels WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])
     if roleidlist:
         try:
-            discorduser = client.get_user(int(discordid))
+            member = ctx.guild.get_member(int(discordid))
             role = discord.utils.get(ctx.guild.roles, id=int(roleidlist[0][0]))
             if action == "add":
-                await discorduser.add_roles(role, reason="added to mapset")
-                await ctx.send("added %s in this channel" % (discorduser.mention))
+                await member.add_roles(role, reason="added to mapset")
+                await ctx.send("added %s in this channel" % (member.mention))
             elif action == "remove":
-                await discorduser.remove_roles(role, reason="removed from mapset")
-                await ctx.send("removed %s from this channel" % (discorduser.mention))
+                await member.remove_roles(role, reason="removed from mapset")
+                await ctx.send("removed %s from this channel" % (member.mention))
         except Exception as e:
             await ctx.send(e)
     else:

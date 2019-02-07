@@ -61,7 +61,7 @@ async def mapsetchannel(client, ctx, mapsetid, mapsetname):
                 await ctx.message.author.add_roles(mapsetrole)
                 embed = await osuembed.mapset(mapset)
                 await channel.send("%s done!" % (ctx.message.author.mention), embed=embed)
-                await dbhandler.query(["INSERT INTO modchannels VALUES (?, ?, ?, ?)", [str(channel.id), str(mapsetrole.id), str(ctx.message.author.id), str(ctx.guild.id)]])
+                await dbhandler.query(["INSERT INTO modchannels VALUES (?, ?, ?, ?, ?)", [str(channel.id), str(mapsetrole.id), str(ctx.message.author.id), str(0), str(ctx.guild.id)]])
             else:
                 await ctx.send("You are not using this command correctly")
         except Exception as e:

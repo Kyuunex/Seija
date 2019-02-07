@@ -43,7 +43,7 @@ async def on_ready():
         await dbhandler.query("CREATE TABLE rankfeedchannels (channelid)")
         await dbhandler.query("CREATE TABLE feedjsondata (feedtype, contents)")
         await dbhandler.query("CREATE TABLE queues (channelid, discordid, guildid)")
-        await dbhandler.query("CREATE TABLE modchannels (channelid, roleid, discordid, guildid)")
+        await dbhandler.query("CREATE TABLE modchannels (channelid, roleid, discordid, mapsetid, guildid)")
         await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), "1"]])
 
 

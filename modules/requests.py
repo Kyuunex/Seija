@@ -145,6 +145,6 @@ async def mapsetnuke(client, ctx):
     try:
         await ctx.send("nuking channel in 2 seconds!")
         await asyncio.sleep(2)
-        await ctx.message.channel.delete("Manually nuked the channel due to abuse")
+        await ctx.message.channel.delete(reason="Manually nuked the channel due to abuse")
     except Exception as e:
         await ctx.send(e)

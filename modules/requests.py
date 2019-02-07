@@ -6,6 +6,7 @@ import discord
 import random
 import asyncio
 
+
 async def mapsetchannel(client, ctx, mapsetid, mapsetname):
     guildmapsetcategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildmapsetcategory", str(ctx.guild.id)]])
     if guildmapsetcategory:
@@ -17,10 +18,12 @@ async def mapsetchannel(client, ctx, mapsetid, mapsetname):
                 mapset = await osuapi.get_beatmap(mapsetid)
 
             if mapsetname:
-                discordfriendlychannelname = mapsetname.replace(" ", "_").lower()
+                discordfriendlychannelname = mapsetname.replace(
+                    " ", "_").lower()
                 rolename = mapsetname
             elif mapset:
-                discordfriendlychannelname = mapset['title'].replace(" ", "_").lower()
+                discordfriendlychannelname = mapset['title'].replace(
+                    " ", "_").lower()
                 rolename = mapset['title']
             else:
                 discordfriendlychannelname = None
@@ -97,7 +100,8 @@ async def queuechannel(client, ctx, queuetype):
                         embed_links=True
                     )
                 }
-                discordfriendlychannelname = "%s-%s-queue" % (ctx.message.author.display_name.replace(" ", "_").lower(), queuetype)
+                discordfriendlychannelname = "%s-%s-queue" % (
+                    ctx.message.author.display_name.replace(" ", "_").lower(), queuetype)
                 category = await utils.get_channel(client.get_all_channels(), int(guildqueuecategory[0][0]))
                 channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category)
                 await channel.send("%s done!" % (ctx.message.author.mention))
@@ -108,6 +112,7 @@ async def queuechannel(client, ctx, queuetype):
             await ctx.send("you already have a queue though. or it was deleted, in this case, ping kyuunex")
     else:
         await ctx.send("Not enabled in this server yet.")
+
 
 async def queuesettings(client, ctx, action):
     if await dbhandler.query(["SELECT discordid FROM queues WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]]):
@@ -126,6 +131,7 @@ async def queuesettings(client, ctx, action):
     else:
         await ctx.send("not your queue")
 
+
 async def modchannelsettings(client, ctx, action, discordid):
     roleidlist = await dbhandler.query(["SELECT roleid FROM modchannels WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])
     if roleidlist:
@@ -143,10 +149,27 @@ async def modchannelsettings(client, ctx, action, discordid):
     else:
         await ctx.send("not your mapset channel")
 
+
 async def mapsetnuke(client, ctx):
-    try:
-        await ctx.send("nuking channel in 2 seconds!")
-        await asyncio.sleep(2)
-        await ctx.message.channel.delete(reason="Manually nuked the channel due to abuse")
-    except Exception as e:
-        await ctx.send(e)
+    roleidlist = await dbhandler.query(["SELECT roleid FROM modchannels WHERE channelid = ?", [str(ctx.message.channel.id)]])
+    if roleidlist:
+        try:
+            await ctx.send("nuking channel and role in 2 seconds! untracking also")
+            await asyncio.sleep(2)
+            role = discord.utils.get(ctx.guild.roles, id=int(roleidlist[0][0]))
+
+            mapsetid = await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE channelid = ?", [str(ctx.message.channel.id)]])
+            if mapsetid:
+                await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
+                await dbhandler.query(["DELETE FROM jsondata WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
+                await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
+                await ctx.send("untracked")
+                await asyncio.sleep(2)
+
+            await dbhandler.query(["DELETE FROM modchannels WHERE channelid = ?", [str(ctx.message.channel.id)]])
+            await role.delete(reason="Manually nuked the role due to abuse")
+            await ctx.message.channel.delete(reason="Manually nuked the channel due to abuse")
+        except Exception as e:
+            await ctx.send(e)
+    else:
+        await ctx.send("this is not a mapset channel")

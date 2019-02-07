@@ -3,29 +3,41 @@ import discord
 from modules import dbhandler
 from modules import permissions
 
+
 async def help(ctx, admin, appversion):
-	helpembed=discord.Embed(title="Seija teaches you how to be a bot master", description="Here are available commands. Any abuse will be dealt with punishment.", color=0xbd3661)
+    helpembed = discord.Embed(title="Seija teaches you how to be a bot master",
+                              description="Here are available commands. Any abuse will be dealt with punishment.", color=0xbd3661)
 
-	helpembed.set_author(name="Seija %s" % (appversion), icon_url="https://i.imgur.com/1icHC5a.png")
-	helpembed.set_thumbnail(url="https://i.imgur.com/JhL9PV8.png")
-	
-	helpembed.add_field(name="'adminlist", value="Shows a list of bot admins", inline=True)
-	
-	if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["vetochannelid", str(ctx.guild.id)]]))[0][0]) :
-		helpembed.add_field(name="'veto <mapsetid>", value="Track a mapset in this channel in veto mode", inline=True)
-		helpembed.add_field(name="'unveto <mapsetid>", value="Untrack a mapset in this channel in veto mode", inline=True)
+    helpembed.set_author(name="Seija %s" % (appversion),
+                         icon_url="https://i.imgur.com/1icHC5a.png")
+    helpembed.set_thumbnail(url="https://i.imgur.com/JhL9PV8.png")
 
-	if admin == "admin":
-		if await permissions.check(ctx.message.author.id) :
-			helpembed.add_field(name="'track", value="Subscribe to a beatmapset discussions in this channel", inline=True)
-			helpembed.add_field(name="'untrack", value="Unsubscribe from a beatmapset discussions in this channel", inline=True)
-			helpembed.add_field(name="'sublist", value="Lists all channels and mapsets being tracked", inline=True)
-			helpembed.add_field(name="'restart", value="Restart the bot", inline=True)
-		else :
-			await ctx.send(embed=await permissions.error())
+    helpembed.add_field(name="'adminlist",
+                        value="Shows a list of bot admins", inline=True)
 
-	helpembed.set_footer(text = "Made by Kyuunex", icon_url='https://avatars0.githubusercontent.com/u/5400432')
-	await ctx.send(embed=helpembed)
+    if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["vetochannelid", str(ctx.guild.id)]]))[0][0]):
+        helpembed.add_field(name="'veto <mapsetid>",
+                            value="Track a mapset in this channel in veto mode", inline=True)
+        helpembed.add_field(name="'unveto <mapsetid>",
+                            value="Untrack a mapset in this channel in veto mode", inline=True)
+
+    if admin == "admin":
+        if await permissions.check(ctx.message.author.id):
+            helpembed.add_field(
+                name="'track", value="Subscribe to a beatmapset discussions in this channel", inline=True)
+            helpembed.add_field(
+                name="'untrack", value="Unsubscribe from a beatmapset discussions in this channel", inline=True)
+            helpembed.add_field(
+                name="'sublist", value="Lists all channels and mapsets being tracked", inline=True)
+            helpembed.add_field(
+                name="'restart", value="Restart the bot", inline=True)
+        else:
+            await ctx.send(embed=await permissions.error())
+
+    helpembed.set_footer(text="Made by Kyuunex",
+                         icon_url='https://avatars0.githubusercontent.com/u/5400432')
+    await ctx.send(embed=helpembed)
+
 
 async def request(ctx):
     await ctx.send("""With this command, you can create ether a queue channel or a mod notification channel for collaborators.

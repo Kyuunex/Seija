@@ -27,6 +27,7 @@ This bot is built using discord.py rewrite library and uses sqlite3 database.
 'sql INSERT INTO config VALUES ('dbdumpchannelid', '460935664712548366', '532397839784083458', '0')
 'sql INSERT INTO config VALUES ('guildmapsetcategory', '460935664712548366', '460935665165795328', '0')
 'sql INSERT INTO config VALUES ('guildqueuecategory', '460935664712548366', '488831339634753546', '0')
+'sql INSERT INTO config VALUES ('guildarchivecategory', '460935664712548366', '491572368221929472', '0')
 ```
 2. Use `'makeadmin <new admin discord id>` to make users bot admins.
 3. Use `'track <mapsetid> <mapset host discord id>` to track mapsets.

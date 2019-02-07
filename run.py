@@ -17,10 +17,12 @@ from modules import users
 from modules import utils
 from modules import groupelements
 from modules import feedchecker
+from modules import requests
+from modules import instructions
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190206"
+appversion = "b20190207"
 
 @client.event
 async def on_ready():
@@ -39,7 +41,7 @@ async def on_ready():
 		await dbhandler.query("CREATE TABLE groupfeedchannels (channelid)")
 		await dbhandler.query("CREATE TABLE rankfeedchannels (channelid)")
 		await dbhandler.query("CREATE TABLE feedjsondata (feedtype, contents)")
-		await dbhandler.query("CREATE TABLE queues (channelid, discordid)")
+		await dbhandler.query("CREATE TABLE queues (channelid, discordid, guildid)")
 		await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), "1"]])
 
 @client.command(name="adminlist", brief="Show bot admin list", description="", pass_context=True)
@@ -115,28 +117,7 @@ async def user(ctx, *, username):
 
 @client.command(name="help", brief="Help for users", description="", pass_context=True)
 async def help(ctx, admin: str = None): # TODO: rewrite help
-	helpembed=discord.Embed(title="Seija teaches you how to be a bot master", description="Here are available commands. Any abuse will be dealt with punishment.", color=0xbd3661)
-
-	helpembed.set_author(name="Seija %s" % (appversion), icon_url="https://i.imgur.com/1icHC5a.png")
-	helpembed.set_thumbnail(url="https://i.imgur.com/JhL9PV8.png")
-	
-	helpembed.add_field(name="'adminlist", value="Shows a list of bot admins", inline=True)
-	
-	if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["vetochannelid", str(ctx.guild.id)]]))[0][0]) :
-		helpembed.add_field(name="'veto <mapsetid>", value="Track a mapset in this channel in veto mode", inline=True)
-		helpembed.add_field(name="'unveto <mapsetid>", value="Untrack a mapset in this channel in veto mode", inline=True)
-
-	if admin == "admin":
-		if await permissions.check(ctx.message.author.id) :
-			helpembed.add_field(name="'track", value="Subscribe to a beatmapset discussions in this channel", inline=True)
-			helpembed.add_field(name="'untrack", value="Unsubscribe from a beatmapset discussions in this channel", inline=True)
-			helpembed.add_field(name="'sublist", value="Lists all channels and mapsets being tracked", inline=True)
-			helpembed.add_field(name="'restart", value="Restart the bot", inline=True)
-		else :
-			await ctx.send(embed=await permissions.error())
-
-	helpembed.set_footer(text = "Made by Kyuunex", icon_url='https://avatars0.githubusercontent.com/u/5400432')
-	await ctx.send(embed=helpembed)
+	await instructions.help(ctx, admin, appversion)
 
 @client.command(name="track", brief="Track a mapset", description="", pass_context=True)
 async def track(ctx, mapsetid: str, mapsethostdiscordid: str = None):
@@ -274,70 +255,13 @@ async def guildsync(ctx):
 		await ctx.send(embed=await permissions.error())
 
 @client.command(name="request", brief="Request a channel", description="", pass_context=True)
-async def requestchannel(ctx, requesttype: str = "help", mapsetid: int = 0, mapsetname: str = None): # TODO: Add request
+async def requestchannel(ctx, requesttype: str = "help", arg1: str = None, arg2: str = None): # TODO: Add request
 	if requesttype == "queue":
-		guildqueuecategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildqueuecategory", str(ctx.guild.id)]])
-		if guildqueuecategory:
-			await ctx.send("Queue placeholder")
-		else:
-			await ctx.send("Not enabled in this server yet.")
+		await requests.queuechannel(client, ctx, arg1)
 	elif requesttype == "mapset":
-		guildmapsetcategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildmapsetcategory", str(ctx.guild.id)]])
-		if guildmapsetcategory:
-			await ctx.send("sure, gimme a moment")
-			if mapsetid == 0:
-				mapset = None
-			else:
-				mapset = await osuapi.get_beatmap(mapsetid)
-
-			if mapsetname:
-				discordfriendlychannelname = mapsetname.replace(" ", "_").lower()
-				rolename = mapsetname
-			elif mapset:
-				discordfriendlychannelname = mapset['title'].replace(" ", "_").lower()
-				rolename = mapset['title']
-			else:
-				discordfriendlychannelname = None
-				rolename = None
-
-			if discordfriendlychannelname:
-				guild = ctx.message.guild
-				rolecolor = discord.Colour(random.randint(1, 16777215))
-				mapsetrole = await guild.create_role(name=rolename, colour=rolecolor)
-				category = await utils.get_channel(client.get_all_channels(), int(guildmapsetcategory[0][0]))
-				channeloverwrites = {
-					guild.default_role: discord.PermissionOverwrite(read_messages=False),
-					ctx.message.author: discord.PermissionOverwrite(
-						create_instant_invite=True,
-						manage_channels=True,
-						manage_roles=True,
-						manage_webhooks=True,
-						read_messages=True,
-						send_messages=True,
-						manage_messages=True,
-						embed_links=True,
-						attach_files=True,
-						read_message_history=True,
-						mention_everyone=False
-					),
-					mapsetrole: discord.PermissionOverwrite(read_messages=True),
-					guild.me: discord.PermissionOverwrite(
-						manage_channels=True,
-						read_messages=True,
-						send_messages=True,
-						embed_links=True
-					)
-				}
-				channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category)
-				await ctx.message.author.add_roles(mapsetrole)
-				embed = await osuembed.mapset(mapset)
-				await channel.send("%s done!" % (ctx.message.author.mention), embed=embed)
-			else:
-				await ctx.send("You are not using this command correctly")
-		else:
-			await ctx.send("Not enabled in this server yet.")
+		await requests.mapsetchannel(client, ctx, arg1, arg2)
 	else:
-		await ctx.send("Help menu placeholder")
+		await instructions.request(ctx)
 
 @client.command(name="nuke", brief="Nuke a requested channel", description="", pass_context=True)
 async def nuke(ctx): # TODO:
@@ -345,6 +269,18 @@ async def nuke(ctx): # TODO:
 		await ctx.send("Not yet implemented")
 	else :
 		await ctx.send(embed=await permissions.ownererror())
+
+@client.command(name="open", brief="open a queue", description="", pass_context=True)
+async def openq(ctx):
+	await requests.queuesettings(client, ctx, "open")
+
+@client.command(name="close", brief="close a queue", description="", pass_context=True)
+async def closeq(ctx):
+	await requests.queuesettings(client, ctx, "close")
+
+@client.command(name="hide", brief="hide a queue", description="", pass_context=True)
+async def hideq(ctx):
+	await requests.queuesettings(client, ctx, "hide")
 
 #####################################################################################################
 

@@ -277,11 +277,16 @@ async def guildsync(ctx):
 @client.command(name="request", brief="Request a channel", description="", pass_context=True)
 async def requestchannel(ctx, requesttype: str = "help", arg1: str = None, arg2: str = None):  # TODO: Add request
     if requesttype == "queue":
-        await requests.queuechannel(client, ctx, arg1)
+        await requests.queuechannel(client, ctx, arg1, appversion)
     elif requesttype == "mapset":
-        await requests.mapsetchannel(client, ctx, arg1, arg2)
+        await requests.mapsetchannel(client, ctx, arg1, arg2, appversion)
+    elif requesttype == "queuehelp":
+        await instructions.queuehelp(ctx, appversion)
+    elif requesttype == "mapsethelp":
+        await instructions.mapsethelp(ctx, appversion)
     else:
-        await instructions.request(ctx)
+        await instructions.queuehelp(ctx, appversion)
+        await instructions.mapsethelp(ctx, appversion)
 
 
 @client.command(name="nuke", brief="Nuke a requested channel", description="", pass_context=True)

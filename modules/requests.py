@@ -2,12 +2,13 @@ from modules import dbhandler
 from modules import osuapi
 from modules import osuembed
 from modules import utils
+from modules import instructions
 import discord
 import random
 import asyncio
 
 
-async def mapsetchannel(client, ctx, mapsetid, mapsetname):
+async def mapsetchannel(client, ctx, mapsetid, mapsetname, appversion):
     guildmapsetcategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildmapsetcategory", str(ctx.guild.id)]])
     if guildmapsetcategory:
         try:
@@ -61,8 +62,8 @@ async def mapsetchannel(client, ctx, mapsetid, mapsetname):
                 }
                 channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category)
                 await ctx.message.author.add_roles(mapsetrole)
-                embed = await osuembed.mapset(mapset)
-                await channel.send("%s done!" % (ctx.message.author.mention), embed=embed)
+                #embed = await osuembed.mapset(mapset)
+                await channel.send("%s done!" % (ctx.message.author.mention), embed=await instructions.modchannelcommands(appversion))
                 await dbhandler.query(["INSERT INTO modchannels VALUES (?, ?, ?, ?, ?)", [str(channel.id), str(mapsetrole.id), str(ctx.message.author.id), str(mapsetid), str(ctx.guild.id)]])
             else:
                 await ctx.send("You are not using this command correctly")
@@ -72,7 +73,7 @@ async def mapsetchannel(client, ctx, mapsetid, mapsetname):
         await ctx.send("Not enabled in this server yet.")
 
 
-async def queuechannel(client, ctx, queuetype):
+async def queuechannel(client, ctx, queuetype, appversion):
     guildqueuecategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildqueuecategory", str(ctx.guild.id)]])
     if guildqueuecategory:
         if not await dbhandler.query(["SELECT discordid FROM queues WHERE discordid = ? AND guildid = ?", [str(ctx.message.author.id), str(ctx.guild.id)]]):
@@ -106,8 +107,8 @@ async def queuechannel(client, ctx, queuetype):
                     ctx.message.author.display_name.replace(" ", "_").lower(), queuetype)
                 category = await utils.get_channel(client.get_all_channels(), int(guildqueuecategory[0][0]))
                 channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category)
-                await channel.send("%s done!" % (ctx.message.author.mention))
                 await dbhandler.query(["INSERT INTO queues VALUES (?, ?, ?)", [str(channel.id), str(ctx.message.author.id), str(ctx.guild.id)]])
+                await channel.send("%s done!" % (ctx.message.author.mention), embed=await instructions.queuecommands(appversion))
             except Exception as e:
                 await ctx.send(e)
         else:

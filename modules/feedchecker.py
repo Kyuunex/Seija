@@ -30,6 +30,7 @@ async def compare(result, lookupvalue, tablename, lookupkey, updatedb, reverse):
             localdata = json.loads((await dbhandler.select(tablename, 'contents', [[lookupkey, lookupvalue]]))[0][0])
             comparison = await comparelists(result, localdata, reverse)
             if comparison:
+                print("comparison if block %s and %s" % (lookupvalue, str(updatedb)))
                 if updatedb:
                     await dbhandler.update(tablename, 'contents', json.dumps(result), lookupkey, lookupvalue)
                     print("db is updating for sure %s" % (lookupvalue))

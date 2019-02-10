@@ -16,9 +16,11 @@ async def mapsetchannel(client, ctx, mapsetid, mapsetname, appversion):
             if int(mapsetid) == 0 or mapsetid == None:
                 mapset = None
                 mapsetid = "0"
+                desc = ""
             else:
                 mapset = await osuapi.get_beatmap(mapsetid)
                 mapsetid = str(mapsetid)
+                desc = "https://osu.ppy.sh/beatmapsets/%s" % (mapsetid)
 
             if mapsetname:
                 discordfriendlychannelname = mapsetname.replace(
@@ -35,7 +37,7 @@ async def mapsetchannel(client, ctx, mapsetid, mapsetname, appversion):
             if discordfriendlychannelname:
                 guild = ctx.message.guild
                 rolecolor = discord.Colour(random.randint(1, 16777215))
-                mapsetrole = await guild.create_role(name=rolename, colour=rolecolor)
+                mapsetrole = await guild.create_role(name=rolename, colour=rolecolor, mentionable=True)
                 category = await utils.get_channel(client.get_all_channels(), int(guildmapsetcategory[0][0]))
                 channeloverwrites = {
                     guild.default_role: discord.PermissionOverwrite(read_messages=False),

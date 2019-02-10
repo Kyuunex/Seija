@@ -22,7 +22,7 @@ from modules import instructions
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190208"
+appversion = "b20190210"
 
 
 @client.event

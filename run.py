@@ -22,7 +22,7 @@ from modules import instructions
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190210"
+appversion = "b20190211"
 
 
 @client.event
@@ -73,7 +73,7 @@ async def restart(ctx):
 @client.command(name="gitpull", brief="Update the bot", description="it just does git pull", pass_context=True)
 async def gitpull(ctx):
     if await permissions.check(ctx.message.author.id):
-        await ctx.send("Updating.")
+        await ctx.send("Feteching the latest version from the repository and updating from version %s" % (appversion))
         os.system('git pull')
         quit()
         # exit()
@@ -115,15 +115,12 @@ async def mapset(ctx, mapsetid: str, text: str = None):
 
 @client.command(name="user", brief="Show a user", description="", pass_context=True)
 async def user(ctx, *, username):
-    if await permissions.check(ctx.message.author.id):
-        embed = await osuembed.osuprofile(await osuapi.get_user(username))
-        if embed:
-            await ctx.send(embed=embed)
-            # await ctx.delete_message(ctx.message)
-        else:
-            await ctx.send(content='`No user found with that username`')
+    embed = await osuembed.osuprofile(await osuapi.get_user(username))
+    if embed:
+        await ctx.send(embed=embed)
+        # await ctx.delete_message(ctx.message)
     else:
-        await ctx.send(embed=await permissions.error())
+        await ctx.send(content='`No user found with that username`')
 
 
 @client.command(name="help", brief="Help for users", description="", pass_context=True)
@@ -479,6 +476,7 @@ async def groupfeed_background_loop():
     await client.wait_until_ready()
     while not client.is_closed():
         try:
+            await asyncio.sleep(120)
             print(time.strftime('%X %x %Z')+' | groupfeed')
             groupfeedchannellist = await dbhandler.query("SELECT channelid FROM groupfeedchannels")
             if groupfeedchannellist:

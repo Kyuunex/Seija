@@ -178,3 +178,22 @@ async def mapsetnuke(client, ctx):
             await ctx.send(e)
     else:
         await ctx.send("this is not a mapset channel")
+
+
+async def abandon(client, ctx):
+    guildarchivecategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildarchivecategory", str(ctx.guild.id)]])
+    if guildarchivecategory:
+        
+        mapsetid = await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE channelid = ?", [str(ctx.message.channel.id)]])
+        if mapsetid:
+            await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
+            await dbhandler.query(["DELETE FROM jsondata WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
+            await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
+            await ctx.send("untracked")
+            await asyncio.sleep(1)
+
+        archivecategory = await utils.get_channel(client.get_all_channels(), int(guildarchivecategory[0][0]))
+        await ctx.message.channel.edit(reason=None, category=archivecategory)
+        await ctx.send("Set abandoned and moved to archive")
+    else:
+        await ctx.send("no archive category set for this server")

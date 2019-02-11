@@ -1,7 +1,9 @@
 import json
 import time
+import asyncio
 from jsondiff import diff
 import jsondiff
+from modules import utils
 from modules import dbhandler
 from modules import osuapi
 from modules import osuembed
@@ -94,3 +96,52 @@ async def untrack(ctx, mapsetid, embed, ranked):
             await ctx.send(content='`Mapset with that ID is no longer being tracked in this channel`')
     else:
         await ctx.send(content='`No tracking record was found in the database with this mapsetid for this channel`')
+
+
+async def main(client):
+    try:
+        await asyncio.sleep(120)
+        for oneentry in await dbhandler.query("SELECT * FROM modtracking"):
+            channel = await utils.get_channel(client.get_all_channels(), int(oneentry[1]))
+            mapsetid = oneentry[0]
+            trackingtype = str(oneentry[5])
+            print(time.strftime('%X %x %Z')+' | '+oneentry[0])
+
+            beatmapsetdiscussionobject = await osuwebapipreview.discussion(mapsetid)
+            if beatmapsetdiscussionobject:
+                newevents = await compare(beatmapsetdiscussionobject["beatmapset"]["discussions"], mapsetid)
+
+                if newevents:
+                    for newevent in newevents:
+                        newevent = newevents[newevent]
+                        if newevent:
+                            for subpostobject in newevent['posts']:
+                                if not subpostobject['system']:
+                                    if not await dbhandler.query(["SELECT postid FROM modposts WHERE postid = ?", [str(subpostobject['id']), ]]):
+                                        await dbhandler.query(
+                                            [
+                                                "INSERT INTO modposts VALUES (?,?,?,?,?)", 
+                                                [
+                                                    str(subpostobject["id"]), 
+                                                    str(mapsetid), 
+                                                    str(newevent["beatmap_id"]), 
+                                                    str(subpostobject["user_id"]), 
+                                                    str(subpostobject["message"])
+                                                ]
+                                            ]
+                                        )
+                                        modtopost = await osuembed.modpost(subpostobject, beatmapsetdiscussionobject, newevent, trackingtype)
+                                        if modtopost:
+                                            await channel.send(embed=modtopost)
+            else:
+                print(time.strftime('%X %x %Z') +
+                        " | Possible connection issues")
+                await asyncio.sleep(300)
+            await asyncio.sleep(120)
+        await asyncio.sleep(1800)
+    except Exception as e:
+        print(time.strftime('%X %x %Z'))
+        print("in background_loop")
+        print(e)
+        print(newevent)
+        await asyncio.sleep(300)

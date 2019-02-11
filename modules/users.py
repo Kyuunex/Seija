@@ -148,10 +148,9 @@ async def on_member_remove(client, member):
             osuid = await dbhandler.query(["SELECT username FROM users WHERE discordid = ?", [str(member.id)]])
             if osuid:
                 embed = await osuembed.osuprofile(await osuapi.get_user(osuid[0][0]))
-                if embed:
-                    await join_channel_object.send(embed=embed)
             else:
-                await join_channel_object.send("%s left this server. Godspeed!" % (str(member.name)))
+                embed = None
+            await join_channel_object.send("%s left this server. Godspeed!" % (str(member.name)), embed=embed)
     except Exception as e:
         print(time.strftime('%X %x %Z'))
         print("in on_member_join")

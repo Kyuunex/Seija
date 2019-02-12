@@ -21,7 +21,7 @@ from modules import instructions
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190211"
+appversion = "b20190212"
 
 
 @client.event
@@ -54,7 +54,7 @@ async def adminlist(ctx):
 @client.command(name="makeadmin", brief="Make a user bot admin", description="", pass_context=True)
 async def makeadmin(ctx, discordid: str):
     if await permissions.checkowner(ctx.message.author.id):
-        await dbhandler.insert('admins', (str(discordid), "0"))
+        await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(discordid), "0"]])
         await ctx.send(":ok_hand:")
     else:
         await ctx.send(embed=await permissions.ownererror())
@@ -203,7 +203,7 @@ async def userdb(ctx, command: str = None, mention: str = None):
 @client.command(name="addgroupfeed", brief="Make a user bot admin", description="", pass_context=True)
 async def addgroupfeed(ctx):
     if await permissions.check(ctx.message.author.id):
-        await dbhandler.insert('groupfeedchannels', (str(ctx.channel.id),))
+        await dbhandler.query(["INSERT INTO groupfeedchannels VALUES (?)", [str(ctx.channel.id)]])
         await ctx.send(":ok_hand:")
     else:
         await ctx.send(embed=await permissions.error())

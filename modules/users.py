@@ -59,7 +59,7 @@ async def verify(channel, member, role, osulookup, response):
             # possibly force update the entry in future
         else:
             print("adding user %s in database" % (discordid,))
-            await dbhandler.insert('users', (discordid, osuaccountid, osuusername, osujoindate, pp, country, rankedmaps, args))
+            await dbhandler.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [discordid, osuaccountid, osuusername, osujoindate, pp, country, rankedmaps, args]])
 
         if not response:
             response = "verified <@%s>" % (discordid)

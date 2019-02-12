@@ -23,19 +23,16 @@ async def comparelists(list1, list2, reverse):
 
 
 async def compare(result, lookupvalue, tablename, lookupkey, updatedb, reverse):
-    if not await dbhandler.select(tablename, lookupkey, [[lookupkey, lookupvalue]]):
-        await dbhandler.insert(tablename, (lookupvalue, json.dumps(result)))
+    if not await dbhandler.query(["SELECT ? FROM ? WHERE ? = ?", [lookupkey, tablename, lookupkey, lookupvalue]]):
+        await dbhandler.query(["INSERT INTO ? VALUES (?,?)", [tablename, lookupvalue, json.dumps(result)]])
         return None
     else:
         if result:
             if updatedb:
-                await dbhandler.update(tablename, 'contents', json.dumps(result), lookupkey, lookupvalue)
-                print("db is updating for sure %s" % (lookupvalue))
-            localdata = json.loads((await dbhandler.select(tablename, 'contents', [[lookupkey, lookupvalue]]))[0][0])
+                await dbhandler.query(["UPDATE ? SET contents = ? WHERE ? = ?", [tablename, json.dumps(result), lookupkey, lookupvalue]])
+            localdata = json.loads((await dbhandler.query(["SELECT contents FROM ? WHERE ? = ?", [tablename, lookupkey, lookupvalue]]))[0][0])
             comparison = await comparelists(result, localdata, reverse)
             if comparison:
-                print("comparison if block %s and %s" %
-                      (lookupvalue, str(updatedb)))
                 return comparison
             else:
                 return None

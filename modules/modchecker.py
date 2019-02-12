@@ -12,14 +12,13 @@ from modules import osuwebapipreview
 
 
 async def compare(result, mapsetid):
-    if not await dbhandler.select('jsondata', 'mapsetid', [['mapsetid', mapsetid]]):
-        # await dbhandler.insert('jsondata', (mapsetid, json.dumps(result, indent=4, sort_keys=True)))
-        await dbhandler.insert('jsondata', (mapsetid, json.dumps(result)))
+    if not await dbhandler.query(["SELECT mapsetid FROM jsondata WHERE mapsetid = ?", [mapsetid]]):
+        await dbhandler.query(["INSERT INTO jsondata VALUES (?,?)", [mapsetid, json.dumps(result)]])
         return None
     else:
-        localdata = json.loads((await dbhandler.select('jsondata', 'contents', [['mapsetid', mapsetid]]))[0][0])
+        localdata = json.loads((await dbhandler.query(["SELECT contents FROM jsondata WHERE mapsetid = ?", [mapsetid]]))[0][0])
         if result != localdata:
-            await dbhandler.update('jsondata', 'contents', json.dumps(result), 'mapsetid', mapsetid)
+            await dbhandler.query(["UPDATE jsondata SET contents = ? WHERE mapsetid = ?", [json.dumps(result), mapsetid]])
             if result:
                 difference = diff(localdata, result)
                 if jsondiff.insert in difference:
@@ -60,13 +59,13 @@ async def populatedb(discussions):
 
 async def track(ctx, mapsetid, mapsethostdiscordid, trackingtype):
     roleid = None  # TODO: actually implement roleid
-    if not await dbhandler.select('modtracking', 'mapsetid', [['mapsetid', str(mapsetid)]]):
+    if not await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE mapsetid = ?", [str(mapsetid)]]):
         mapsetmetadata = await osuapi.get_beatmap(str(mapsetid))
         embed = await osuembed.mapset(mapsetmetadata)
         if embed:
             beatmapsetdiscussionobject = await osuwebapipreview.discussion(str(mapsetid))
             if beatmapsetdiscussionobject:
-                await dbhandler.insert('modtracking', (str(mapsetid), str(ctx.message.channel.id), mapsethostdiscordid, roleid, str(mapsetmetadata['creator_id']), trackingtype))
+                await dbhandler.query(["INSERT INTO modtracking VALUES (?,?,?,?,?,?)", [str(mapsetid), str(ctx.message.channel.id), mapsethostdiscordid, roleid, str(mapsetmetadata['creator_id']), trackingtype]])
                 await compare(beatmapsetdiscussionobject["beatmapset"]["discussions"], str(mapsetid))
                 await populatedb(beatmapsetdiscussionobject)
                 if trackingtype == 1:
@@ -80,12 +79,10 @@ async def track(ctx, mapsetid, mapsethostdiscordid, trackingtype):
 
 
 async def untrack(ctx, mapsetid, embed, ranked):
-    where = [
-            ['mapsetid', str(mapsetid)],
-            ['channelid', str(ctx.message.channel.id)]
-    ]
-    if await dbhandler.select('modtracking', 'mapsetid', where):
-        await dbhandler.delete('modtracking', where)
+    if await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(ctx.message.channel.id)]]):
+        await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(ctx.message.channel.id)]])
+        #await dbhandler.query(["DELETE FROM jsondata WHERE mapsetid = ?",[str(mapsetid),]])
+        #await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid),]])
 
         if embed:
             if ranked:

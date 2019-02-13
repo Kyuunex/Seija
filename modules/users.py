@@ -71,13 +71,13 @@ async def verify(channel, member, role, osulookup, response):
 
 
 async def guildnamesync(ctx):
+    now = datetime.datetime.now()
     for member in ctx.guild.members:
         if not member.bot:
             query = await dbhandler.query(["SELECT * FROM users WHERE discordid = ?", [str(member.id)]])
             if query:
                 osuprofile = await osuapi.get_user(query[0][1])
                 if osuprofile:
-                    now = datetime.datetime.now()
                     if "04-01T" in str(now.isoformat()):
                         osuusername = upsidedown.transform(
                             osuprofile['username'])
@@ -109,7 +109,6 @@ async def guildnamesync(ctx):
                     await ctx.send("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])))
             else:
                 await ctx.send("%s | not in db" % (member.mention))
-        await asyncio.sleep(0.3)
 
 
 async def on_member_join(client, member):

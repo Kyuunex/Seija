@@ -3,6 +3,7 @@ from modules import osuapi
 from modules import osuembed
 from modules import utils
 from modules import instructions
+from modules import permissions
 import discord
 import random
 import asyncio
@@ -120,7 +121,7 @@ async def queuechannel(client, ctx, queuetype, appversion):
 
 
 async def queuesettings(client, ctx, action):
-    if await dbhandler.query(["SELECT discordid FROM queues WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]]):
+    if (await dbhandler.query(["SELECT discordid FROM queues WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
         try:
             if action == "open":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=True)
@@ -183,17 +184,20 @@ async def mapsetnuke(client, ctx):
 async def abandon(client, ctx):
     guildarchivecategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildarchivecategory", str(ctx.guild.id)]])
     if guildarchivecategory:
-        
-        mapsetid = await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE channelid = ?", [str(ctx.message.channel.id)]])
-        if mapsetid:
-            await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
-            await dbhandler.query(["DELETE FROM jsondata WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
-            await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
-            await ctx.send("untracked")
-            await asyncio.sleep(1)
+        if (await dbhandler.query(["SELECT * FROM modchannels WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await dbhandler.query(["SELECT * FROM queues WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
+            try:
+                mapsetid = await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE channelid = ?", [str(ctx.message.channel.id)]])
+                if mapsetid:
+                    await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
+                    await dbhandler.query(["DELETE FROM jsondata WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
+                    await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
+                    await ctx.send("untracked")
+                    await asyncio.sleep(1)
 
-        archivecategory = await utils.get_channel(client.get_all_channels(), int(guildarchivecategory[0][0]))
-        await ctx.message.channel.edit(reason=None, category=archivecategory)
-        await ctx.send("Set abandoned and moved to archive")
+                archivecategory = await utils.get_channel(client.get_all_channels(), int(guildarchivecategory[0][0]))
+                await ctx.message.channel.edit(reason=None, category=archivecategory)
+                await ctx.send("Abandoned and moved to archive")
+            except Exception as e:
+                await ctx.send(e)
     else:
         await ctx.send("no archive category set for this server")

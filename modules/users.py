@@ -39,7 +39,7 @@ async def verify(channel, member, role, osulookup, response):
         if authorsmapset:
             osuusername = str(authorsmapset['creator'])
             osuaccountid = str(authorsmapset['creator_id'])
-            embed = await osuembed.mapset(authorsmapset)
+            embed = await osuembed.mapsetold(authorsmapset)
 
     if osuusername:
         if type(member) is str:

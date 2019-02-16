@@ -34,7 +34,7 @@ async def main(client):
                 mapsetid = maplist['link'].split('http://osu.ppy.sh/s/')[1]
                 lookupmapindb = await dbhandler.query(["SELECT mapsetid FROM rankedmaps WHERE mapsetid = ?", [str(mapsetid), ]])
                 if not lookupmapindb:
-                    embed = await osuembed.mapset(await osuapi.get_beatmap(mapsetid))
+                    embed = await osuembed.mapset(await osuapi.get_beatmaps(mapsetid))
                     if embed:
                         for rankfeedchannelid in rankfeedchannellist:
                             channel = await utils.get_channel(client.get_all_channels(), int(rankfeedchannelid[0]))

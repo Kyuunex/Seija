@@ -104,7 +104,7 @@ async def sql(ctx, *, query):
 @client.command(name="mapset", brief="Show a mapset", description="", pass_context=True)
 async def mapset(ctx, mapsetid: str, text: str = None):
     if await permissions.check(ctx.message.author.id):
-        embed = await osuembed.mapset(await osuapi.get_beatmap(mapsetid))
+        embed = await osuembed.mapset(await osuapi.get_beatmaps(mapsetid))
         if embed:
             await ctx.send(content=text, embed=embed)
             # await ctx.delete_message(ctx.message)
@@ -152,7 +152,7 @@ async def veto(ctx, mapsetid: int, mapsethostdiscordid: int = None):
 @client.command(name="unveto", brief="Untrack a mapset in this channel in veto mode", description="", pass_context=True)
 async def unveto(ctx, mapsetid: int):
     if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["vetochannelid", str(ctx.guild.id)]]))[0][0]):
-        embed = await osuembed.mapset(await osuapi.get_beatmap(mapsetid))
+        embed = await osuembed.mapsetold(await osuapi.get_beatmap(mapsetid))
         await modchecker.untrack(ctx, mapsetid, embed, None)
     else:
         await ctx.send(embed=await permissions.error())
@@ -162,7 +162,7 @@ async def unveto(ctx, mapsetid: int):
 async def untrack(ctx, mapsetid: str, trackingtype: str = None):
     if await permissions.check(ctx.message.author.id):
         if trackingtype == "ranked":
-            embed = await osuembed.mapset(await osuapi.get_beatmap(mapsetid))
+            embed = await osuembed.mapsetold(await osuapi.get_beatmap(mapsetid))
             await modchecker.untrack(ctx, mapsetid, embed, trackingtype)
         elif trackingtype == "all":
             await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid),]])
@@ -180,7 +180,7 @@ async def untrack(ctx, mapsetid: str, trackingtype: str = None):
 async def sublist(ctx):
     if await permissions.check(ctx.message.author.id):
         for oneentry in await dbhandler.query("SELECT * FROM modtracking"):
-            embed = await osuembed.mapset(await osuapi.get_beatmap(str(oneentry[0])))
+            embed = await osuembed.mapsetold(await osuapi.get_beatmap(str(oneentry[0])))
             await ctx.send(content="mapsetid %s | channel <#%s> | mapsethostdiscordid %s \nroleid %s | mapsethostosuid %s | trackingtype %s" % (oneentry), embed=embed)
     else:
         await ctx.send(embed=await permissions.error())

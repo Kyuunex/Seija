@@ -61,7 +61,7 @@ async def track(ctx, mapsetid, mapsethostdiscordid, trackingtype):
     roleid = None  # TODO: actually implement roleid
     if not await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE mapsetid = ?", [str(mapsetid)]]):
         mapsetmetadata = await osuapi.get_beatmap(str(mapsetid))
-        embed = await osuembed.mapset(mapsetmetadata)
+        embed = await osuembed.mapsetold(mapsetmetadata)
         if embed:
             beatmapsetdiscussionobject = await osuwebapipreview.discussion(str(mapsetid))
             if beatmapsetdiscussionobject:

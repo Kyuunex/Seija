@@ -65,7 +65,7 @@ async def mapsetchannel(client, ctx, mapsetid, mapsetname, appversion):
                 }
                 channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category)
                 await ctx.message.author.add_roles(mapsetrole)
-                #embed = await osuembed.mapset(mapset)
+                #embed = await osuembed.mapsetold(mapset)
                 await channel.send("%s done!" % (ctx.message.author.mention), embed=await instructions.modchannelcommands(appversion))
                 await dbhandler.query(["INSERT INTO modchannels VALUES (?, ?, ?, ?, ?)", [str(channel.id), str(mapsetrole.id), str(ctx.message.author.id), str(mapsetid), str(ctx.guild.id)]])
             else:

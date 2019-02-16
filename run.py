@@ -21,7 +21,7 @@ from modules import instructions
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190214"
+appversion = "b20190216"
 
 
 @client.event

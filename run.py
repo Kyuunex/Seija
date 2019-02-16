@@ -18,6 +18,7 @@ from modules import utils
 from modules import groupfeed
 from modules import requests
 from modules import instructions
+from modules import rankfeed
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
@@ -40,6 +41,7 @@ async def on_ready():
         await dbhandler.query("CREATE TABLE modtracking (mapsetid, channelid, mapsethostdiscordid, roleid, mapsethostosuid, type)")
         await dbhandler.query("CREATE TABLE groupfeedchannels (channelid)")
         await dbhandler.query("CREATE TABLE rankfeedchannels (channelid)")
+        await dbhandler.query("CREATE TABLE rankedmaps (mapsetid)")
         await dbhandler.query("CREATE TABLE feedjsondata (feedtype, contents)")
         await dbhandler.query("CREATE TABLE queues (channelid, discordid, guildid)")
         await dbhandler.query("CREATE TABLE modchannels (channelid, roleid, discordid, mapsetid, guildid)")
@@ -200,10 +202,19 @@ async def userdb(ctx, command: str = None, mention: str = None):
         await ctx.send(embed=await permissions.ownererror())
 
 
-@client.command(name="addgroupfeed", brief="Make a user bot admin", description="", pass_context=True)
+@client.command(name="addgroupfeed", brief="add group feed", description="", pass_context=True)
 async def addgroupfeed(ctx):
     if await permissions.check(ctx.message.author.id):
         await dbhandler.query(["INSERT INTO groupfeedchannels VALUES (?)", [str(ctx.channel.id)]])
+        await ctx.send(":ok_hand:")
+    else:
+        await ctx.send(embed=await permissions.error())
+
+
+@client.command(name="addrankfeed", brief="add rank feed", description="", pass_context=True)
+async def addrankfeed(ctx):
+    if await permissions.check(ctx.message.author.id):
+        await dbhandler.query(["INSERT INTO rankfeedchannels VALUES (?)", [str(ctx.channel.id)]])
         await ctx.send(":ok_hand:")
     else:
         await ctx.send(embed=await permissions.error())
@@ -297,6 +308,10 @@ async def groupfeed_background_loop():
     while not client.is_closed():
         await groupfeed.main(client)
 
+async def rankfeed_background_loop():
+    await client.wait_until_ready()
+    while not client.is_closed():
+        await rankfeed.main(client)
 
 # TODO: add rankfeed
 # TODO: add background task to check user profiles every few hours. watch for username changes and also serve as mapping feed
@@ -304,4 +319,5 @@ async def groupfeed_background_loop():
 
 client.loop.create_task(modchecker_background_loop())
 client.loop.create_task(groupfeed_background_loop())
+client.loop.create_task(rankfeed_background_loop())
 client.run(open("data/token.txt", "r+").read(), bot=True)

@@ -13,6 +13,14 @@ from modules import osuembed
 from modules import utils
 
 
+async def comparelists(list2, list1):
+    difference = []
+    for i in list1:
+        if not i in list2:
+            difference.append(i)
+    return difference
+
+
 async def compare(result, osuid):
     if not await dbhandler.query(["SELECT osuid FROM userevents WHERE osuid = ?", [osuid]]):
         await dbhandler.query(["INSERT INTO userevents VALUES (?,?)", [osuid, json.dumps(result)]])
@@ -25,14 +33,13 @@ async def compare(result, osuid):
             await asyncio.sleep(120)
             return None
         else:
-            difference = diff(list(localdata), list(result))
-            if jsondiff.insert in difference:
-                return dict(difference[jsondiff.insert])
+            difference = await comparelists(localdata, result)
+            return difference
 
 
 async def main(client):
     try:
-        print(time.strftime('%X %x %Z')+' | tracking members')
+        print(time.strftime('%X %x %Z')+' | user event tracker')
         memberfeedchannellist = await dbhandler.query(["SELECT * FROM config WHERE setting = ?", ["usereventtracker"]])
         if memberfeedchannellist:
             now = datetime.datetime.now()
@@ -65,7 +72,6 @@ async def usereventtrack(channel, osuprofile):
     newevents = await compare(osuprofile['events'], str(osuprofile['user_id']))
     if newevents:
         for newevent in newevents:
-            newevent = newevents[newevent]
             if newevent:
                 eventcolor = await determineevent(newevent['display_html'])
                 if eventcolor:
@@ -77,6 +83,7 @@ async def usereventtrack(channel, osuprofile):
                         except:
                             print(osuprofile['username'])
                         await channel.send(display_text, embed=embed)
+
 
 async def determineevent(string):
     if 'has submitted' in string:

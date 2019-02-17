@@ -39,6 +39,7 @@ async def compare(result, osuid):
 
 async def main(client):
     try:
+        await asyncio.sleep(120)
         print(time.strftime('%X %x %Z')+' | user event tracker')
         memberfeedchannellist = await dbhandler.query(["SELECT * FROM config WHERE setting = ?", ["usereventtracker"]])
         if memberfeedchannellist:
@@ -59,6 +60,7 @@ async def main(client):
                                 await utils.send_notice("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])), auditchannel, now)
                         else:
                             await utils.send_notice("%s | not in db" % (member.mention), auditchannel, now)
+                        await asyncio.sleep(1)
         await asyncio.sleep(7200)
     except Exception as e:
         print(time.strftime('%X %x %Z'))

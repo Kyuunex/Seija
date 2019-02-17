@@ -32,6 +32,7 @@ async def compare(result, osuid):
 
 async def main(client):
     try:
+        await asyncio.sleep(60)
         print(time.strftime('%X %x %Z')+' | tracking members')
         memberfeedchannellist = await dbhandler.query(["SELECT * FROM config WHERE setting = ?", ["usereventtracker"]])
         if memberfeedchannellist:

@@ -19,15 +19,15 @@ async def compare(result, osuid):
         return None
     else:
         localdata = json.loads((await dbhandler.query(["SELECT contents FROM userevents WHERE osuid = ?", [osuid]]))[0][0])
-        if result != localdata:
-            await dbhandler.query(["UPDATE userevents SET contents = ? WHERE osuid = ?", [json.dumps(result), osuid]])
-            if result:
-                difference = diff(localdata, result)
-                if jsondiff.insert in difference:
-                    return dict(difference[jsondiff.insert])
-            else:
-                print('connection problems?')
-                return None
+        await dbhandler.query(["UPDATE userevents SET contents = ? WHERE osuid = ?", [json.dumps(result), osuid]])
+        if type(result) is None:
+            print('connection problems?')
+            await asyncio.sleep(120)
+            return None
+        else:
+            difference = diff(list(localdata), list(result))
+            if jsondiff.insert in difference:
+                return dict(difference[jsondiff.insert])
 
 
 async def main(client):

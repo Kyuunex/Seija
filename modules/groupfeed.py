@@ -8,7 +8,7 @@ from modules import osuwebapipreview
 from modules import utils
 
 
-async def comparelists(list1, list2, reverse):
+async def comparelists(list1, list2, reverse = False):
     difference = []
     if reverse:
         comparelist1 = list2

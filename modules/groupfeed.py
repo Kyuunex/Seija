@@ -22,7 +22,7 @@ async def comparelists(list1, list2, reverse):
     return difference
 
 
-async def compare(result, lookupvalue, tablename, lookupkey, updatedb, reverse):
+async def compare(result, lookupvalue, tablename, lookupkey, updatedb = True, reverse = False):
     if not await dbhandler.query(["SELECT %s FROM %s WHERE %s = ?" % (lookupkey, tablename, lookupkey), [lookupvalue]]):
         await dbhandler.query(["INSERT INTO %s VALUES (?,?)" % (tablename), [lookupvalue, json.dumps(result)]])
         return None

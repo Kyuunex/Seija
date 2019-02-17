@@ -19,10 +19,11 @@ from modules import groupfeed
 from modules import requests
 from modules import instructions
 from modules import rankfeed
+from modules import usereventtracker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190216"
+appversion = "b20190217"
 
 
 @client.event
@@ -35,6 +36,7 @@ async def on_ready():
         appinfo = await client.application_info()
         await dbhandler.query("CREATE TABLE users (discordid, osuid, username, osujoindate, pp, country, rankedmaps, args)")
         await dbhandler.query("CREATE TABLE jsondata (mapsetid, contents)")
+        await dbhandler.query("CREATE TABLE userevents (osuid, contents)")
         await dbhandler.query("CREATE TABLE config (setting, parent, value, flag)")
         await dbhandler.query("CREATE TABLE admins (discordid, permissions)")
         await dbhandler.query("CREATE TABLE modposts (postid, mapsetid, mapid, userid, contents)")
@@ -42,6 +44,7 @@ async def on_ready():
         await dbhandler.query("CREATE TABLE groupfeedchannels (channelid)")
         await dbhandler.query("CREATE TABLE rankfeedchannels (channelid)")
         await dbhandler.query("CREATE TABLE rankedmaps (mapsetid)")
+        await dbhandler.query("CREATE TABLE notices (timestamp, notice)")
         await dbhandler.query("CREATE TABLE feedjsondata (feedtype, contents)")
         await dbhandler.query("CREATE TABLE queues (channelid, discordid, guildid)")
         await dbhandler.query("CREATE TABLE modchannels (channelid, roleid, discordid, mapsetid, guildid)")
@@ -308,10 +311,17 @@ async def groupfeed_background_loop():
     while not client.is_closed():
         await groupfeed.main(client)
 
+
 async def rankfeed_background_loop():
     await client.wait_until_ready()
     while not client.is_closed():
         await rankfeed.main(client)
+
+
+async def usereventtracker_background_loop():
+    await client.wait_until_ready()
+    while not client.is_closed():
+        await usereventtracker.main(client)
 
 # TODO: add rankfeed
 # TODO: add background task to check user profiles every few hours. watch for username changes and also serve as mapping feed
@@ -320,4 +330,5 @@ async def rankfeed_background_loop():
 client.loop.create_task(modchecker_background_loop())
 client.loop.create_task(groupfeed_background_loop())
 client.loop.create_task(rankfeed_background_loop())
+client.loop.create_task(usereventtracker_background_loop())
 client.run(open("data/token.txt", "r+").read(), bot=True)

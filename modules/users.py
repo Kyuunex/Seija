@@ -76,43 +76,44 @@ async def guildnamesync(ctx):
         if not member.bot:
             query = await dbhandler.query(["SELECT * FROM users WHERE discordid = ?", [str(member.id)]])
             if query:
-                await one_guild_member_sync(ctx, query, now, member)
+                osuprofile = await osuapi.get_user(query[0][1])
+                if osuprofile:
+                    await one_guild_member_sync(ctx.channel, query, now, member, osuprofile)
+                else:
+                    await ctx.channel.send("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])))
             else:
                 await ctx.send("%s | not in db" % (member.mention))
 
 
-async def one_guild_member_sync(ctx, query, now, member):
-    osuprofile = await osuapi.get_user(query[0][1])
-    if osuprofile:
-        if "04-01T" in str(now.isoformat()):
-            osuusername = upsidedown.transform(
-                osuprofile['username'])
-        else:
-            osuusername = osuprofile['username']
-        if member.display_name != osuusername:
-            if "nosync" in str(query[0][7]):
-                await ctx.send("%s | `%s` | `%s` | username not updated as `nosync` was set for this user" % (str(member.id), osuusername, str(query[0][1])))
-            else:
-                try:
-                    await member.edit(nick=osuusername)
-                except Exception as e:
-                    await ctx.send(e)
-                    await ctx.send("%s | `%s` | `%s` | no perms to update" % (member.mention, osuusername, str(query[0][1])))
-                await ctx.send("%s | `%s` | `%s` | nickname updated" % (member.mention, osuusername, str(query[0][1])))
-        await dbhandler.query(
-            [
-                "UPDATE users SET country = ?, pp = ?, osujoindate = ?, username = ? WHERE discordid = ?;",
-                [
-                    str(osuprofile['country']),
-                    str(osuprofile['pp_raw']),
-                    str(osuprofile['join_date']),
-                    str(osuprofile['username']),
-                    str(member.id)
-                ]
-            ]
-        )
+async def one_guild_member_sync(auditchannel, query, now, member, osuprofile):
+    if "04-01T" in str(now.isoformat()):
+        osuusername = upsidedown.transform(
+            osuprofile['username'])
     else:
-        await ctx.send("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])))
+        osuusername = osuprofile['username']
+    if member.display_name != osuusername:
+        if "nosync" in str(query[0][7]):
+            await utils.send_notice("%s | `%s` | `%s` | username not updated as `nosync` was set for this user" % (str(member.id), osuusername, str(query[0][1])), auditchannel, now)
+        else:
+            try:
+                await member.edit(nick=osuusername)
+            except Exception as e:
+                await auditchannel.send(e)
+                await auditchannel.send("%s | `%s` | `%s` | no perms to update" % (member.mention, osuusername, str(query[0][1])))
+            await auditchannel.send("%s | `%s` | `%s` | nickname updated" % (member.mention, osuusername, str(query[0][1])))
+    await dbhandler.query(
+        [
+            "UPDATE users SET country = ?, pp = ?, osujoindate = ?, username = ? WHERE discordid = ?;",
+            [
+                str(osuprofile['country']),
+                str(osuprofile['pp_raw']),
+                str(osuprofile['join_date']),
+                str(osuprofile['username']),
+                str(member.id)
+            ]
+        ]
+    )
+
 
 
 async def on_member_join(client, member):

@@ -32,7 +32,7 @@ async def mapsetold(beatmapobject):
         return None
 
 
-async def mapset(beatmapsetobject):
+async def mapset(beatmapsetobject, color = 0xbd3661):
     if beatmapsetobject:
         beatmapobject = beatmapsetobject[0]
         mapsetembed = discord.Embed(
@@ -40,7 +40,7 @@ async def mapset(beatmapsetobject):
             url="https://osu.ppy.sh/beatmapsets/%s" % (
                 str(beatmapobject['beatmapset_id'])),
             description=str(beatmapobject['artist']),
-            color=0xbd3661
+            color=int(color)
         )
         mapsetembed.set_author(
             name=str(beatmapobject['creator']),

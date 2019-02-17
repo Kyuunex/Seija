@@ -54,7 +54,7 @@ async def main(client):
                             osuprofile = await osuapi.get_user(query[0][1])
                             if osuprofile:
                                 await users.one_guild_member_sync(auditchannel, query, now, member, osuprofile)
-                                await usereventtrack(feedchannel, osuprofile)
+                                await usereventtrack(client, feedchannel, osuprofile)
                             else:
                                 await utils.send_notice("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])), auditchannel, now)
                         else:
@@ -67,7 +67,20 @@ async def main(client):
         await asyncio.sleep(7200)
 
 
-async def usereventtrack(channel, osuprofile):
+async def manual_loop(client):
+    print(time.strftime('%X %x %Z')+' | manual loop')
+    manualfeedenabled = await dbhandler.query(["SELECT * FROM config WHERE setting = ?", ["manualusereventtracker"]])
+    if manualfeedenabled:
+        for oneentry in await dbhandler.query("SELECT * FROM manualusereventtracking"):
+            osuprofile = await osuapi.get_user(oneentry[0])
+            if osuprofile: #
+                await usereventtrack(client, oneentry[1].split(","), osuprofile)
+            else:
+                print("`%s` | `%s` | restricted" % (str(oneentry[0])))
+    await asyncio.sleep(1200)
+
+
+async def usereventtrack(client, channel, osuprofile):
     print("currently checking %s" % (osuprofile['username']))
     newevents = await compare(osuprofile['events'], str(osuprofile['user_id']))
     if newevents:
@@ -82,7 +95,15 @@ async def usereventtrack(channel, osuprofile):
                             print(display_text)
                         except:
                             print(osuprofile['username'])
-                        await channel.send(display_text, embed=embed)
+                        if type(channel) is list:
+                            for onechannel in channel:
+                                tochannel = client.get_channel(int(onechannel))
+                                await tochannel.send(display_text, embed=embed)
+                        elif type(channel) is int:
+                            tochannel = client.get_channel(int(channel))
+                            await tochannel.send(display_text, embed=embed)
+                        else:
+                            await channel.send(display_text, embed=embed)
 
 
 async def determineevent(string):

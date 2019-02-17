@@ -45,6 +45,7 @@ async def on_ready():
         await dbhandler.query("CREATE TABLE rankfeedchannels (channelid)")
         await dbhandler.query("CREATE TABLE rankedmaps (mapsetid)")
         await dbhandler.query("CREATE TABLE notices (timestamp, notice)")
+        await dbhandler.query("CREATE TABLE manualusereventtracking (osuid, channellist)")
         await dbhandler.query("CREATE TABLE feedjsondata (feedtype, contents)")
         await dbhandler.query("CREATE TABLE queues (channelid, discordid, guildid)")
         await dbhandler.query("CREATE TABLE modchannels (channelid, roleid, discordid, mapsetid, guildid)")
@@ -223,6 +224,15 @@ async def addrankfeed(ctx):
         await ctx.send(embed=await permissions.error())
 
 
+@client.command(name="tu", brief="add rank feed", description="", pass_context=True)
+async def tu(ctx, osuid, channels):
+    if await permissions.check(ctx.message.author.id):
+        await dbhandler.query(["INSERT INTO manualusereventtracking VALUES (?,?)", [osuid, channels]])
+        await ctx.send(":ok_hand:")
+    else:
+        await ctx.send(embed=await permissions.error())
+
+
 @client.command(name="guildsync", brief="guildsync", description="", pass_context=True)
 async def guildsync(ctx):
     if await permissions.check(ctx.message.author.id):
@@ -323,6 +333,12 @@ async def usereventtracker_background_loop():
     while not client.is_closed():
         await usereventtracker.main(client)
 
+
+async def manualusereventtracker_background_loop():
+    await client.wait_until_ready()
+    while not client.is_closed():
+        await usereventtracker.manual_loop(client)
+
 # TODO: add rankfeed
 # TODO: add background task to check user profiles every few hours. watch for username changes and also serve as mapping feed
 # TODO: detect when channel is deleted and automatically untrack
@@ -331,4 +347,5 @@ client.loop.create_task(modchecker_background_loop())
 client.loop.create_task(groupfeed_background_loop())
 client.loop.create_task(rankfeed_background_loop())
 client.loop.create_task(usereventtracker_background_loop())
+client.loop.create_task(manualusereventtracker_background_loop())
 client.run(open("data/token.txt", "r+").read(), bot=True)

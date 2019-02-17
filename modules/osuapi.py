@@ -25,6 +25,7 @@ async def request(endpoint, query):
 async def get_user(username):
     query = {
         'u': username,
+        'event_days': '4',
     }
     requestobject = await request('get_user', query)
     if requestobject:

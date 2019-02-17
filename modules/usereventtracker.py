@@ -32,7 +32,6 @@ async def compare(result, osuid):
 
 async def main(client):
     try:
-        await asyncio.sleep(60)
         print(time.strftime('%X %x %Z')+' | tracking members')
         memberfeedchannellist = await dbhandler.query(["SELECT * FROM config WHERE setting = ?", ["usereventtracker"]])
         if memberfeedchannellist:
@@ -62,6 +61,7 @@ async def main(client):
 
 
 async def usereventtrack(channel, osuprofile):
+    print("currently checking %s" % (osuprofile['username']))
     newevents = await compare(osuprofile['events'], str(osuprofile['user_id']))
     if newevents:
         for newevent in newevents:
@@ -72,6 +72,10 @@ async def usereventtrack(channel, osuprofile):
                     embed = await osuembed.mapset(await osuapi.get_beatmaps(newevent['beatmapset_id']), eventcolor)
                     if embed:
                         display_text = unescape(re.sub('<[^<]+?>', '', newevent['display_html']))
+                        try:
+                            print(display_text)
+                        except:
+                            print(osuprofile['username'])
                         await channel.send(display_text, embed=embed)
 
 async def determineevent(string):

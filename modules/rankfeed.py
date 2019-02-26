@@ -37,7 +37,7 @@ async def main(client):
                     embed = await osuembed.mapset(await osuapi.get_beatmaps(mapsetid))
                     if embed:
                         for rankfeedchannelid in rankfeedchannellist:
-                            channel = await utils.get_channel(client.get_all_channels(), int(rankfeedchannelid[0]))
+                            channel = client.get_channel(int(rankfeedchannelid[0]))
                             await channel.send(embed=embed)
                         await dbhandler.query(["INSERT INTO rankedmaps VALUES (?)", [str(mapsetid)]])
         await asyncio.sleep(1600)

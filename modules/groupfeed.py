@@ -56,7 +56,7 @@ async def groupmain(client, user, groupname, groupurl, description, groupfeedcha
         color
     )
     for groupfeedchannelid in groupfeedchannellist:
-        channel = await utils.get_channel(client.get_all_channels(), int(groupfeedchannelid[0]))
+        channel = client.get_channel(int(groupfeedchannelid[0]))
         await channel.send(embed=embed)
 
 

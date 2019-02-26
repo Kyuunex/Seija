@@ -118,26 +118,27 @@ async def one_guild_member_sync(auditchannel, query, now, member, osuprofile):
 
 async def on_member_join(client, member):
     try:
-        guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannelid", str(member.guild.id)]])
-        if guildverifychannel:
-            join_channel_object = await utils.get_channel(client.get_all_channels(), int((guildverifychannel)[0][0]))
-            lookupuser = await dbhandler.query(["SELECT osuid FROM users WHERE discordid = ?", [str(member.id), ]])
-            if lookupuser:
-                print("user %s joined with osuid %s" %
-                      (str(member.id), str(lookupuser[0][0])))
-                role = discord.utils.get(member.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifyroleid", str(member.guild.id)]]))[0][0]))
-                osulookup = "u/%s" % (lookupuser[0][0])
-                verifyattempt = await verify(join_channel_object, member, role, osulookup, "Welcome aboard %s! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.mention))
+        if not member.bot:
+            guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannelid", str(member.guild.id)]])
+            if guildverifychannel:
+                join_channel_object = client.get_channel(int((guildverifychannel)[0][0]))
+                lookupuser = await dbhandler.query(["SELECT osuid FROM users WHERE discordid = ?", [str(member.id), ]])
+                if lookupuser:
+                    print("user %s joined with osuid %s" %
+                        (str(member.id), str(lookupuser[0][0])))
+                    role = discord.utils.get(member.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifyroleid", str(member.guild.id)]]))[0][0]))
+                    osulookup = "u/%s" % (lookupuser[0][0])
+                    verifyattempt = await verify(join_channel_object, member, role, osulookup, "Welcome aboard %s! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.mention))
 
-                if not verifyattempt:
-                    await join_channel_object.send("Hello %s. It seems like you are in my database but the profile I know of you is restricted. If this is correct, please link any of your uploaded maps (new website only) and I'll verify you instantly. If this is not correct, tag Kyuunex." % (member.mention))
-            else:
-                await join_channel_object.send("Welcome %s! We have a verification system in this server so we know who you are, give you appropriate roles and keep raids/spam out." % (member.mention))
-                osuprofile = await osuapi.get_user(member.name)
-                if osuprofile:
-                    await join_channel_object.send(content='Is this your osu profile? If yes, type `yes`, if not, link your profile.', embed=await osuembed.osuprofile(osuprofile))
+                    if not verifyattempt:
+                        await join_channel_object.send("Hello %s. It seems like you are in my database but the profile I know of you is restricted. If this is correct, please link any of your uploaded maps (new website only) and I'll verify you instantly. If this is not correct, tag Kyuunex." % (member.mention))
                 else:
-                    await join_channel_object.send('Please post a link to your osu profile and I will verify you instantly.')
+                    await join_channel_object.send("Welcome %s! We have a verification system in this server so we know who you are, give you appropriate roles and keep raids/spam out." % (member.mention))
+                    osuprofile = await osuapi.get_user(member.name)
+                    if osuprofile:
+                        await join_channel_object.send(content='Is this your osu profile? If yes, type `yes`, if not, link your profile.', embed=await osuembed.osuprofile(osuprofile))
+                    else:
+                        await join_channel_object.send('Please post a link to your osu profile and I will verify you instantly.')
     except Exception as e:
         print(time.strftime('%X %x %Z'))
         print("in on_member_join")
@@ -146,15 +147,16 @@ async def on_member_join(client, member):
 
 async def on_member_remove(client, member):
     try:
-        guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannelid", str(member.guild.id)]])
-        if guildverifychannel:
-            join_channel_object = await utils.get_channel(client.get_all_channels(), int((guildverifychannel)[0][0]))
-            osuid = await dbhandler.query(["SELECT username FROM users WHERE discordid = ?", [str(member.id)]])
-            if osuid:
-                embed = await osuembed.osuprofile(await osuapi.get_user(osuid[0][0]))
-            else:
-                embed = None
-            await join_channel_object.send("%s left this server. Godspeed!" % (str(member.name)), embed=embed)
+        if not member.bot:
+            guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannelid", str(member.guild.id)]])
+            if guildverifychannel:
+                join_channel_object = client.get_channel(int((guildverifychannel)[0][0]))
+                osuid = await dbhandler.query(["SELECT username FROM users WHERE discordid = ?", [str(member.id)]])
+                if osuid:
+                    embed = await osuembed.osuprofile(await osuapi.get_user(osuid[0][0]))
+                else:
+                    embed = None
+                await join_channel_object.send("%s left this server. Godspeed!" % (str(member.name)), embed=embed)
     except Exception as e:
         print(time.strftime('%X %x %Z'))
         print("in on_member_join")
@@ -197,47 +199,58 @@ async def on_message(client, message):
             print(e)
 
 
-async def userdb(ctx, command, mention):
+async def userdbprintall(ctx, command, mention):
     try:
-        if command == "printall":
-            if mention == "m":
-                tag = "<@%s> / %s"
-            else:
-                tag = "%s / %s"
-            for oneuser in await dbhandler.query("SELECT * FROM users"):
-                embed = await osuembed.osuprofile(await osuapi.get_user(oneuser[1]))
-                if embed:
-                    await ctx.send(content=tag % (oneuser[0], oneuser[2]), embed=embed)
-        elif command == "massverify":
-            userarray = open("data/users.csv",
-                             encoding="utf8").read().splitlines()
-            if mention == "m":
-                tag = "Preverified: <@%s>"
-            else:
-                tag = "Preverified: %s"
-            for oneuser in userarray:
-                uzer = oneuser.split(',')
-                await verify(ctx.message.channel, str(uzer[1]), None, "u/%s" % (uzer[0]), tag % (str(uzer[1])))
-                await asyncio.sleep(1)
-        elif command == "servercheck":
-            responce = "These users are not in my database:\n"
-            count = 0
-            for member in ctx.guild.members:
-                if not member.bot:
-                    if not await dbhandler.query(["SELECT osuid FROM users WHERE discordid = ?", [str(member.id), ]]):
-                        count += 1
-                        if mention == "m":
-                            responce += ("<@%s>\n" % (str(member.id)))
-                        else:
-                            responce += ("\"%s\" %s\n" %
-                                         (str(member.display_name), str(member.id)))
-                        if count > 40:
-                            count = 0
-                            responce += ""
-                            await ctx.send(responce)
-                            responce = "\n"
-            responce += ""
-            await ctx.send(responce)
+        if mention == "m":
+            tag = "<@%s> / %s"
+        else:
+            tag = "%s / %s"
+        for oneuser in await dbhandler.query("SELECT * FROM users"):
+            embed = await osuembed.osuprofile(await osuapi.get_user(oneuser[1]))
+            if embed:
+                await ctx.send(content=tag % (oneuser[0], oneuser[2]), embed=embed)
+    except Exception as e:
+        print(time.strftime('%X %x %Z'))
+        print("in userdb")
+        print(e)
+
+async def userdbmassverify(ctx, command, mention):
+    try:
+        userarray = open("data/users.csv",
+                            encoding="utf8").read().splitlines()
+        if mention == "m":
+            tag = "Preverified: <@%s>"
+        else:
+            tag = "Preverified: %s"
+        for oneuser in userarray:
+            uzer = oneuser.split(',')
+            await verify(ctx.message.channel, str(uzer[1]), None, "u/%s" % (uzer[0]), tag % (str(uzer[1])))
+            await asyncio.sleep(1)
+    except Exception as e:
+        print(time.strftime('%X %x %Z'))
+        print("in userdb")
+        print(e)
+
+async def userdbservercheck(ctx, command, mention):
+    try:
+        responce = "These users are not in my database:\n"
+        count = 0
+        for member in ctx.guild.members:
+            if not member.bot:
+                if not await dbhandler.query(["SELECT osuid FROM users WHERE discordid = ?", [str(member.id), ]]):
+                    count += 1
+                    if mention == "m":
+                        responce += ("<@%s>\n" % (str(member.id)))
+                    else:
+                        responce += ("\"%s\" %s\n" %
+                                        (str(member.display_name), str(member.id)))
+                    if count > 40:
+                        count = 0
+                        responce += ""
+                        await ctx.send(responce)
+                        responce = "\n"
+        responce += ""
+        await ctx.send(responce)
     except Exception as e:
         print(time.strftime('%X %x %Z'))
         print("in userdb")

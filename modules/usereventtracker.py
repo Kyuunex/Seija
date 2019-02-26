@@ -1,8 +1,6 @@
 import asyncio
 import time
 import datetime
-from jsondiff import diff
-import jsondiff
 import json
 import re
 from html import unescape

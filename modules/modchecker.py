@@ -1,31 +1,12 @@
 import json
 import time
 import asyncio
-from jsondiff import diff
-import jsondiff
 from modules import utils
 from modules import dbhandler
 from modules import osuapi
 from modules import osuembed
 from modules import osuwebapipreview
 from modules import osuwebapipreview
-
-
-async def compare(result, mapsetid):
-    if not await dbhandler.query(["SELECT mapsetid FROM jsondata WHERE mapsetid = ?", [mapsetid]]):
-        await dbhandler.query(["INSERT INTO jsondata VALUES (?,?)", [mapsetid, json.dumps(result)]])
-        return None
-    else:
-        localdata = json.loads((await dbhandler.query(["SELECT contents FROM jsondata WHERE mapsetid = ?", [mapsetid]]))[0][0])
-        if result != localdata:
-            await dbhandler.query(["UPDATE jsondata SET contents = ? WHERE mapsetid = ?", [json.dumps(result), mapsetid]])
-            if result:
-                difference = diff(localdata, result)
-                if jsondiff.insert in difference:
-                    return dict(difference[jsondiff.insert])
-            else:
-                print('connection problems?')
-                return None
 
 
 async def populatedb(discussions):
@@ -65,9 +46,8 @@ async def track(ctx, mapsetid, mapsethostdiscordid, trackingtype):
         if embed:
             beatmapsetdiscussionobject = await osuwebapipreview.discussion(str(mapsetid))
             if beatmapsetdiscussionobject:
-                await dbhandler.query(["INSERT INTO modtracking VALUES (?,?,?,?,?,?)", [str(mapsetid), str(ctx.message.channel.id), mapsethostdiscordid, roleid, str(mapsetmetadata['creator_id']), trackingtype]])
-                await compare(beatmapsetdiscussionobject["beatmapset"]["discussions"], str(mapsetid))
                 await populatedb(beatmapsetdiscussionobject)
+                await dbhandler.query(["INSERT INTO modtracking VALUES (?,?,?,?,?,?)", [str(mapsetid), str(ctx.message.channel.id), mapsethostdiscordid, roleid, str(mapsetmetadata['creator_id']), trackingtype]])
                 if trackingtype == 1:
                     await ctx.send(content='This mapset is now being tracked in this channel in veto mode', embed=embed)
                 else:
@@ -81,7 +61,6 @@ async def track(ctx, mapsetid, mapsethostdiscordid, trackingtype):
 async def untrack(ctx, mapsetid, embed, ranked):
     if await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(ctx.message.channel.id)]]):
         await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(ctx.message.channel.id)]])
-        #await dbhandler.query(["DELETE FROM jsondata WHERE mapsetid = ?",[str(mapsetid),]])
         #await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid),]])
 
         if embed:
@@ -99,21 +78,21 @@ async def main(client):
     try:
         await asyncio.sleep(120)
         for oneentry in await dbhandler.query("SELECT * FROM modtracking"):
-            channel = await utils.get_channel(client.get_all_channels(), int(oneentry[1]))
-            mapsetid = oneentry[0]
+            channel = client.get_channel(int(oneentry[1]))
+            mapsetid = str(oneentry[0])
             trackingtype = str(oneentry[5])
             print(time.strftime('%X %x %Z')+' | '+oneentry[0])
 
             beatmapsetdiscussionobject = await osuwebapipreview.discussion(mapsetid)
-            if beatmapsetdiscussionobject:
-                newevents = await compare(beatmapsetdiscussionobject["beatmapset"]["discussions"], mapsetid)
 
-                if newevents:
-                    for newevent in newevents:
-                        newevent = newevents[newevent]
-                        if newevent:
-                            for subpostobject in newevent['posts']:
-                                if not subpostobject['system']:
+            if beatmapsetdiscussionobject:
+                discussions = beatmapsetdiscussionobject["beatmapset"]["discussions"]
+
+                if discussions:
+                    for discussion in discussions:
+                        try:
+                            if discussion:
+                                for subpostobject in discussion['posts']:
                                     if not await dbhandler.query(["SELECT postid FROM modposts WHERE postid = ?", [str(subpostobject['id']), ]]):
                                         await dbhandler.query(
                                             [
@@ -121,24 +100,30 @@ async def main(client):
                                                 [
                                                     str(subpostobject["id"]), 
                                                     str(mapsetid), 
-                                                    str(newevent["beatmap_id"]), 
+                                                    str(discussion["beatmap_id"]), 
                                                     str(subpostobject["user_id"]), 
                                                     str(subpostobject["message"])
                                                 ]
                                             ]
                                         )
-                                        modtopost = await osuembed.modpost(subpostobject, beatmapsetdiscussionobject, newevent, trackingtype)
-                                        if modtopost:
-                                            await channel.send(embed=modtopost)
+                                        if (not subpostobject['system']) and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
+                                            modtopost = await osuembed.modpost(subpostobject, beatmapsetdiscussionobject, discussion, trackingtype)
+                                            if modtopost:
+                                                await channel.send(embed=modtopost)
+                        except Exception as e:
+                            print(time.strftime('%X %x %Z'))
+                            print("while looping through discussions")
+                            print(e)
+                            print(discussion)
+                else:
+                    print("No actual discussions found at %s" % (mapsetid))
             else:
-                print(time.strftime('%X %x %Z') +
-                        " | Possible connection issues")
+                print("%s | Possible connection issues" % (time.strftime('%X %x %Z')))
                 await asyncio.sleep(300)
             await asyncio.sleep(120)
         await asyncio.sleep(1800)
     except Exception as e:
         print(time.strftime('%X %x %Z'))
-        print("in background_loop")
+        print("in modchecker.main")
         print(e)
-        print(newevent)
         await asyncio.sleep(300)

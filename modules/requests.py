@@ -2,7 +2,7 @@ from modules import dbhandler
 from modules import osuapi
 from modules import osuembed
 from modules import utils
-from modules import instructions
+from modules import docs
 from modules import permissions
 import discord
 import random
@@ -17,11 +17,11 @@ async def mapsetchannel(client, ctx, mapsetid, mapsetname, appversion):
             if int(mapsetid) == 0 or mapsetid == None:
                 mapset = None
                 mapsetid = "0"
-                desc = ""
+                #desc = ""
             else:
                 mapset = await osuapi.get_beatmap(mapsetid)
                 mapsetid = str(mapsetid)
-                desc = "https://osu.ppy.sh/beatmapsets/%s" % (mapsetid)
+                #desc = "https://osu.ppy.sh/beatmapsets/%s" % (mapsetid)
 
             if mapsetname:
                 discordfriendlychannelname = mapsetname.replace(
@@ -39,7 +39,7 @@ async def mapsetchannel(client, ctx, mapsetid, mapsetname, appversion):
                 guild = ctx.message.guild
                 rolecolor = discord.Colour(random.randint(1, 16777215))
                 mapsetrole = await guild.create_role(name=rolename, colour=rolecolor, mentionable=True)
-                category = await utils.get_channel(client.get_all_channels(), int(guildmapsetcategory[0][0]))
+                category = client.get_channel(int(guildmapsetcategory[0][0]))
                 channeloverwrites = {
                     guild.default_role: discord.PermissionOverwrite(read_messages=False),
                     ctx.message.author: discord.PermissionOverwrite(
@@ -66,7 +66,7 @@ async def mapsetchannel(client, ctx, mapsetid, mapsetname, appversion):
                 channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category)
                 await ctx.message.author.add_roles(mapsetrole)
                 #embed = await osuembed.mapsetold(mapset)
-                await channel.send("%s done!" % (ctx.message.author.mention), embed=await instructions.modchannelcommands(appversion))
+                await channel.send("%s done!" % (ctx.message.author.mention), embed=await docs.modchannelcommands(appversion))
                 await dbhandler.query(["INSERT INTO modchannels VALUES (?, ?, ?, ?, ?)", [str(channel.id), str(mapsetrole.id), str(ctx.message.author.id), str(mapsetid), str(ctx.guild.id)]])
             else:
                 await ctx.send("You are not using this command correctly")
@@ -108,10 +108,10 @@ async def queuechannel(client, ctx, queuetype, appversion):
                 }
                 discordfriendlychannelname = "%s-%s-queue" % (
                     ctx.message.author.display_name.replace(" ", "_").lower(), queuetype)
-                category = await utils.get_channel(client.get_all_channels(), int(guildqueuecategory[0][0]))
+                category = client.get_channel(int(guildqueuecategory[0][0]))
                 channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category)
                 await dbhandler.query(["INSERT INTO queues VALUES (?, ?, ?)", [str(channel.id), str(ctx.message.author.id), str(ctx.guild.id)]])
-                await channel.send("%s done!" % (ctx.message.author.mention), embed=await instructions.queuecommands(appversion))
+                await channel.send("%s done!" % (ctx.message.author.mention), embed=await docs.queuecommands(appversion))
             except Exception as e:
                 await ctx.send(e)
         else:
@@ -167,7 +167,7 @@ async def mapsetnuke(client, ctx):
             mapsetid = await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE channelid = ?", [str(ctx.message.channel.id)]])
             if mapsetid:
                 await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
-                await dbhandler.query(["DELETE FROM jsondata WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
+                #await dbhandler.query(["DELETE FROM jsondata WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
                 await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
                 await ctx.send("untracked")
                 await asyncio.sleep(2)
@@ -189,12 +189,12 @@ async def abandon(client, ctx):
                 mapsetid = await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE channelid = ?", [str(ctx.message.channel.id)]])
                 if mapsetid:
                     await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
-                    await dbhandler.query(["DELETE FROM jsondata WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
+                    #await dbhandler.query(["DELETE FROM jsondata WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
                     await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
                     await ctx.send("untracked")
                     await asyncio.sleep(1)
 
-                archivecategory = await utils.get_channel(client.get_all_channels(), int(guildarchivecategory[0][0]))
+                archivecategory = client.get_channel(int(guildarchivecategory[0][0]))
                 await ctx.message.channel.edit(reason=None, category=archivecategory)
                 await ctx.send("Abandoned and moved to archive")
             except Exception as e:

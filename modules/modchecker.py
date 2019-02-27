@@ -18,19 +18,18 @@ async def populatedb(discussions):
             if onemod:
                 for subpost in onemod["posts"]:
                     if subpost:
-                        if not subpost["system"]:
-                            allposts.append(
+                        allposts.append(
+                            [
+                                "INSERT INTO modposts VALUES (?,?,?,?,?)", 
                                 [
-                                    "INSERT INTO modposts VALUES (?,?,?,?,?)", 
-                                    [
-                                        str(subpost["id"]), 
-                                        str(onemod["beatmapset_id"]), 
-                                        str(onemod["beatmap_id"]), 
-                                        str(subpost["user_id"]), 
-                                        str(subpost["message"])
-                                    ]
+                                    str(subpost["id"]), 
+                                    str(onemod["beatmapset_id"]), 
+                                    str(onemod["beatmap_id"]), 
+                                    str(subpost["user_id"]), 
+                                    str(subpost["message"])
                                 ]
-                            )
+                            ]
+                        )
         except Exception as e:
             print(time.strftime('%X %x %Z'))
             print("in modchecker.populatedb")

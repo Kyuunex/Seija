@@ -12,7 +12,6 @@ from modules import osuembed
 from modules import osuwebapipreview
 from modules import dbhandler
 from modules import modchecker
-from modules import modelements
 from modules import users
 from modules import utils
 from modules import groupfeed
@@ -22,8 +21,8 @@ from modules import rankfeed
 from modules import usereventtracker
 
 client = commands.Bot(command_prefix='\'')
-#client.remove_command('help')
-appversion = "w20190226"
+client.remove_command('help')
+appversion = "r20190227"
 
 
 @client.event
@@ -45,9 +44,9 @@ async def on_ready():
         await dbhandler.query("CREATE TABLE rankedmaps (mapsetid)")
         await dbhandler.query("CREATE TABLE notices (timestamp, notice)")
         await dbhandler.query("CREATE TABLE manualusereventtracking (osuid, channellist)")
-        await dbhandler.query("CREATE TABLE feedjsondata (feedtype, contents)")
+        await dbhandler.query("CREATE TABLE group_feed_json_data (feedtype, contents)")
         await dbhandler.query("CREATE TABLE queues (channelid, discordid, guildid)")
-        await dbhandler.query("CREATE TABLE modchannels (channelid, roleid, discordid, mapsetid, guildid)")
+        await dbhandler.query("CREATE TABLE mapchannels (channelid, roleid, discordid, mapsetid, guildid)")
         await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), "1"]])
 
 
@@ -145,9 +144,9 @@ async def user(ctx, *, username):
         await ctx.send(content='`No user found with that username`')
 
 
-@client.command(name="prettyhelp", brief="The pretty help command.", description="", pass_context=True)
-async def prettyhelp(ctx, subhelp: str = None):  # TODO: rewrite help
-    await docs.help(ctx, subhelp, appversion)
+@client.command(name="help", brief="The pretty help command.", description="", pass_context=True)
+async def help(ctx, subhelp: str = None):  # TODO: rewrite help
+    await docs.main(ctx, subhelp)
 
 
 @client.command(name="forcetrack", brief="Force Track a mapset in the current channel.", description="", pass_context=True)
@@ -168,7 +167,6 @@ async def forceuntrack(ctx, mapsetid: str, trackingtype: str = None):
             await modchecker.untrack(ctx, mapsetid, embed, trackingtype)
         elif trackingtype == "all":
             await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid),]])
-            await dbhandler.query(["DELETE FROM jsondata WHERE mapsetid = ?",[str(mapsetid),]])
             await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid),]])
             await ctx.send('`Mapset with that ID is no longer being tracked anywhere`')
         else:
@@ -237,22 +235,15 @@ async def subscribemapper(ctx, osuid, channels):
 @client.command(name="request", brief="Request ether a queue or mod channel.", description="", pass_context=True)
 async def requestchannel(ctx, requesttype: str = "help", arg1: str = None, arg2: str = None):  # TODO: Add request
     if requesttype == "queue":
-        await requests.queuechannel(client, ctx, arg1, appversion)
+        await requests.make_queue_channel(client, ctx, arg1)
     elif requesttype == "mapset":
-        await requests.mapsetchannel(client, ctx, arg1, arg2, appversion)
-    elif requesttype == "queuehelp":
-        await docs.queuehelp(ctx, appversion)
-    elif requesttype == "mapsethelp":
-        await docs.mapsethelp(ctx, appversion)
-    else:
-        await docs.queuehelp(ctx, appversion)
-        await docs.mapsethelp(ctx, appversion)
+        await requests.make_mapset_channel(client, ctx, arg1, arg2)
 
 
 @client.command(name="nuke", brief="Nuke a requested channel.", description="", pass_context=True)
 async def nuke(ctx):
     if await permissions.check(ctx.message.author.id):
-        await requests.mapsetnuke(client, ctx)
+        await requests.nuke_mapset_channel(client, ctx)
     else:
         await ctx.send(embed=await permissions.error())
 
@@ -274,12 +265,12 @@ async def hideq(ctx):
 
 @client.command(name="add", brief="Add a user in the current mapset channel.", description="", pass_context=True)
 async def addm(ctx, discordid: int):
-    await requests.modchannelsettings(client, ctx, "add", discordid)
+    await requests.mapchannelsettings(client, ctx, "add", discordid)
 
 
 @client.command(name="remove", brief="Remove a user from the current mapset channel.", description="", pass_context=True)
 async def removem(ctx, discordid: int):
-    await requests.modchannelsettings(client, ctx, "remove", discordid)
+    await requests.mapchannelsettings(client, ctx, "remove", discordid)
 
 
 @client.command(name="abandon", brief="Abandon the mapset and untrack.", description="", pass_context=True)

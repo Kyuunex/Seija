@@ -1,6 +1,7 @@
 import json
 import time
 import asyncio
+import discord
 from modules import dbhandler
 from modules import osuapi
 from modules import osuembed
@@ -47,7 +48,7 @@ async def groupmain(client, user, groupname, groupurl, description, groupfeedcha
         osuprofile = {}
         osuprofile['username'] = "restricted user"
         osuprofile['user_id'] = user
-    embed = await osuembed.groupmember(
+    embed = await groupmember(
         osuprofile,
         groupname,
         groupurl,
@@ -62,8 +63,8 @@ async def groupmain(client, user, groupname, groupurl, description, groupfeedcha
 
 async def groupcheck(client, groupfeedchannellist, groupid, groupname):
     userlist = await osuwebapipreview.groups(groupid)
-    checkadditions = await compare(userlist, groupid, 'feedjsondata', 'feedtype', False, False)
-    checkremovals = await compare(userlist, groupid, 'feedjsondata', 'feedtype', True, True)
+    checkadditions = await compare(userlist, groupid, 'group_feed_json_data', 'feedtype', False, False)
+    checkremovals = await compare(userlist, groupid, 'group_feed_json_data', 'feedtype', True, True)
     if checkadditions:
         for newuser in checkadditions:
             print("groupfeed | %s | added %s" % (groupname, newuser))
@@ -97,3 +98,24 @@ async def main(client):
         print("in groupfeed_background_loop")
         print(e)
         await asyncio.sleep(3600)
+
+
+async def groupmember(osuprofile, groupname, groupurl, description, color):
+    if osuprofile:
+        osuprofileembed = discord.Embed(
+            # title=groupname,
+            # url=groupurl,
+            description=description,
+            color=color
+        )
+        # osuprofileembed.set_author(
+        #    name=osuprofile['username'],
+        #    url='https://osu.ppy.sh/users/%s' % (str(osuprofile['user_id'])),
+        #    icon_url='https://a.ppy.sh/%s' % (str(osuprofile['user_id']))
+        #    )
+        osuprofileembed.set_thumbnail(
+            url='https://a.ppy.sh/%s' % (str(osuprofile['user_id']))
+        )
+        return osuprofileembed
+    else:
+        return None

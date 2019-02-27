@@ -1,6 +1,7 @@
 import json
 import time
 import asyncio
+import discord
 from modules import utils
 from modules import dbhandler
 from modules import osuapi
@@ -107,7 +108,7 @@ async def main(client):
                                             ]
                                         )
                                         if (not subpostobject['system']) and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
-                                            modtopost = await osuembed.modpost(subpostobject, beatmapsetdiscussionobject, discussion, trackingtype)
+                                            modtopost = await modpost(subpostobject, beatmapsetdiscussionobject, discussion, trackingtype)
                                             if modtopost:
                                                 await channel.send(embed=modtopost)
                         except Exception as e:
@@ -127,3 +128,109 @@ async def main(client):
         print("in modchecker.main")
         print(e)
         await asyncio.sleep(300)
+
+
+async def get_username(beatmapsetdiscussionobject, subpostobject):
+    for oneuser in beatmapsetdiscussionobject["beatmapset"]["related_users"]:
+        if subpostobject['user_id'] == oneuser['id']:
+            if "bng" in oneuser['groups']:
+                return oneuser['username']+" [BN]"
+            elif "qat" in oneuser['groups']:
+                return oneuser['username']+" [QAT]"
+            else:
+                return oneuser['username']
+
+
+async def get_diffname(beatmapsetdiscussionobject, newevent):
+    for onediff in beatmapsetdiscussionobject["beatmapset"]["beatmaps"]:
+        if newevent['beatmap_id']:
+            if onediff['id'] == newevent['beatmap_id']:
+                diffname = onediff['version']
+        else:
+            diffname = "All difficulties"
+    return diffname
+
+
+async def get_modtype(newevent):
+    if newevent['resolved']:
+        footer = {
+            'icon': "https://i.imgur.com/jjxrPpu.png",
+            'text': "RESOLVED",
+            'color': 0x77b255,
+        }
+    else:
+        if newevent['message_type'] == "praise":
+            footer = {
+                'icon': "https://i.imgur.com/2kFPL8m.png",
+                'text': "Praise",
+                'color': 0x44aadd,
+            }
+        elif newevent['message_type'] == "hype":
+            footer = {
+                'icon': "https://i.imgur.com/fkJmW44.png",
+                'text': "Hype",
+                'color': 0x44aadd,
+            }
+        elif newevent['message_type'] == "mapper_note":
+            footer = {
+                'icon': "https://i.imgur.com/HdmJ9i5.png",
+                'text': "Note",
+                'color': 0x8866ee,
+            }
+        elif newevent['message_type'] == "problem":
+            footer = {
+                'icon': "https://i.imgur.com/qxyuJFF.png",
+                'text': "Problem",
+                'color': 0xcc5288,
+            }
+        elif newevent['message_type'] == "suggestion":
+            footer = {
+                'icon': "https://i.imgur.com/Newgp6L.png",
+                'text': "Suggestion",
+                'color': 0xeeb02a,
+            }
+        else:
+            footer = {
+                'icon': "",
+                'text': newevent['message_type'],
+                'color': 0xbd3661,
+            }
+    return footer
+
+
+async def modpost(subpostobject, beatmapsetdiscussionobject, newevent, trackingtype):
+    if subpostobject:
+        if trackingtype == "0":
+            title = str(await get_diffname(beatmapsetdiscussionobject, newevent))
+        elif trackingtype == "1":
+            title = "%s / %s" % (str(beatmapsetdiscussionobject["beatmapset"]["title"]), str(await get_diffname(beatmapsetdiscussionobject, newevent)))
+            if newevent['message_type'] == "hype":
+                return None
+            elif newevent['message_type'] == "praise":
+                return None
+
+        footer = await get_modtype(newevent)
+        modpost = discord.Embed(
+            title=title,
+            url="https://osu.ppy.sh/beatmapsets/%s/discussion#/%s" % (
+                str(beatmapsetdiscussionobject["beatmapset"]["id"]), str(newevent['id'])),
+            description=str(subpostobject['message']),
+            color=footer['color']
+        )
+        modpost.set_author(
+            name=str(await get_username(beatmapsetdiscussionobject, subpostobject)),
+            url="https://osu.ppy.sh/users/%s" % (
+                str(subpostobject['user_id'])),
+            icon_url="https://a.ppy.sh/%s" % (str(subpostobject['user_id']))
+        )
+        modpost.set_thumbnail(
+            url="https://b.ppy.sh/thumb/%sl.jpg" % (
+                str(beatmapsetdiscussionobject["beatmapset"]["id"]))
+        )
+        modpost.set_footer(
+            text=str(footer['text']),
+            icon_url=str(footer['icon'])
+        )
+        return modpost
+    else:
+        return None

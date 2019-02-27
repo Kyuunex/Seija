@@ -109,7 +109,7 @@ For mapset channel management commands, type `'help mapchannelmanagement`""", co
 
 
 async def queuemanagement():
-    embed = discord.Embed(title="Queue management commands", description="""**Please avoid manually editing channel permissions unless you wanna ban a specific person or a role from your queue.**""", color=0xbd3661)
+    embed = discord.Embed(title="Queue management commands", description="""**Please avoid manually editing channel permissions unless you wanna ban a specific person or a role from your queue or unless the bot is down.**""", color=0xbd3661)
     embed.add_field(name="'open", value="Open the queue, everyone can see and post in it.", inline=False)
     embed.add_field(name="'close", value="Close the queue, everyone can see but can't post in it. You can also use this command to unhide the queue, but again, nobody will be able to post in it.", inline=False)
     embed.add_field(name="'hide", value="Hide the queue, only admins can see the queue. Nobody else can see and post in it.", inline=False)

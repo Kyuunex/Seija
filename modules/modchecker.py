@@ -94,23 +94,27 @@ async def main(client):
                         try:
                             if discussion:
                                 for subpostobject in discussion['posts']:
-                                    if not await dbhandler.query(["SELECT postid FROM modposts WHERE postid = ?", [str(subpostobject['id']), ]]):
-                                        await dbhandler.query(
-                                            [
-                                                "INSERT INTO modposts VALUES (?,?,?,?,?)", 
+                                    if subpostobject:
+                                        if not await dbhandler.query(["SELECT postid FROM modposts WHERE postid = ?", [str(subpostobject['id']), ]]):
+                                            await dbhandler.query(
                                                 [
-                                                    str(subpostobject["id"]), 
-                                                    str(mapsetid), 
-                                                    str(discussion["beatmap_id"]), 
-                                                    str(subpostobject["user_id"]), 
-                                                    str(subpostobject["message"])
+                                                    "INSERT INTO modposts VALUES (?,?,?,?,?)", 
+                                                    [
+                                                        str(subpostobject["id"]), 
+                                                        str(mapsetid), 
+                                                        str(discussion["beatmap_id"]), 
+                                                        str(subpostobject["user_id"]), 
+                                                        str(subpostobject["message"])
+                                                    ]
                                                 ]
-                                            ]
-                                        )
-                                        if (not subpostobject['system']) and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
-                                            modtopost = await modpost(subpostobject, beatmapsetdiscussionobject, discussion, trackingtype)
-                                            if modtopost:
-                                                await channel.send(embed=modtopost)
+                                            )
+                                            if (not subpostobject['system']) and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
+                                                modtopost = await modpost(subpostobject, beatmapsetdiscussionobject, discussion, trackingtype)
+                                                if modtopost:
+                                                    try:
+                                                        await channel.send(embed=modtopost)
+                                                    except Exception as e:
+                                                        print(e)
                         except Exception as e:
                             print(time.strftime('%X %x %Z'))
                             print("while looping through discussions")

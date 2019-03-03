@@ -125,14 +125,18 @@ async def queuesettings(client, ctx, action, embed_title = None, embed_desc = No
         try:
             if embed_title:
                 embed = discord.Embed(title=embed_title, color=0xbd3661, description=embed_desc)
+                embed.set_author(name=ctx.message.author.display_name, icon_url=ctx.message.author.avatar_url)
+                await ctx.message.delete()
             else:
                 embed = None
             if action == "open":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=True)
                 await ctx.send("queue open!", embed=embed)
+                await ctx.message.delete()
             elif action == "close":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=False)
                 await ctx.send("queue closed!", embed=embed)
+                await ctx.message.delete()
             elif action == "hide":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=False, send_messages=False)
                 await ctx.send("queue hidden!")

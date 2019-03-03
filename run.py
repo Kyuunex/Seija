@@ -127,7 +127,7 @@ async def mapset(ctx, mapsetid: str, text: str = None):
         embed = await osuembed.mapset(await osuapi.get_beatmaps(mapsetid))
         if embed:
             await ctx.send(content=text, embed=embed)
-            # await ctx.delete_message(ctx.message)
+            # await ctx.message.delete()
         else:
             await ctx.send(content='`No mapset found with that ID`')
     else:
@@ -139,7 +139,7 @@ async def user(ctx, *, username):
     embed = await osuembed.osuprofile(await osuapi.get_user(username))
     if embed:
         await ctx.send(embed=embed)
-        # await ctx.delete_message(ctx.message)
+        # await ctx.message.delete()
     else:
         await ctx.send(content='`No user found with that username`')
 

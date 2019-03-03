@@ -132,11 +132,9 @@ async def queuesettings(client, ctx, action, embed_title = None, embed_desc = No
             if action == "open":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=True)
                 await ctx.send("queue open!", embed=embed)
-                await ctx.message.delete()
             elif action == "close":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=False)
                 await ctx.send("queue closed!", embed=embed)
-                await ctx.message.delete()
             elif action == "hide":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=False, send_messages=False)
                 await ctx.send("queue hidden!")

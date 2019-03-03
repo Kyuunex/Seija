@@ -120,15 +120,19 @@ async def make_queue_channel(client, ctx, queuetype):
         await ctx.send("Not enabled in this server yet.")
 
 
-async def queuesettings(client, ctx, action):
+async def queuesettings(client, ctx, action, embed_title = None, embed_desc = None):
     if (await dbhandler.query(["SELECT discordid FROM queues WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
         try:
+            if embed_title:
+                embed = discord.Embed(title=embed_title, color=0xbd3661, description=embed_desc)
+            else:
+                embed = None
             if action == "open":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=True)
-                await ctx.send("queue open!")
+                await ctx.send("queue open!", embed=embed)
             elif action == "close":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=False)
-                await ctx.send("queue closed!")
+                await ctx.send("queue closed!", embed=embed)
             elif action == "hide":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=False, send_messages=False)
                 await ctx.send("queue hidden!")

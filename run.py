@@ -22,7 +22,7 @@ from modules import usereventtracker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "r20190227"
+appversion = "r20190303"
 
 
 @client.event
@@ -249,13 +249,13 @@ async def nuke(ctx):
 
 
 @client.command(name="open", brief="Open the queue.", description="", pass_context=True)
-async def openq(ctx):
-    await requests.queuesettings(client, ctx, "open")
+async def openq(ctx, title = None, desc = ""):
+    await requests.queuesettings(client, ctx, "open", title, desc)
 
 
 @client.command(name="close", brief="Close the queue.", description="", pass_context=True)
-async def closeq(ctx):
-    await requests.queuesettings(client, ctx, "close")
+async def closeq(ctx, title = None, desc = ""):
+    await requests.queuesettings(client, ctx, "close", title, desc)
 
 
 @client.command(name="hide", brief="Hide the queue.", description="", pass_context=True)

@@ -34,6 +34,12 @@ async def discussion(mapset):
         if "json-beatmapset-discussion" in httpcontents:
             result = await customparser('<script id="json-beatmapset-discussion" type="application/json">', '</script>', httpcontents)
             return json.loads(result)
+        elif "<h1>Page Missing</h1>" in httpcontents:
+            return {
+                "beatmapset": {
+                    "status": "deleted"
+                }
+            }
         else:
             return None
     else:

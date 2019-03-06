@@ -24,7 +24,7 @@ from modules import usereventtracker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "r20190303"
+appversion = "b20190306"
 
 
 @client.event

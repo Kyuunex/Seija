@@ -86,8 +86,30 @@ async def main(client):
             beatmapsetdiscussionobject = await osuwebapipreview.discussion(mapsetid)
 
             if beatmapsetdiscussionobject:
-                discussions = beatmapsetdiscussionobject["beatmapset"]["discussions"]
+                status = beatmapsetdiscussionobject["beatmapset"]["status"]
 
+                if (status == "wip") or (status == "qualified") or (status == "pending"):
+                    discussions = beatmapsetdiscussionobject["beatmapset"]["discussions"]
+                elif status == "ranked":
+                    discussions = None
+                    await channel.send(content='I detected that this map is ranked now. Since the modding stage is finished, and the map is moved to the ranked section, I will no longer be checking for mods on this mapset.', embed=await osuembed.mapset(await osuapi.get_beatmaps(mapsetid)))
+                    await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid),]])
+                    await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid),]])
+                elif status == "graveyard":
+                    discussions = None
+                    await channel.send(content='I detected that this map is graveyarded now and so, I am untracking it. Ping a manager when you revive the set. Please understand that we don\'t wanna track dead sets', embed=await osuembed.mapset(await osuapi.get_beatmaps(mapsetid)))
+                    await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid),]])
+                    await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid),]])
+                elif status == "deleted":
+                    discussions = None
+                    await channel.send(content='I detected that the mapset with the id %s has been deleted, so I am untracking.' % (str(mapsetid)))
+                    await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid),]])
+                    await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid),]])
+                else:
+                    discussions = None
+                    await channel.send(content='<@155976140073205761> something went wrong, please check the console output.')
+                    print("%s / %s" % (status, mapsetid))
+ 
                 if discussions:
                     for discussion in discussions:
                         try:
@@ -120,7 +142,7 @@ async def main(client):
                             print(e)
                             print(discussion)
                 else:
-                    print("No actual discussions found at %s" % (mapsetid))
+                    print("No actual discussions found at %s or mapset untracked automatically" % (mapsetid))
             else:
                 print("%s | Possible connection issues" % (time.strftime('%X %x %Z')))
                 await asyncio.sleep(300)

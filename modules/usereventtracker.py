@@ -68,17 +68,23 @@ async def main(client):
 
 
 async def manual_loop(client):
-    print(time.strftime('%X %x %Z')+' | manual loop')
-    manualfeedenabled = await dbhandler.query(["SELECT * FROM config WHERE setting = ?", ["manualusereventtracker"]])
-    if manualfeedenabled:
-        for oneentry in await dbhandler.query("SELECT * FROM manualusereventtracking"):
-            osuprofile = await osuapi.get_user(oneentry[0])
-            if osuprofile: #
-                await usereventtrack(client, oneentry[1].split(","), osuprofile)
-            else:
-                print("`%s` | `%s` | restricted" % (str(oneentry[0])))
-    await asyncio.sleep(1200)
-
+    try:
+        print(time.strftime('%X %x %Z')+' | manual loop')
+        manualfeedenabled = await dbhandler.query(["SELECT * FROM config WHERE setting = ?", ["manualusereventtracker"]])
+        if manualfeedenabled:
+            for oneentry in await dbhandler.query("SELECT * FROM manualusereventtracking"):
+                osuprofile = await osuapi.get_user(oneentry[0])
+                if osuprofile: #
+                    await usereventtrack(client, oneentry[1].split(","), osuprofile)
+                else:
+                    print("`%s` | `%s` | restricted" % (str(oneentry[0])))
+        await asyncio.sleep(1200)
+    except Exception as e:
+        print(time.strftime('%X %x %Z'))
+        print("in membertrack")
+        print(e)
+        await asyncio.sleep(7200)
+        
 
 async def usereventtrack(client, channel, osuprofile):
     print("currently checking %s" % (osuprofile['username']))

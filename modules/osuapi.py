@@ -34,6 +34,18 @@ async def get_user(username):
         return None
 
 
+async def get_user_best(username, limit = 15):
+    query = {
+        'u': username,
+        'limit': str(limit)
+    }
+    requestobject = await request('get_user_best', query)
+    if requestobject:
+        return requestobject
+    else:
+        return None
+
+
 async def get_beatmaps(mapsetid):
     query = {
         's': mapsetid,
@@ -45,9 +57,9 @@ async def get_beatmaps(mapsetid):
         return None
 
 
-async def get_beatmap(mapsetid):
+async def get_beatmap(mapsetid, lookup = "s"):
     query = {
-        's': mapsetid,
+        lookup: mapsetid,
     }
     requestobject = await request('get_beatmaps', query)
     if requestobject:

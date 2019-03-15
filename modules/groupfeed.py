@@ -63,16 +63,17 @@ async def groupmain(client, user, groupname, groupurl, description, groupfeedcha
 
 async def groupcheck(client, groupfeedchannellist, groupid, groupname):
     userlist = await osuwebapipreview.groups(groupid)
-    checkadditions = await compare(userlist, groupid, 'group_feed_json_data', 'feedtype', False, False)
-    checkremovals = await compare(userlist, groupid, 'group_feed_json_data', 'feedtype', True, True)
-    if checkadditions:
-        for newuser in checkadditions:
-            print("groupfeed | %s | added %s" % (groupname, newuser))
-            await groupmain(client, newuser, groupname, "https://osu.ppy.sh/groups/%s" % (groupid), "**%s** \nhas been added to \nthe **%s**", groupfeedchannellist, 0xffbd0e)
-    if checkremovals:
-        for removeduser in checkremovals:
-            print("groupfeed | %s | removed %s" % (groupname, removeduser))
-            await groupmain(client, removeduser, groupname, "https://osu.ppy.sh/groups/%s" % (groupid), "**%s** \nhas been removed from \nthe **%s**", groupfeedchannellist, 0x2c0e6c)
+    if userlist:
+        checkadditions = await compare(userlist, groupid, 'group_feed_json_data', 'feedtype', False, False)
+        checkremovals = await compare(userlist, groupid, 'group_feed_json_data', 'feedtype', True, True)
+        if checkadditions:
+            for newuser in checkadditions:
+                print("groupfeed | %s | added %s" % (groupname, newuser))
+                await groupmain(client, newuser, groupname, "https://osu.ppy.sh/groups/%s" % (groupid), "**%s** \nhas been added to \nthe **%s**", groupfeedchannellist, 0xffbd0e)
+        if checkremovals:
+            for removeduser in checkremovals:
+                print("groupfeed | %s | removed %s" % (groupname, removeduser))
+                await groupmain(client, removeduser, groupname, "https://osu.ppy.sh/groups/%s" % (groupid), "**%s** \nhas been removed from \nthe **%s**", groupfeedchannellist, 0x2c0e6c)
 
 
 async def main(client):

@@ -38,7 +38,7 @@ async def compare(result, lookupvalue, tablename, lookupkey, updatedb = True, re
             else:
                 return None
         else:
-            print('groupfeed connection problems?')
+            print('in compare groupfeed connection problems?')
             return None
 
 
@@ -74,6 +74,9 @@ async def groupcheck(client, groupfeedchannellist, groupid, groupname):
             for removeduser in checkremovals:
                 print("groupfeed | %s | removed %s" % (groupname, removeduser))
                 await groupmain(client, removeduser, groupname, "https://osu.ppy.sh/groups/%s" % (groupid), "**%s** \nhas been removed from \nthe **%s**", groupfeedchannellist, 0x2c0e6c)
+    else:
+        print('groupfeed connection problems?')
+        return None
 
 
 async def main(client):

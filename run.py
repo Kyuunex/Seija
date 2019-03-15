@@ -20,12 +20,11 @@ from modules import groupfeed
 from modules import requests
 from modules import docs
 from modules import rankfeed
-from modules import scoretracking
 from modules import usereventtracker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190306"
+appversion = "b20190315"
 
 
 @client.event
@@ -38,6 +37,7 @@ async def on_ready():
         appinfo = await client.application_info()
         await dbhandler.query("CREATE TABLE users (discordid, osuid, username, osujoindate, pp, country, rankedmaps, args)")
         await dbhandler.query("CREATE TABLE userevents (osuid, contents)")
+        await dbhandler.query("CREATE TABLE manualuserevents (osuid, contents)")
         await dbhandler.query("CREATE TABLE config (setting, parent, value, flag)")
         await dbhandler.query("CREATE TABLE admins (discordid, permissions)")
         await dbhandler.query("CREATE TABLE modposts (postid, mapsetid, mapid, userid, contents)")
@@ -48,7 +48,6 @@ async def on_ready():
         await dbhandler.query("CREATE TABLE notices (timestamp, notice)")
         await dbhandler.query("CREATE TABLE manualusereventtracking (osuid, channellist)")
         await dbhandler.query("CREATE TABLE group_feed_json_data (feedtype, contents)")
-        await dbhandler.query("CREATE TABLE scoretrackingdata (osuid, username, channels, contents)")
         await dbhandler.query("CREATE TABLE queues (channelid, discordid, guildid)")
         await dbhandler.query("CREATE TABLE mapchannels (channelid, roleid, discordid, mapsetid, guildid)")
         await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), "1"]])
@@ -178,34 +177,6 @@ async def forceuntrack(ctx, mapsetid: str, trackingtype: str = None):
             await modchecker.untrack(ctx, mapsetid, embed, trackingtype)
     else:
         await ctx.send(embed=await permissions.error())
-
-
-@client.command(name="scoretrack", brief="", description="", pass_context=True)
-async def scoretrack(ctx, userid: str, channellist: str = None):
-    if await permissions.checkowner(ctx.message.author.id):
-        if channellist == None:
-            channellist = ctx.channel.id
-        await scoretracking.track(ctx, userid, channellist)
-    else:
-        await ctx.send(embed=await permissions.ownererror())
-
-
-@client.command(name="scoreuntrack", brief="", description="", pass_context=True)
-async def scoreuntrack(ctx, userid: str, channellist: str = None):
-    if await permissions.checkowner(ctx.message.author.id):
-        if channellist == None:
-            channellist = ctx.channel.id
-        await scoretracking.untrack(ctx, userid, channellist)
-    else:
-        await ctx.send(embed=await permissions.ownererror())
-
-
-@client.command(name="scoretracklist", brief="", description="", pass_context=True)
-async def scoretracklist(ctx):
-    if await permissions.checkowner(ctx.message.author.id):
-        await scoretracking.tracklist(ctx)
-    else:
-        await ctx.send(embed=await permissions.ownererror())
 
 
 @client.command(name="veto", brief="Track a mapset in the current channel in veto mode.", description="", pass_context=True)
@@ -344,16 +315,10 @@ async def rankfeed_background_loop():
         await rankfeed.main(client)
 
 
-async def scoretracking_background_loop():
-    await client.wait_until_ready()
-    while not client.is_closed():
-        await scoretracking.main(client)
-
-
 async def usereventtracker_background_loop():
     await client.wait_until_ready()
     while not client.is_closed():
-        await usereventtracker.main(client)
+        await users.mapping_username_loop(client)
 
 
 async def manualusereventtracker_background_loop():

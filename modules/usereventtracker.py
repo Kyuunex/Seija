@@ -19,13 +19,13 @@ async def comparelists(list2, list1):
     return difference
 
 
-async def compare(result, osuid):
-    if not await dbhandler.query(["SELECT osuid FROM userevents WHERE osuid = ?", [osuid]]):
-        await dbhandler.query(["INSERT INTO userevents VALUES (?,?)", [osuid, json.dumps(result)]])
+async def compare(result, osuid, table = "userevents"):
+    if not await dbhandler.query(["SELECT osuid FROM %s WHERE osuid = ?" % (table), [osuid]]):
+        await dbhandler.query(["INSERT INTO %s VALUES (?,?)" % (table), [osuid, json.dumps(result)]])
         return None
     else:
-        localdata = json.loads((await dbhandler.query(["SELECT contents FROM userevents WHERE osuid = ?", [osuid]]))[0][0])
-        await dbhandler.query(["UPDATE userevents SET contents = ? WHERE osuid = ?", [json.dumps(result), osuid]])
+        localdata = json.loads((await dbhandler.query(["SELECT contents FROM %s WHERE osuid = ?" % (table), [osuid]]))[0][0])
+        await dbhandler.query(["UPDATE %s SET contents = ? WHERE osuid = ?" % (table), [json.dumps(result), osuid]])
         if type(result) is None:
             print('connection problems?')
             await asyncio.sleep(120)
@@ -33,38 +33,6 @@ async def compare(result, osuid):
         else:
             difference = await comparelists(localdata, result)
             return difference
-
-
-async def main(client):
-    try:
-        await asyncio.sleep(3600)
-        print(time.strftime('%X %x %Z')+' | user event tracker')
-        memberfeedchannellist = await dbhandler.query(["SELECT * FROM config WHERE setting = ?", ["usereventtracker"]])
-        if memberfeedchannellist:
-            now = datetime.datetime.now()
-            for onechannel in memberfeedchannellist:
-                auditchannel = client.get_channel(int(onechannel[3]))
-                feedchannel = client.get_channel(int(onechannel[2]))
-                guild = client.get_guild(int(onechannel[1]))
-                for member in guild.members:
-                    if not member.bot:
-                        query = await dbhandler.query(["SELECT * FROM users WHERE discordid = ?", [str(member.id)]])
-                        if query:
-                            osuprofile = await osuapi.get_user(query[0][1])
-                            if osuprofile:
-                                await users.one_guild_member_sync(auditchannel, query, now, member, osuprofile)
-                                await usereventtrack(client, feedchannel, osuprofile)
-                            else:
-                                await utils.send_notice("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])), auditchannel, now)
-                        else:
-                            await utils.send_notice("%s | not in db" % (member.mention), auditchannel, now)
-                        await asyncio.sleep(1)
-        await asyncio.sleep(3600)
-    except Exception as e:
-        print(time.strftime('%X %x %Z'))
-        print("in membertrack")
-        print(e)
-        await asyncio.sleep(7200)
 
 
 async def manual_loop(client):
@@ -75,7 +43,7 @@ async def manual_loop(client):
             for oneentry in await dbhandler.query("SELECT * FROM manualusereventtracking"):
                 osuprofile = await osuapi.get_user(oneentry[0])
                 if osuprofile: #
-                    await usereventtrack(client, oneentry[1].split(","), osuprofile)
+                    await usereventtrack(client, oneentry[1].split(","), osuprofile, "manualuserevents")
                 else:
                     print("`%s` | `%s` | restricted" % (str(oneentry[0])))
         await asyncio.sleep(1200)
@@ -86,9 +54,9 @@ async def manual_loop(client):
         await asyncio.sleep(7200)
         
 
-async def usereventtrack(client, channel, osuprofile):
+async def usereventtrack(client, channel, osuprofile, table = "userevents"):
     print("currently checking %s" % (osuprofile['username']))
-    newevents = await compare(osuprofile['events'], str(osuprofile['user_id']))
+    newevents = await compare(osuprofile['events'], str(osuprofile['user_id']), table)
     if newevents:
         for newevent in newevents:
             if newevent:

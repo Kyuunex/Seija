@@ -1,6 +1,7 @@
 from modules import osuapi
 from modules import osuembed
 from modules import dbhandler
+from modules import usereventtracker
 from modules import utils
 import discord
 import time
@@ -83,6 +84,38 @@ async def guildnamesync(ctx):
                     await ctx.channel.send("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])))
             else:
                 await ctx.send("%s | not in db" % (member.mention))
+
+
+async def mapping_username_loop(client):
+    try:
+        await asyncio.sleep(3600)
+        print(time.strftime('%X %x %Z')+' | user event tracker')
+        memberfeedchannellist = await dbhandler.query(["SELECT * FROM config WHERE setting = ?", ["usereventtracker"]])
+        if memberfeedchannellist:
+            now = datetime.datetime.now()
+            for onechannel in memberfeedchannellist:
+                auditchannel = client.get_channel(int(onechannel[3]))
+                feedchannel = client.get_channel(int(onechannel[2]))
+                guild = client.get_guild(int(onechannel[1]))
+                for member in guild.members:
+                    if not member.bot:
+                        query = await dbhandler.query(["SELECT * FROM users WHERE discordid = ?", [str(member.id)]])
+                        if query:
+                            osuprofile = await osuapi.get_user(query[0][1])
+                            if osuprofile:
+                                await one_guild_member_sync(auditchannel, query, now, member, osuprofile)
+                                await usereventtracker.usereventtrack(client, feedchannel, osuprofile)
+                            else:
+                                await utils.send_notice("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])), auditchannel, now)
+                        else:
+                            await utils.send_notice("%s | not in db" % (member.mention), auditchannel, now)
+                        await asyncio.sleep(1)
+        await asyncio.sleep(3600)
+    except Exception as e:
+        print(time.strftime('%X %x %Z'))
+        print("in membertrack")
+        print(e)
+        await asyncio.sleep(7200)
 
 
 async def one_guild_member_sync(auditchannel, query, now, member, osuprofile):

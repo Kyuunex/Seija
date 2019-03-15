@@ -38,7 +38,7 @@ async def compare(result, lookupvalue, tablename, lookupkey, updatedb = True, re
             else:
                 return None
         else:
-            print('connection problems?')
+            print('groupfeed connection problems?')
             return None
 
 

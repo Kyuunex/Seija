@@ -144,7 +144,7 @@ async def main(client):
                 else:
                     print("No actual discussions found at %s or mapset untracked automatically" % (mapsetid))
             else:
-                print("%s | Possible connection issues" % (time.strftime('%X %x %Z')))
+                print("%s | modchecker connection issues" % (time.strftime('%X %x %Z')))
                 await asyncio.sleep(300)
             await asyncio.sleep(120)
         await asyncio.sleep(1800)

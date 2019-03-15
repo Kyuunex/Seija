@@ -27,7 +27,7 @@ async def compare(result, osuid, table = "userevents"):
         localdata = json.loads((await dbhandler.query(["SELECT contents FROM %s WHERE osuid = ?" % (table), [osuid]]))[0][0])
         await dbhandler.query(["UPDATE %s SET contents = ? WHERE osuid = ?" % (table), [json.dumps(result), osuid]])
         if type(result) is None:
-            print('connection problems?')
+            print('usereventtracker connection problems?')
             await asyncio.sleep(120)
             return None
         else:

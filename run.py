@@ -21,6 +21,7 @@ from modules import requests
 from modules import docs
 from modules import rankfeed
 from modules import usereventtracker
+from modules import aprilfools
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
@@ -50,6 +51,7 @@ async def on_ready():
         await dbhandler.query("CREATE TABLE group_feed_json_data (feedtype, contents)")
         await dbhandler.query("CREATE TABLE queues (channelid, discordid, guildid)")
         await dbhandler.query("CREATE TABLE mapchannels (channelid, roleid, discordid, mapsetid, guildid)")
+        await dbhandler.query("CREATE TABLE namebackups (id, name)")
         await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), "1"]])
 
 
@@ -224,6 +226,20 @@ async def addrankfeed(ctx):
         await ctx.send(":ok_hand:")
     else:
         await ctx.send(embed=await permissions.error())
+
+
+@client.command(name="af", brief="", description="", pass_context=True)
+async def af(ctx, action):
+    if await permissions.checkowner(ctx.message.author.id):
+        if action == "apply":
+            await aprilfools.apply_channels(client, ctx)
+            await aprilfools.apply_roles(client, ctx)
+        elif action == "restore":
+            await aprilfools.restore_channels(client, ctx)
+            await aprilfools.restore_roles(client, ctx)
+        await ctx.send(":ok_hand:")
+    else:
+        await ctx.send(embed=await permissions.ownererror())
 
 
 @client.command(name="subscribemapper", brief="Track mapping activity of a specified user.", description="", pass_context=True)

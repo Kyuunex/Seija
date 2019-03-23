@@ -141,7 +141,7 @@ async def queuesettings(client, ctx, action, embed_title = None, embed_desc = No
         except Exception as e:
             await ctx.send(e)
     else:
-        await ctx.send("not your queue")
+        await ctx.send("%s not your queue" % (ctx.message.author.mention))
 
 
 async def mapchannelsettings(client, ctx, action, discordid):

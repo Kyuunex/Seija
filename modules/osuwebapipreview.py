@@ -2,6 +2,7 @@ import json
 import asyncio
 import time
 import aiohttp
+import html
 
 baseurl = "https://osu.ppy.sh/"
 #baseurl = "http://192.168.9.13/"
@@ -49,14 +50,13 @@ async def discussion(mapset):
 async def groups(groupid):
     httpcontents = await rawrequest('groups', '', groupid)
     if httpcontents:
-        if "user-action-button user-action-button--message" in httpcontents:
-            messyarray = httpcontents.split(
-                "https://osu.ppy.sh/home/messages/users/")
+        if "js-react--user-card" in httpcontents:
+            messyarray = httpcontents.split("data-user=\"")
             actuallist = []
             for i in messyarray:
-                parsedmemberid = (i.split("\""))[0]
-                if not "<!DOCTYPE html>" in parsedmemberid:
-                    actuallist.append(str(int(parsedmemberid)))
+                parsedmemberjson = (i.split("\">"))[0]
+                if not "<!DOCTYPE html>" in parsedmemberjson:
+                    actuallist.append(str(int((json.loads(html.unescape(parsedmemberjson)))["id"])))
             return list(actuallist)
         else:
             return None

@@ -17,7 +17,8 @@ from modules import modchecker
 from modules import users
 from modules import utils
 from modules import groupfeed
-from modules import requests
+from modules import mapchannel
+from modules import queuechannel
 from modules import docs
 from modules import rankfeed
 from modules import usereventtracker
@@ -25,7 +26,7 @@ from modules import aprilfools
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190324"
+appversion = "b20190330"
 
 
 @client.event
@@ -231,13 +232,18 @@ async def addrankfeed(ctx):
 @client.command(name="af", brief="", description="", pass_context=True)
 async def af(ctx, action):
     if await permissions.checkowner(ctx.message.author.id):
+        await ctx.message.delete()
         if action == "apply":
             await aprilfools.apply_channels(client, ctx)
             await aprilfools.apply_roles(client, ctx)
+            try:
+                await ctx.send(file=discord.File("data/imsorry.png"))
+            except:
+                await ctx.send(":ok_hand:")
         elif action == "restore":
             await aprilfools.restore_channels(client, ctx)
             await aprilfools.restore_roles(client, ctx)
-        await ctx.send(":ok_hand:")
+            await ctx.send(":ok_hand:")
     else:
         await ctx.send(embed=await permissions.ownererror())
 
@@ -254,47 +260,47 @@ async def subscribemapper(ctx, osuid, channels):
 @client.command(name="request", brief="Request ether a queue or mod channel.", description="", pass_context=True)
 async def requestchannel(ctx, requesttype: str = "help", arg1: str = None, arg2: str = None):  # TODO: Add request
     if requesttype == "queue":
-        await requests.make_queue_channel(client, ctx, arg1)
+        await queuechannel.make_queue_channel(client, ctx, arg1)
     elif requesttype == "mapset":
-        await requests.make_mapset_channel(client, ctx, arg1, arg2)
+        await mapchannel.make_mapset_channel(client, ctx, arg1, arg2)
 
 
 @client.command(name="nuke", brief="Nuke a requested channel.", description="", pass_context=True)
 async def nuke(ctx):
     if await permissions.check(ctx.message.author.id):
-        await requests.nuke_mapset_channel(client, ctx)
+        await mapchannel.nuke_mapset_channel(client, ctx)
     else:
         await ctx.send(embed=await permissions.error())
 
 
 @client.command(name="open", brief="Open the queue.", description="", pass_context=True)
 async def openq(ctx, title = None, desc = ""):
-    await requests.queuesettings(client, ctx, "open", title, desc)
+    await queuechannel.queuesettings(client, ctx, "open", title, desc)
 
 
 @client.command(name="close", brief="Close the queue.", description="", pass_context=True)
 async def closeq(ctx, title = None, desc = ""):
-    await requests.queuesettings(client, ctx, "close", title, desc)
+    await queuechannel.queuesettings(client, ctx, "close", title, desc)
 
 
 @client.command(name="hide", brief="Hide the queue.", description="", pass_context=True)
 async def hideq(ctx):
-    await requests.queuesettings(client, ctx, "hide")
+    await queuechannel.queuesettings(client, ctx, "hide")
 
 
 @client.command(name="add", brief="Add a user in the current mapset channel.", description="", pass_context=True)
 async def addm(ctx, discordid: int):
-    await requests.mapchannelsettings(client, ctx, "add", discordid)
+    await mapchannel.mapchannelsettings(client, ctx, "add", discordid)
 
 
 @client.command(name="remove", brief="Remove a user from the current mapset channel.", description="", pass_context=True)
 async def removem(ctx, discordid: int):
-    await requests.mapchannelsettings(client, ctx, "remove", discordid)
+    await mapchannel.mapchannelsettings(client, ctx, "remove", discordid)
 
 
 @client.command(name="abandon", brief="Abandon the mapset and untrack.", description="", pass_context=True)
 async def abandon(ctx):
-    await requests.abandon(client, ctx)
+    await mapchannel.abandon(client, ctx)
 
 
 @client.event
@@ -342,8 +348,6 @@ async def manualusereventtracker_background_loop():
     while not client.is_closed():
         await usereventtracker.manual_loop(client)
 
-# TODO: add rankfeed
-# TODO: add background task to check user profiles every few hours. watch for username changes and also serve as mapping feed
 # TODO: detect when channel is deleted and automatically untrack
 
 client.loop.create_task(modchecker_background_loop())

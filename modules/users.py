@@ -1,13 +1,18 @@
 from modules import osuapi
 from modules import osuembed
 from modules import dbhandler
-from modules import usereventtracker
-from modules import utils
+from modules import usereventfeed
 import discord
 import time
 import datetime
 import asyncio
 import upsidedown
+
+
+async def send_notice(notice, channel, now):
+    if not await dbhandler.query(["SELECT notice FROM notices WHERE notice = ?", [notice]]):
+        await channel.send(notice)
+        await dbhandler.query(["INSERT INTO notices VALUES (?, ?)", [str(now.isoformat()), notice]])
 
 
 async def verify(channel, member, role, osulookup, response):
@@ -104,11 +109,11 @@ async def mapping_username_loop(client):
                             osuprofile = await osuapi.get_user(query[0][1])
                             if osuprofile:
                                 await one_guild_member_sync(auditchannel, query, now, member, osuprofile)
-                                await usereventtracker.usereventtrack(client, feedchannel, osuprofile)
+                                await usereventfeed.usereventtrack(client, feedchannel, osuprofile, "userevents")
                             else:
-                                await utils.send_notice("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])), auditchannel, now)
+                                await send_notice("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])), auditchannel, now)
                         else:
-                            await utils.send_notice("%s | not in db" % (member.mention), auditchannel, now)
+                            await send_notice("%s | not in db" % (member.mention), auditchannel, now)
                         await asyncio.sleep(1)
         await asyncio.sleep(3600)
     except Exception as e:
@@ -126,7 +131,7 @@ async def one_guild_member_sync(auditchannel, query, now, member, osuprofile):
         osuusername = osuprofile['username']
     if member.display_name != osuusername:
         if "nosync" in str(query[0][7]):
-            await utils.send_notice("%s | `%s` | `%s` | username not updated as `nosync` was set for this user" % (str(member.id), osuusername, str(query[0][1])), auditchannel, now)
+            await send_notice("%s | `%s` | `%s` | username not updated as `nosync` was set for this user" % (str(member.id), osuusername, str(query[0][1])), auditchannel, now)
         else:
             try:
                 await member.edit(nick=osuusername)
@@ -148,13 +153,12 @@ async def one_guild_member_sync(auditchannel, query, now, member, osuprofile):
     )
 
 
-
 async def on_member_join(client, member):
     try:
-        if not member.bot:
-            guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannelid", str(member.guild.id)]])
-            if guildverifychannel:
-                join_channel_object = client.get_channel(int((guildverifychannel)[0][0]))
+        guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannelid", str(member.guild.id)]])
+        if guildverifychannel:
+            join_channel_object = client.get_channel(int((guildverifychannel)[0][0]))
+            if not member.bot:
                 lookupuser = await dbhandler.query(["SELECT osuid FROM users WHERE discordid = ?", [str(member.id), ]])
                 if lookupuser:
                     print("user %s joined with osuid %s" %
@@ -172,6 +176,8 @@ async def on_member_join(client, member):
                         await join_channel_object.send(content='Is this your osu profile? If yes, type `yes`, if not, link your profile.', embed=await osuembed.osuprofile(osuprofile))
                     else:
                         await join_channel_object.send('Please post a link to your osu profile and I will verify you instantly.')
+            else:
+                await join_channel_object.send('beep boop boop beep, %s has joined our army of bots' % (member.mention))
     except Exception as e:
         print(time.strftime('%X %x %Z'))
         print("in on_member_join")
@@ -180,16 +186,18 @@ async def on_member_join(client, member):
 
 async def on_member_remove(client, member):
     try:
-        if not member.bot:
-            guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannelid", str(member.guild.id)]])
-            if guildverifychannel:
-                join_channel_object = client.get_channel(int((guildverifychannel)[0][0]))
+        guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannelid", str(member.guild.id)]])
+        if guildverifychannel:
+            join_channel_object = client.get_channel(int((guildverifychannel)[0][0]))
+            if not member.bot:
                 osuid = await dbhandler.query(["SELECT username FROM users WHERE discordid = ?", [str(member.id)]])
                 if osuid:
                     embed = await osuembed.osuprofile(await osuapi.get_user(osuid[0][0]))
                 else:
                     embed = None
                 await join_channel_object.send("%s left this server. Godspeed!" % (str(member.name)), embed=embed)
+            else:
+                await join_channel_object.send('beep boop boop beep, %s has left our army of bots' % (member.mention))
     except Exception as e:
         print(time.strftime('%X %x %Z'))
         print("in on_member_join")

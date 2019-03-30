@@ -1,12 +1,9 @@
-import json
 import time
 import asyncio
 import discord
-from modules import utils
 from modules import dbhandler
 from modules import osuapi
 from modules import osuembed
-from modules import osuwebapipreview
 from modules import osuwebapipreview
 
 

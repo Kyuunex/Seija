@@ -4,24 +4,16 @@ import discord
 import asyncio
 from discord.ext import commands
 import os
-import shutil
-import time
-import random
 
 from modules import permissions
 from modules import osuapi
 from modules import osuembed
-from modules import osuwebapipreview
 from modules import dbhandler
 from modules import modchecker
 from modules import users
-from modules import utils
-from modules import groupfeed
 from modules import mapchannel
 from modules import queuechannel
 from modules import docs
-from modules import rankfeed
-from modules import usereventtracker
 from modules import aprilfools
 
 client = commands.Bot(command_prefix='\'')
@@ -39,17 +31,11 @@ async def on_ready():
         appinfo = await client.application_info()
         await dbhandler.query("CREATE TABLE users (discordid, osuid, username, osujoindate, pp, country, rankedmaps, args)")
         await dbhandler.query("CREATE TABLE userevents (osuid, contents)")
-        await dbhandler.query("CREATE TABLE manualuserevents (osuid, contents)")
         await dbhandler.query("CREATE TABLE config (setting, parent, value, flag)")
         await dbhandler.query("CREATE TABLE admins (discordid, permissions)")
         await dbhandler.query("CREATE TABLE modposts (postid, mapsetid, mapid, userid, contents)")
         await dbhandler.query("CREATE TABLE modtracking (mapsetid, channelid, mapsethostdiscordid, roleid, mapsethostosuid, type)")
-        await dbhandler.query("CREATE TABLE groupfeedchannels (channelid)")
-        await dbhandler.query("CREATE TABLE rankfeedchannels (channelid)")
-        await dbhandler.query("CREATE TABLE rankedmaps (mapsetid)")
         await dbhandler.query("CREATE TABLE notices (timestamp, notice)")
-        await dbhandler.query("CREATE TABLE manualusereventtracking (osuid, channellist)")
-        await dbhandler.query("CREATE TABLE group_feed_json_data (feedtype, contents)")
         await dbhandler.query("CREATE TABLE queues (channelid, discordid, guildid)")
         await dbhandler.query("CREATE TABLE mapchannels (channelid, roleid, discordid, mapsetid, guildid)")
         await dbhandler.query("CREATE TABLE namebackups (id, name)")
@@ -211,24 +197,6 @@ async def sublist(ctx):
         await ctx.send(embed=await permissions.error())
 
 
-@client.command(name="addgroupfeed", brief="Add a groupfeed in the current channel.", description="", pass_context=True)
-async def addgroupfeed(ctx):
-    if await permissions.check(ctx.message.author.id):
-        await dbhandler.query(["INSERT INTO groupfeedchannels VALUES (?)", [str(ctx.channel.id)]])
-        await ctx.send(":ok_hand:")
-    else:
-        await ctx.send(embed=await permissions.error())
-
-
-@client.command(name="addrankfeed", brief="Add a rankfeed in the current channel.", description="", pass_context=True)
-async def addrankfeed(ctx):
-    if await permissions.check(ctx.message.author.id):
-        await dbhandler.query(["INSERT INTO rankfeedchannels VALUES (?)", [str(ctx.channel.id)]])
-        await ctx.send(":ok_hand:")
-    else:
-        await ctx.send(embed=await permissions.error())
-
-
 @client.command(name="af", brief="", description="", pass_context=True)
 async def af(ctx, action):
     if await permissions.checkowner(ctx.message.author.id):
@@ -246,15 +214,6 @@ async def af(ctx, action):
             await ctx.send(":ok_hand:")
     else:
         await ctx.send(embed=await permissions.ownererror())
-
-
-@client.command(name="subscribemapper", brief="Track mapping activity of a specified user.", description="", pass_context=True)
-async def subscribemapper(ctx, osuid, channels):
-    if await permissions.check(ctx.message.author.id):
-        await dbhandler.query(["INSERT INTO manualusereventtracking VALUES (?,?)", [osuid, channels]])
-        await ctx.send(":ok_hand:")
-    else:
-        await ctx.send(embed=await permissions.error())
 
 
 @client.command(name="request", brief="Request ether a queue or mod channel.", description="", pass_context=True)
@@ -325,35 +284,14 @@ async def modchecker_background_loop():
         await modchecker.main(client)
 
 
-async def groupfeed_background_loop():
-    await client.wait_until_ready()
-    while not client.is_closed():
-        await groupfeed.main(client)
-
-
-async def rankfeed_background_loop():
-    await client.wait_until_ready()
-    while not client.is_closed():
-        await rankfeed.main(client)
-
-
-async def usereventtracker_background_loop():
+async def users_background_loop():
     await client.wait_until_ready()
     while not client.is_closed():
         await users.mapping_username_loop(client)
 
 
-async def manualusereventtracker_background_loop():
-    await client.wait_until_ready()
-    while not client.is_closed():
-        await usereventtracker.manual_loop(client)
-
 # TODO: detect when channel is deleted and automatically untrack
 
 client.loop.create_task(modchecker_background_loop())
-client.loop.create_task(groupfeed_background_loop())
-client.loop.create_task(rankfeed_background_loop())
-#client.loop.create_task(scoretracking_background_loop())
-client.loop.create_task(usereventtracker_background_loop())
-client.loop.create_task(manualusereventtracker_background_loop())
+client.loop.create_task(users_background_loop())
 client.run(open("data/token.txt", "r+").read(), bot=True)

@@ -1,14 +1,11 @@
 import asyncio
 import time
-import datetime
 import json
 import re
 from html import unescape
 from modules import dbhandler
-from modules import users
 from modules import osuapi
 from modules import osuembed
-from modules import utils
 
 
 async def comparelists(list2, list1):
@@ -19,7 +16,7 @@ async def comparelists(list2, list1):
     return difference
 
 
-async def compare(result, osuid, table = "userevents"):
+async def compare(result, osuid, table):
     if not await dbhandler.query(["SELECT osuid FROM %s WHERE osuid = ?" % (table), [osuid]]):
         await dbhandler.query(["INSERT INTO %s VALUES (?,?)" % (table), [osuid, json.dumps(result)]])
         return None
@@ -27,7 +24,7 @@ async def compare(result, osuid, table = "userevents"):
         localdata = json.loads((await dbhandler.query(["SELECT contents FROM %s WHERE osuid = ?" % (table), [osuid]]))[0][0])
         await dbhandler.query(["UPDATE %s SET contents = ? WHERE osuid = ?" % (table), [json.dumps(result), osuid]])
         if type(result) is None:
-            print('usereventtracker connection problems?')
+            print('usereventfeed connection problems?')
             await asyncio.sleep(120)
             return None
         else:
@@ -35,15 +32,15 @@ async def compare(result, osuid, table = "userevents"):
             return difference
 
 
-async def manual_loop(client):
+async def main(client):
     try:
         print(time.strftime('%X %x %Z')+' | manual loop')
-        manualfeedenabled = await dbhandler.query(["SELECT * FROM config WHERE setting = ?", ["manualusereventtracker"]])
-        if manualfeedenabled:
-            for oneentry in await dbhandler.query("SELECT * FROM manualusereventtracking"):
+        tracklist = await dbhandler.query("SELECT * FROM usereventfeed_tracklist")
+        if tracklist:
+            for oneentry in tracklist:
                 osuprofile = await osuapi.get_user(oneentry[0])
                 if osuprofile: #
-                    await usereventtrack(client, oneentry[1].split(","), osuprofile, "manualuserevents")
+                    await usereventtrack(client, oneentry[1].split(","), osuprofile, "usereventfeed_json_data")
                 else:
                     print("`%s` | `%s` | restricted" % (str(oneentry[0])))
         await asyncio.sleep(1200)
@@ -54,7 +51,7 @@ async def manual_loop(client):
         await asyncio.sleep(7200)
         
 
-async def usereventtrack(client, channel, osuprofile, table = "userevents"):
+async def usereventtrack(client, channel, osuprofile, table):
     print("currently checking %s" % (osuprofile['username']))
     newevents = await compare(osuprofile['events'], str(osuprofile['user_id']), table)
     if newevents:

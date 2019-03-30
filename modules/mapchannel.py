@@ -1,7 +1,5 @@
 from modules import dbhandler
 from modules import osuapi
-from modules import osuembed
-from modules import utils
 from modules import docs
 from modules import permissions
 import discord

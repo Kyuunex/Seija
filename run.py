@@ -202,15 +202,21 @@ async def af(ctx, action):
     if await permissions.checkowner(ctx.message.author.id):
         await ctx.message.delete()
         if action == "apply":
+            await aprilfools.apply_guild(client, ctx)
             await aprilfools.apply_channels(client, ctx)
+            await asyncio.sleep(10)
             await aprilfools.apply_roles(client, ctx)
+            await aprilfools.rotate_logo(client, ctx)
             try:
                 await ctx.send(file=discord.File("data/imsorry.png"))
             except:
                 await ctx.send(":ok_hand:")
         elif action == "restore":
+            await aprilfools.restore_guild(client, ctx)
             await aprilfools.restore_channels(client, ctx)
+            await asyncio.sleep(10)
             await aprilfools.restore_roles(client, ctx)
+            await aprilfools.rotate_logo(client, ctx)
             await ctx.send(":ok_hand:")
     else:
         await ctx.send(embed=await permissions.ownererror())

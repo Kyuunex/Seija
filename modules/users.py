@@ -138,7 +138,7 @@ async def one_guild_member_sync(auditchannel, query, now, member, osuprofile):
             except Exception as e:
                 await auditchannel.send(e)
                 await auditchannel.send("%s | `%s` | `%s` | no perms to update" % (member.mention, osuusername, str(query[0][1])))
-            await auditchannel.send("%s | `%s` | `%s` | nickname updated" % (member.mention, osuusername, str(query[0][1])))
+            await auditchannel.send("%s | `%s` | `%s` | nickname updated, old nickname %s" % (member.mention, osuusername, str(query[0][1]), str(query[0][2])))
     await dbhandler.query(
         [
             "UPDATE users SET country = ?, pp = ?, osujoindate = ?, username = ? WHERE discordid = ?;",
@@ -255,6 +255,7 @@ async def userdbprintall(ctx, command, mention):
         print("in userdb")
         print(e)
 
+
 async def userdbmassverify(ctx, command, mention):
     try:
         userarray = open("data/users.csv",
@@ -271,6 +272,7 @@ async def userdbmassverify(ctx, command, mention):
         print(time.strftime('%X %x %Z'))
         print("in userdb")
         print(e)
+
 
 async def userdbservercheck(ctx, command, mention):
     try:

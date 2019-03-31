@@ -115,6 +115,7 @@ async def mapping_username_loop(client):
                         else:
                             await send_notice("%s | not in db" % (member.mention), auditchannel, now)
                         await asyncio.sleep(1)
+        print(time.strftime('%X %x %Z')+' | mapping username loop finished')
         await asyncio.sleep(3600)
     except Exception as e:
         print(time.strftime('%X %x %Z'))

@@ -110,3 +110,8 @@ async def rotate_logo(client, ctx):
             print(e)
             print("in rotate_logo")
             await asyncio.sleep(10)
+
+
+
+#TODO: reverse channel
+#TODO: rotate all emotes

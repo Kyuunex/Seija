@@ -4,6 +4,7 @@ import discord
 import asyncio
 from discord.ext import commands
 import os
+import upsidedown
 
 from modules import permissions
 from modules import osuapi
@@ -18,7 +19,7 @@ from modules import aprilfools
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190331"
+appversion = "b20190401"
 
 
 @client.event
@@ -72,6 +73,15 @@ async def gitpull(ctx):
         os.system('git pull')
         quit()
         # exit()
+    else:
+        await ctx.send(embed=await permissions.error())
+
+
+@client.command(name="echo", brief="Echo a astring", description="", pass_context=True)
+async def echo(ctx, *, string):
+    if await permissions.check(ctx.message.author.id):
+        await ctx.message.delete()
+        await ctx.send(upsidedown.transform(string))
     else:
         await ctx.send(embed=await permissions.error())
 

@@ -93,7 +93,7 @@ async def guildnamesync(ctx):
 
 async def mapping_username_loop(client):
     try:
-        await asyncio.sleep(3600)
+        await asyncio.sleep(10)
         print(time.strftime('%X %x %Z')+' | user event tracker')
         memberfeedchannellist = await dbhandler.query(["SELECT * FROM config WHERE setting = ?", ["usereventtracker"]])
         if memberfeedchannellist:
@@ -116,7 +116,7 @@ async def mapping_username_loop(client):
                             await send_notice("%s | not in db" % (member.mention), auditchannel, now)
                         await asyncio.sleep(1)
         print(time.strftime('%X %x %Z')+' | mapping username loop finished')
-        await asyncio.sleep(3600)
+        await asyncio.sleep(7200)
     except Exception as e:
         print(time.strftime('%X %x %Z'))
         print("in membertrack")

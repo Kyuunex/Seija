@@ -9,7 +9,6 @@ from modules import osuwebapipreview
 
 async def populatedb(discussions, channelid):
     modposts = discussions["beatmapset"]["discussions"]
-    channelid = ""
     allposts = []
     for onemod in modposts:
         try:

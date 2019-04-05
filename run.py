@@ -19,7 +19,7 @@ from modules import aprilfools
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190401"
+appversion = "b20190406"
 
 
 @client.event
@@ -34,8 +34,8 @@ async def on_ready():
         await dbhandler.query("CREATE TABLE userevents (osuid, contents)")
         await dbhandler.query("CREATE TABLE config (setting, parent, value, flag)")
         await dbhandler.query("CREATE TABLE admins (discordid, permissions)")
-        await dbhandler.query("CREATE TABLE modposts (postid, mapsetid, mapid, userid, contents)")
-        await dbhandler.query("CREATE TABLE modtracking (mapsetid, channelid, mapsethostdiscordid, roleid, mapsethostosuid, type)")
+        await dbhandler.query("CREATE TABLE modposts (postid, mapsetid, channelid)")
+        await dbhandler.query("CREATE TABLE modtracking (mapsetid, channelid, type)")
         await dbhandler.query("CREATE TABLE notices (timestamp, notice)")
         await dbhandler.query("CREATE TABLE queues (channelid, discordid, guildid)")
         await dbhandler.query("CREATE TABLE mapchannels (channelid, roleid, discordid, mapsetid, guildid)")
@@ -202,7 +202,7 @@ async def sublist(ctx):
     if await permissions.check(ctx.message.author.id):
         for oneentry in await dbhandler.query("SELECT * FROM modtracking"):
             embed = await osuembed.mapsetold(await osuapi.get_beatmap(str(oneentry[0])))
-            await ctx.send(content="mapsetid %s | channel <#%s> | mapsethostdiscordid %s \nroleid %s | mapsethostosuid %s | trackingtype %s" % (oneentry), embed=embed)
+            await ctx.send(content="mapsetid %s | channel <#%s> | trackingtype %s" % (oneentry), embed=embed)
     else:
         await ctx.send(embed=await permissions.error())
 

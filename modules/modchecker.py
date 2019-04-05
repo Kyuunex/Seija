@@ -7,8 +7,9 @@ from modules import osuembed
 from modules import osuwebapipreview
 
 
-async def populatedb(discussions):
+async def populatedb(discussions, channelid):
     modposts = discussions["beatmapset"]["discussions"]
+    channelid = ""
     allposts = []
     for onemod in modposts:
         try:
@@ -17,13 +18,11 @@ async def populatedb(discussions):
                     if subpost:
                         allposts.append(
                             [
-                                "INSERT INTO modposts VALUES (?,?,?,?,?)", 
+                                "INSERT INTO modposts VALUES (?,?,?)", 
                                 [
                                     str(subpost["id"]), 
                                     str(onemod["beatmapset_id"]), 
-                                    str(onemod["beatmap_id"]), 
-                                    str(subpost["user_id"]), 
-                                    str(subpost["message"])
+                                    str(channelid)
                                 ]
                             ]
                         )
@@ -36,15 +35,14 @@ async def populatedb(discussions):
 
 
 async def track(ctx, mapsetid, mapsethostdiscordid, trackingtype):
-    roleid = None  # TODO: actually implement roleid
     if not await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE mapsetid = ?", [str(mapsetid)]]):
         mapsetmetadata = await osuapi.get_beatmap(str(mapsetid))
         embed = await osuembed.mapsetold(mapsetmetadata)
         if embed:
             beatmapsetdiscussionobject = await osuwebapipreview.discussion(str(mapsetid))
             if beatmapsetdiscussionobject:
-                await populatedb(beatmapsetdiscussionobject)
-                await dbhandler.query(["INSERT INTO modtracking VALUES (?,?,?,?,?,?)", [str(mapsetid), str(ctx.message.channel.id), mapsethostdiscordid, roleid, str(mapsetmetadata['creator_id']), trackingtype]])
+                await populatedb(beatmapsetdiscussionobject, str(ctx.channel.id))
+                await dbhandler.query(["INSERT INTO modtracking VALUES (?,?,?)", [str(mapsetid), str(ctx.message.channel.id), trackingtype]])
                 if trackingtype == 1:
                     await ctx.send(content='This mapset is now being tracked in this channel in veto mode', embed=embed)
                 else:
@@ -76,8 +74,9 @@ async def main(client):
         await asyncio.sleep(120)
         for oneentry in await dbhandler.query("SELECT * FROM modtracking"):
             channel = client.get_channel(int(oneentry[1]))
+            channelid = str(channel.id)
             mapsetid = str(oneentry[0])
-            trackingtype = str(oneentry[5])
+            trackingtype = str(oneentry[2])
             print(time.strftime('%X %x %Z')+' | '+oneentry[0])
 
             beatmapsetdiscussionobject = await osuwebapipreview.discussion(mapsetid)
@@ -116,13 +115,11 @@ async def main(client):
                                         if not await dbhandler.query(["SELECT postid FROM modposts WHERE postid = ?", [str(subpostobject['id']), ]]):
                                             await dbhandler.query(
                                                 [
-                                                    "INSERT INTO modposts VALUES (?,?,?,?,?)", 
+                                                    "INSERT INTO modposts VALUES (?,?,?)", 
                                                     [
                                                         str(subpostobject["id"]), 
                                                         str(mapsetid), 
-                                                        str(discussion["beatmap_id"]), 
-                                                        str(subpostobject["user_id"]), 
-                                                        str(subpostobject["message"])
+                                                        str(channelid)
                                                     ]
                                                 ]
                                             )

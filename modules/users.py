@@ -41,11 +41,11 @@ async def verify(channel, member, role, osulookup, response):
             country = str(osuprofile['country'])
             embed = await osuembed.osuprofile(osuprofile)
     elif verificationtype == "s":
-        authorsmapset = await osuapi.get_beatmap(lookupstr)
+        authorsmapset = await osuapi.get_beatmaps(lookupstr)
         if authorsmapset:
-            osuusername = str(authorsmapset['creator'])
-            osuaccountid = str(authorsmapset['creator_id'])
-            embed = await osuembed.mapsetold(authorsmapset)
+            osuusername = str(authorsmapset[0]['creator'])
+            osuaccountid = str(authorsmapset[0]['creator_id'])
+            embed = await osuembed.mapset(authorsmapset)
 
     if osuusername:
         if type(member) is str:

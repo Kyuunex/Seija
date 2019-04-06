@@ -49,9 +49,10 @@ async def adminlist(ctx):
 
 
 @client.command(name="makeadmin", brief="Add a user to bot admin list.", description="", pass_context=True)
-async def makeadmin(ctx, discordid: str):
-    if await permissions.checkowner(ctx.message.author.id):
-        await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(discordid), "0"]])
+async def makeadmin(ctx, discordid: str, perms = str("0")):
+    appinfo = await client.application_info()
+    if await permissions.checkowner(ctx.message.author.id) or await permissions.checkowner(str(appinfo.owner.id)):
+        await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(discordid), str(perms)]])
         await ctx.send(":ok_hand:")
     else:
         await ctx.send(embed=await permissions.ownererror())
@@ -152,28 +153,20 @@ async def help(ctx, subhelp: str = None):  # TODO: rewrite help
 
 
 @client.command(name="forcetrack", brief="Force Track a mapset in the current channel.", description="", pass_context=True)
-async def forcetrack(ctx, mapsetid: str, mapsethostdiscordid: str = None):
+async def forcetrack(ctx, mapsetid: str):
     if await permissions.check(ctx.message.author.id):
-        if mapsethostdiscordid == None:
-            mapsethostdiscordid = ctx.message.author.id
-        await modchecker.track(ctx, str(mapsetid), str(mapsethostdiscordid), 0)
+        await modchecker.track(ctx, str(mapsetid), 0)
     else:
         await ctx.send(embed=await permissions.error())
 
 
 @client.command(name="forceuntrack", brief="Force untrack a mapset in the current channel.", description="", pass_context=True)
-async def forceuntrack(ctx, mapsetid: str, trackingtype: str = None):
+async def forceuntrack(ctx, mapsetid: str, untrackall = False):
     if await permissions.check(ctx.message.author.id):
-        if trackingtype == "ranked":
-            embed = await osuembed.mapsetold(await osuapi.get_beatmap(mapsetid))
-            await modchecker.untrack(ctx, mapsetid, embed, trackingtype)
-        elif trackingtype == "all":
-            await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid),]])
-            await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid),]])
-            await ctx.send('`Mapset with that ID is no longer being tracked anywhere`')
+        if await modchecker.untrack(mapsetid, ctx.message.channel.id, bool(untrackall)):
+            await ctx.send("Untracked")
         else:
-            embed = None
-            await modchecker.untrack(ctx, mapsetid, embed, trackingtype)
+            await ctx.send("No tracking record found")
     else:
         await ctx.send(embed=await permissions.error())
 
@@ -181,18 +174,19 @@ async def forceuntrack(ctx, mapsetid: str, trackingtype: str = None):
 @client.command(name="veto", brief="Track a mapset in the current channel in veto mode.", description="", pass_context=True)
 async def veto(ctx, mapsetid: int, mapsethostdiscordid: int = None):
     if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["vetochannelid", str(ctx.guild.id)]]))[0][0]):
-        if mapsethostdiscordid == None:
-            mapsethostdiscordid = ctx.message.author.id
-        await modchecker.track(ctx, str(mapsetid), str(mapsethostdiscordid), 1)
+        await modchecker.track(ctx, str(mapsetid), 1)
     else:
         await ctx.send(embed=await permissions.error())
 
 
 @client.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode.", description="", pass_context=True)
 async def unveto(ctx, mapsetid: int):
-    if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["vetochannelid", str(ctx.guild.id)]]))[0][0]):
-        embed = await osuembed.mapsetold(await osuapi.get_beatmap(mapsetid))
-        await modchecker.untrack(ctx, mapsetid, embed, None)
+    if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["vetochannelid", str(ctx.guild.id)]]))[0][0]):   
+        if await modchecker.untrack(mapsetid, ctx.message.channel.id, False):
+            embed = await osuembed.mapset(await osuapi.get_beatmaps(mapsetid))
+            await ctx.send("Untracked this", embed=embed)
+        else:
+            await ctx.send("No tracking record found")
     else:
         await ctx.send(embed=await permissions.error())
 
@@ -201,7 +195,7 @@ async def unveto(ctx, mapsetid: int):
 async def sublist(ctx):
     if await permissions.check(ctx.message.author.id):
         for oneentry in await dbhandler.query("SELECT * FROM modtracking"):
-            embed = await osuembed.mapsetold(await osuapi.get_beatmap(str(oneentry[0])))
+            embed = await osuembed.mapset(await osuapi.get_beatmaps(str(oneentry[0])))
             await ctx.send(content="mapsetid %s | channel <#%s> | trackingtype %s" % (oneentry), embed=embed)
     else:
         await ctx.send(embed=await permissions.error())

@@ -33,10 +33,9 @@ async def populatedb(discussions, channelid):
     await dbhandler.massquery(allposts)
 
 
-async def track(ctx, mapsetid, mapsethostdiscordid, trackingtype):
+async def track(ctx, mapsetid, trackingtype):
     if not await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE mapsetid = ?", [str(mapsetid)]]):
-        mapsetmetadata = await osuapi.get_beatmap(str(mapsetid))
-        embed = await osuembed.mapsetold(mapsetmetadata)
+        embed = await osuembed.mapset(await osuapi.get_beatmaps(mapsetid))
         if embed:
             beatmapsetdiscussionobject = await osuwebapipreview.discussion(str(mapsetid))
             if beatmapsetdiscussionobject:
@@ -52,20 +51,21 @@ async def track(ctx, mapsetid, mapsethostdiscordid, trackingtype):
             await ctx.send(content='`No mapset found with that ID`')
 
 
-async def untrack(ctx, mapsetid, embed, ranked):
-    if await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(ctx.message.channel.id)]]):
-        await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(ctx.message.channel.id)]])
-        #await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid),]])
-
-        if embed:
-            if ranked:
-                await ctx.send(content='Congratulations on ranking your mapset. Since the modding stage is finished, and the map is moved to the ranked section, I will no longer be checking for mods on this mapset.', embed=embed)
-            else:
-                await ctx.send(content='This Mapset is no longer being tracked in this channel', embed=embed)
+async def untrack(mapsetid, channelid, untrackall = False):
+    if untrackall:
+        if await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE mapsetid = ?", [str(mapsetid)]]):
+            await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?", [str(mapsetid)]])
+            await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?", [str(mapsetid)]])
+            return True
         else:
-            await ctx.send(content='`Mapset with that ID is no longer being tracked in this channel`')
+            return False
     else:
-        await ctx.send(content='`No tracking record was found in the database with this mapsetid for this channel`')
+        if await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channelid)]]):
+            await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channelid)]])
+            await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channelid)]])
+            return True
+        else:
+            return False
 
 
 async def main(client):
@@ -87,19 +87,16 @@ async def main(client):
                     discussions = beatmapsetdiscussionobject["beatmapset"]["discussions"]
                 elif status == "ranked":
                     discussions = None
-                    await channel.send(content='I detected that this map is ranked now. Since the modding stage is finished, and the map is moved to the ranked section, I will no longer be checking for mods on this mapset.', embed=await osuembed.mapset(await osuapi.get_beatmaps(mapsetid)))
-                    await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid),]])
-                    await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid),]])
+                    if await untrack(mapsetid, channelid):
+                        await channel.send(content='I detected that this map is ranked now. Since the modding stage is finished, and the map is moved to the ranked section, I will no longer be checking for mods on this mapset.', embed=await osuembed.mapset(await osuapi.get_beatmaps(mapsetid)))
                 elif status == "graveyard":
                     discussions = None
-                    await channel.send(content='I detected that this map is graveyarded now and so, I am untracking it. Ping a manager when you revive the set. Please understand that we don\'t wanna track dead sets', embed=await osuembed.mapset(await osuapi.get_beatmaps(mapsetid)))
-                    await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid),]])
-                    await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid),]])
+                    if await untrack(mapsetid, channelid):
+                        await channel.send(content='I detected that this map is graveyarded now and so, I am untracking it. Ping a manager when this set is back in pending section. Please understand that we don\'t wanna track dead sets.', embed=await osuembed.mapset(await osuapi.get_beatmaps(mapsetid)))
                 elif status == "deleted":
                     discussions = None
-                    await channel.send(content='I detected that the mapset with the id %s has been deleted, so I am untracking.' % (str(mapsetid)))
-                    await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid),]])
-                    await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid),]])
+                    if await untrack(mapsetid, channelid):
+                        await channel.send(content='I detected that the mapset with the id %s has been deleted, so I am untracking.' % (str(mapsetid)))
                 else:
                     discussions = None
                     await channel.send(content='<@155976140073205761> something went wrong, please check the console output.')
@@ -111,7 +108,7 @@ async def main(client):
                             if discussion:
                                 for subpostobject in discussion['posts']:
                                     if subpostobject:
-                                        if not await dbhandler.query(["SELECT postid FROM modposts WHERE postid = ?", [str(subpostobject['id']), ]]):
+                                        if not await dbhandler.query(["SELECT postid FROM modposts WHERE postid = ? AND channelid = ?", [str(subpostobject['id']), str(channelid)]]):
                                             await dbhandler.query(
                                                 [
                                                     "INSERT INTO modposts VALUES (?,?,?)", 

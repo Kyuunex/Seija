@@ -63,7 +63,6 @@ async def make_mapset_channel(client, ctx, mapsetid, mapsetname):
                 }
                 channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category)
                 await ctx.message.author.add_roles(mapsetrole)
-                #embed = await osuembed.mapsetold(mapset)
                 await channel.send("%s done!" % (ctx.message.author.mention), embed=await docs.mapchannelmanagement())
                 await dbhandler.query(["INSERT INTO mapchannels VALUES (?, ?, ?, ?, ?)", [str(channel.id), str(mapsetrole.id), str(ctx.message.author.id), str(mapsetid), str(ctx.guild.id)]])
             else:
@@ -102,8 +101,8 @@ async def nuke_mapset_channel(client, ctx):
 
             mapsetid = await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE channelid = ?", [str(ctx.message.channel.id)]])
             if mapsetid:
-                await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
-                await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
+                await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ? AND channelid = ?",[str(mapsetid[0][0]), str(ctx.message.channel.id)]])
+                await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ? AND channelid = ?",[str(mapsetid[0][0]), str(ctx.message.channel.id)]])
                 await ctx.send("untracked")
                 await asyncio.sleep(2)
 
@@ -123,8 +122,8 @@ async def abandon(client, ctx):
             try:
                 mapsetid = await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE channelid = ?", [str(ctx.message.channel.id)]])
                 if mapsetid:
-                    await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
-                    await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?",[str(mapsetid[0][0]),]])
+                    await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ? AND channelid = ?",[str(mapsetid[0][0]), str(ctx.message.channel.id)]])
+                    await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ? AND channelid = ?",[str(mapsetid[0][0]), str(ctx.message.channel.id)]])
                     await ctx.send("untracked")
                     await asyncio.sleep(1)
 

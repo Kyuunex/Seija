@@ -3,34 +3,6 @@ import asyncio
 import pycountry
 
 
-async def mapsetold(beatmapobject):
-    if beatmapobject:
-        mapsetembed = discord.Embed(
-            title=str(beatmapobject['title']),
-            url="https://osu.ppy.sh/beatmapsets/%s" % (
-                str(beatmapobject['beatmapset_id'])),
-            description=str(beatmapobject['artist']),
-            color=0xbd3661
-        )
-        mapsetembed.set_author(
-            name=str(beatmapobject['creator']),
-            url="https://osu.ppy.sh/users/%s" % (
-                str(beatmapobject['creator_id'])),
-            icon_url="https://a.ppy.sh/%s" % (str(beatmapobject['creator_id']))
-        )
-        mapsetembed.set_thumbnail(
-            url="https://b.ppy.sh/thumb/%sl.jpg" % (
-                str(beatmapobject['beatmapset_id']))
-        )
-        mapsetembed.set_footer(
-            text=str(beatmapobject['source']),
-            icon_url='https://raw.githubusercontent.com/ppy/osu-resources/51f2b9b37f38cd349a3dd728a78f8fffcb3a54f5/osu.Game.Resources/Textures/Menu/logo.png'
-        )
-        return mapsetembed
-    else:
-        return None
-
-
 async def mapset(beatmapsetobject, color = 0xbd3661):
     if beatmapsetobject:
         beatmapobject = beatmapsetobject[0]

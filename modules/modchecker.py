@@ -98,7 +98,7 @@ async def main(client):
             beatmapset_discussions = await osuwebapipreview.discussion(mapsetid)
 
             if beatmapset_discussions:
-                discussions = check_status(channel, mapsetid, beatmapset_discussions)
+                discussions = await check_status(channel, mapsetid, beatmapset_discussions)
                 if discussions:
                     for discussion in discussions:
                         try:

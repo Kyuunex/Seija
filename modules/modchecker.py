@@ -116,7 +116,7 @@ async def main(client):
                                                     ]
                                                 ]
                                             )
-                                            if (not subpostobject['system']) and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
+                                            if (not subpostobject['system']) and (not subpostobject["message"] == "r") and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
                                                 modtopost = await modpost(subpostobject, beatmapset_discussions, discussion, tracking_mode)
                                                 if modtopost:
                                                     try:

@@ -11,7 +11,7 @@ This bot is built using discord.py rewrite library and uses sqlite3 database.
 1. Unpack files
 2. Install git.
 3. Install `python 3.6.7` or newer
-4. Install discord.py rewrite library using this command `python -m pip install -U discord.py[voice]`. `python3` for linux.
+4. Install `discord.py rewrite library` using this command `python -m pip install -U discord.py[voice]` for Windows and `python3 -m pip install -U discord.py[voice]` for Linux.
 5. `pip install upsidedown feedparser pycountry Pillow`. (`pip3` on linux)
 6. Before using, you need to create a folder called `data` and create `token.txt` and `osuapikey.txt` in it. Then put your bot token and osu api key in the files. 
 7. If you have an access to `maindb.sqlite3` file which is a database backup, put it in `data` folder before running the bot. Make sure you add your discord id in `admins` table though with permissions of `1`. There can only be one user with that perms, so, remove any other id with permissions of `1`. You can use [this](https://sqlitebrowser.org/) to manually edit sqlite3 database files.

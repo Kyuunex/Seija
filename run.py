@@ -43,12 +43,12 @@ async def on_ready():
         await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), "1"]])
 
 
-@client.command(name="adminlist", brief="Show bot admin list.", description="", pass_context=True)
+@client.command(name="adminlist", brief="Show bot admin list", description="", pass_context=True)
 async def adminlist(ctx):
     await ctx.send(embed=await permissions.adminlist())
 
 
-@client.command(name="makeadmin", brief="Add a user to bot admin list.", description="", pass_context=True)
+@client.command(name="makeadmin", brief="Add a user to bot admin list", description="", pass_context=True)
 async def makeadmin(ctx, discordid: str, perms = str("0")):
     appinfo = await client.application_info()
     if await permissions.checkowner(ctx.message.author.id) or await permissions.checkowner(str(appinfo.owner.id)):
@@ -58,7 +58,7 @@ async def makeadmin(ctx, discordid: str, perms = str("0")):
         await ctx.send(embed=await permissions.ownererror())
 
 
-@client.command(name="restart", brief="Restart the bot.", description="", pass_context=True)
+@client.command(name="restart", brief="Restart the bot", description="", pass_context=True)
 async def restart(ctx):
     if await permissions.check(ctx.message.author.id):
         await ctx.send("Restarting")
@@ -67,7 +67,7 @@ async def restart(ctx):
         await ctx.send(embed=await permissions.error())
 
 
-@client.command(name="gitpull", brief="Update the bot.", description="Grabs the latest version from GitHub.", pass_context=True)
+@client.command(name="gitpull", brief="Update the bot", description="Grabs the latest version from GitHub.", pass_context=True)
 async def gitpull(ctx):
     if await permissions.check(ctx.message.author.id):
         await ctx.send("Fetching the latest version from the repository and updating from version %s" % (appversion))
@@ -78,7 +78,7 @@ async def gitpull(ctx):
         await ctx.send(embed=await permissions.error())
 
 
-@client.command(name="echo", brief="Echo a astring", description="", pass_context=True)
+@client.command(name="echo", brief="Echo a string", description="", pass_context=True)
 async def echo(ctx, *, string):
     if await permissions.check(ctx.message.author.id):
         await ctx.message.delete()
@@ -87,7 +87,7 @@ async def echo(ctx, *, string):
         await ctx.send(embed=await permissions.error())
 
 
-@client.command(name="dbdump", brief="Perform a database dump.", description="", pass_context=True)
+@client.command(name="dbdump", brief="Perform a database dump", description="", pass_context=True)
 async def dbdump(ctx):
     if await permissions.check(ctx.message.author.id):
         if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["dbdumpchannelid", str(ctx.guild.id)]]))[0][0]):
@@ -96,7 +96,7 @@ async def dbdump(ctx):
         await ctx.send(embed=await permissions.error())
 
 
-@client.command(name="sql", brief="Executre an SQL query.", description="", pass_context=True)
+@client.command(name="sql", brief="Executre an SQL query", description="", pass_context=True)
 async def sql(ctx, *, query):
     if await permissions.checkowner(ctx.message.author.id):
         if len(query) > 0:
@@ -106,7 +106,7 @@ async def sql(ctx, *, query):
         await ctx.send(embed=await permissions.ownererror())
 
 
-@client.command(name="verify", brief="Manually verify a user.", description="", pass_context=True)
+@client.command(name="verify", brief="Manually verify a user", description="", pass_context=True)
 async def verify(ctx, osuid: str, discordid: int, preverify: str = None):
     if await permissions.check(ctx.message.author.id):
         await users.mverify(ctx, osuid, discordid, preverify)
@@ -114,7 +114,7 @@ async def verify(ctx, osuid: str, discordid: int, preverify: str = None):
         await ctx.send(embed=await permissions.error())
 
 
-@client.command(name="userdb", brief="Guild member and Database related commands.", description="", pass_context=True)
+@client.command(name="userdb", brief="Guild member and Database related commands", description="", pass_context=True)
 async def userdb(ctx, command: str = None, mention: str = None):
     if await permissions.checkowner(ctx.message.author.id):
         #await users.userdb(ctx, command, mention)
@@ -124,7 +124,7 @@ async def userdb(ctx, command: str = None, mention: str = None):
         await ctx.send(embed=await permissions.ownererror())
 
 
-@client.command(name="mapset", brief="Show mapset info.", description="", pass_context=True)
+@client.command(name="mapset", brief="Show mapset info", description="", pass_context=True)
 async def mapset(ctx, mapsetid: str, text: str = None):
     if await permissions.check(ctx.message.author.id):
         embed = await osuembed.mapset(await osuapi.get_beatmaps(mapsetid))
@@ -137,7 +137,7 @@ async def mapset(ctx, mapsetid: str, text: str = None):
         await ctx.send(embed=await permissions.error())
 
 
-@client.command(name="user", brief="Show osu user info.", description="", pass_context=True)
+@client.command(name="user", brief="Show osu user info", description="", pass_context=True)
 async def user(ctx, *, username):
     embed = await osuembed.osuprofile(await osuapi.get_user(username))
     if embed:
@@ -147,12 +147,12 @@ async def user(ctx, *, username):
         await ctx.send(content='`No user found with that username`')
 
 
-@client.command(name="help", brief="The pretty help command.", description="", pass_context=True)
+@client.command(name="help", brief="The pretty help command", description="", pass_context=True)
 async def help(ctx, subhelp: str = None):  # TODO: rewrite help
     await docs.main(ctx, subhelp)
 
 
-@client.command(name="forcetrack", brief="Force Track a mapset in the current channel.", description="", pass_context=True)
+@client.command(name="forcetrack", brief="Force Track a mapset in the current channel", description="", pass_context=True)
 async def forcetrack(ctx, mapsetid: str):
     if await permissions.check(ctx.message.author.id):
         if await modchecker.track(mapsetid, ctx.message.channel.id):
@@ -163,7 +163,7 @@ async def forcetrack(ctx, mapsetid: str):
         await ctx.send(embed=await permissions.error())
 
 
-@client.command(name="forceuntrack", brief="Force untrack a mapset in the current channel.", description="", pass_context=True)
+@client.command(name="forceuntrack", brief="Force untrack a mapset in the current channel", description="", pass_context=True)
 async def forceuntrack(ctx, mapsetid: str, untrackall = False):
     if await permissions.check(ctx.message.author.id):
         if await modchecker.untrack(mapsetid, ctx.message.channel.id, bool(untrackall)):
@@ -174,7 +174,7 @@ async def forceuntrack(ctx, mapsetid: str, untrackall = False):
         await ctx.send(embed=await permissions.error())
 
 
-@client.command(name="veto", brief="Track a mapset in the current channel in veto mode.", description="", pass_context=True)
+@client.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="", pass_context=True)
 async def veto(ctx, mapsetid: int, mapsethostdiscordid: int = None):
     if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["vetochannelid", str(ctx.guild.id)]]))[0][0]):
         if await modchecker.track(mapsetid, ctx.message.channel.id, "1"):
@@ -185,7 +185,7 @@ async def veto(ctx, mapsetid: int, mapsethostdiscordid: int = None):
         await ctx.send(embed=await permissions.error())
 
 
-@client.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode.", description="", pass_context=True)
+@client.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode", description="", pass_context=True)
 async def unveto(ctx, mapsetid: int):
     if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["vetochannelid", str(ctx.guild.id)]]))[0][0]):   
         if await modchecker.untrack(mapsetid, ctx.message.channel.id, False):
@@ -197,7 +197,7 @@ async def unveto(ctx, mapsetid: int):
         await ctx.send(embed=await permissions.error())
 
 
-@client.command(name="sublist", brief="List all tracked mapsets everywhere.", description="", pass_context=True)
+@client.command(name="sublist", brief="List all tracked mapsets everywhere", description="", pass_context=True)
 async def sublist(ctx):
     if await permissions.check(ctx.message.author.id):
         for oneentry in await dbhandler.query("SELECT * FROM modtracking"):
@@ -205,6 +205,15 @@ async def sublist(ctx):
             await ctx.send(content="mapsetid %s | channel <#%s> | tracking_mode %s" % (oneentry), embed=embed)
     else:
         await ctx.send(embed=await permissions.error())
+        
+        
+@client.command(name="chanlist", brief="List all mapset channel", description="", pass_context=True)
+async def chanlist(ctx):
+    if await permissions.checkowner(ctx.message.author.id):
+        for oneentry in await dbhandler.query("SELECT * FROM mapchannels"):
+            await ctx.send(content="channelid <#%s> | roleid %s | discordid <@%s> | mapsetid %s | guildid %s | " % (oneentry))
+    else:
+        await ctx.send(embed=await permissions.ownererror())
 
 
 @client.command(name="af", brief="", description="", pass_context=True)
@@ -232,7 +241,7 @@ async def af(ctx, action):
         await ctx.send(embed=await permissions.ownererror())
 
 
-@client.command(name="request", brief="Request ether a queue or mod channel.", description="", pass_context=True)
+@client.command(name="request", brief="Request ether a queue or mod channel", description="", pass_context=True)
 async def requestchannel(ctx, requesttype: str = "help", arg1: str = None, arg2: str = None):  # TODO: Add request
     if requesttype == "queue":
         await queuechannel.make_queue_channel(client, ctx, arg1)
@@ -240,7 +249,7 @@ async def requestchannel(ctx, requesttype: str = "help", arg1: str = None, arg2:
         await mapchannel.make_mapset_channel(client, ctx, arg1, arg2)
 
 
-@client.command(name="nuke", brief="Nuke a requested channel.", description="", pass_context=True)
+@client.command(name="nuke", brief="Nuke a requested channel", description="", pass_context=True)
 async def nuke(ctx):
     if await permissions.check(ctx.message.author.id):
         await mapchannel.nuke_mapset_channel(client, ctx)
@@ -248,32 +257,32 @@ async def nuke(ctx):
         await ctx.send(embed=await permissions.error())
 
 
-@client.command(name="open", brief="Open the queue.", description="", pass_context=True)
+@client.command(name="open", brief="Open the queue", description="", pass_context=True)
 async def openq(ctx, title = None, desc = ""):
     await queuechannel.queuesettings(client, ctx, "open", title, desc)
 
 
-@client.command(name="close", brief="Close the queue.", description="", pass_context=True)
+@client.command(name="close", brief="Close the queue", description="", pass_context=True)
 async def closeq(ctx, title = None, desc = ""):
     await queuechannel.queuesettings(client, ctx, "close", title, desc)
 
 
-@client.command(name="hide", brief="Hide the queue.", description="", pass_context=True)
+@client.command(name="hide", brief="Hide the queue", description="", pass_context=True)
 async def hideq(ctx):
     await queuechannel.queuesettings(client, ctx, "hide")
 
 
-@client.command(name="add", brief="Add a user in the current mapset channel.", description="", pass_context=True)
+@client.command(name="add", brief="Add a user in the current mapset channel", description="", pass_context=True)
 async def addm(ctx, discordid: int):
     await mapchannel.mapchannelsettings(client, ctx, "add", discordid)
 
 
-@client.command(name="remove", brief="Remove a user from the current mapset channel.", description="", pass_context=True)
+@client.command(name="remove", brief="Remove a user from the current mapset channel", description="", pass_context=True)
 async def removem(ctx, discordid: int):
     await mapchannel.mapchannelsettings(client, ctx, "remove", discordid)
 
 
-@client.command(name="abandon", brief="Abandon the mapset and untrack.", description="", pass_context=True)
+@client.command(name="abandon", brief="Abandon the mapset and untrack", description="", pass_context=True)
 async def abandon(ctx):
     await mapchannel.abandon(client, ctx)
 

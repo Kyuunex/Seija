@@ -68,7 +68,8 @@ async def make_mapset_channel(client, ctx, mapsetid, mapsetname):
             else:
                 await ctx.send("You are not using this command correctly")
         except Exception as e:
-            await ctx.send(e)
+            print(e)
+            await ctx.send("This did not work. You probably specified something incorrectly. Look at the instructions carefully.")
     else:
         await ctx.send("Not enabled in this server yet.")
 

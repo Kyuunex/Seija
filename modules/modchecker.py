@@ -91,48 +91,51 @@ async def main(client):
         await asyncio.sleep(120)
         for oneentry in await dbhandler.query("SELECT * FROM modtracking"):
             channel = client.get_channel(int(oneentry[1]))
-            mapsetid = str(oneentry[0])
-            tracking_mode = str(oneentry[2])
-            print(time.strftime('%X %x %Z')+' | '+oneentry[0])
+            if channel:
+                mapsetid = str(oneentry[0])
+                tracking_mode = str(oneentry[2])
+                print(time.strftime('%X %x %Z')+' | '+oneentry[0])
 
-            beatmapset_discussions = await osuwebapipreview.discussion(mapsetid)
+                beatmapset_discussions = await osuwebapipreview.discussion(mapsetid)
 
-            if beatmapset_discussions:
-                discussions = await check_status(channel, mapsetid, beatmapset_discussions)
-                if discussions:
-                    for discussion in discussions:
-                        try:
-                            if discussion:
-                                for subpostobject in discussion['posts']:
-                                    if subpostobject:
-                                        if not await dbhandler.query(["SELECT postid FROM modposts WHERE postid = ? AND channelid = ?", [str(subpostobject['id']), str(channel.id)]]):
-                                            await dbhandler.query(
-                                                [
-                                                    "INSERT INTO modposts VALUES (?,?,?)", 
+                if beatmapset_discussions:
+                    discussions = await check_status(channel, mapsetid, beatmapset_discussions)
+                    if discussions:
+                        for discussion in discussions:
+                            try:
+                                if discussion:
+                                    for subpostobject in discussion['posts']:
+                                        if subpostobject:
+                                            if not await dbhandler.query(["SELECT postid FROM modposts WHERE postid = ? AND channelid = ?", [str(subpostobject['id']), str(channel.id)]]):
+                                                await dbhandler.query(
                                                     [
-                                                        str(subpostobject["id"]), 
-                                                        str(mapsetid), 
-                                                        str(channel.id)
+                                                        "INSERT INTO modposts VALUES (?,?,?)", 
+                                                        [
+                                                            str(subpostobject["id"]), 
+                                                            str(mapsetid), 
+                                                            str(channel.id)
+                                                        ]
                                                     ]
-                                                ]
-                                            )
-                                            if (not subpostobject['system']) and (not subpostobject["message"] == "r") and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
-                                                modtopost = await modpost(subpostobject, beatmapset_discussions, discussion, tracking_mode)
-                                                if modtopost:
-                                                    try:
-                                                        await channel.send(embed=modtopost)
-                                                    except Exception as e:
-                                                        print(e)
-                        except Exception as e:
-                            print(time.strftime('%X %x %Z'))
-                            print("while looping through discussions")
-                            print(e)
-                            print(discussion)
+                                                )
+                                                if (not subpostobject['system']) and (not subpostobject["message"] == "r") and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
+                                                    modtopost = await modpost(subpostobject, beatmapset_discussions, discussion, tracking_mode)
+                                                    if modtopost:
+                                                        try:
+                                                            await channel.send(embed=modtopost)
+                                                        except Exception as e:
+                                                            print(e)
+                            except Exception as e:
+                                print(time.strftime('%X %x %Z'))
+                                print("while looping through discussions")
+                                print(e)
+                                print(discussion)
+                    else:
+                        print("No actual discussions found at %s or mapset untracked automatically" % (mapsetid))
                 else:
-                    print("No actual discussions found at %s or mapset untracked automatically" % (mapsetid))
+                    print("%s | modchecker connection issues" % (time.strftime('%X %x %Z')))
+                    await asyncio.sleep(300)
             else:
-                print("%s | modchecker connection issues" % (time.strftime('%X %x %Z')))
-                await asyncio.sleep(300)
+                print("someone manually removed the channel with id %s and mapset id %s" % (oneentry[1], oneentry[0]))
             await asyncio.sleep(120)
         await asyncio.sleep(1800)
     except Exception as e:

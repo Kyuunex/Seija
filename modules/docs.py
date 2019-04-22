@@ -39,7 +39,7 @@ async def help():
     embed.add_field(name="'help mapchannelmanagement", value="To bring mapset channel management commands.", inline=True)
     embed.add_field(name="'help queuemanagement", value="To bring up queue channel management commands.", inline=True)
     embed.add_field(name="'help admin", value="Commands for admins.", inline=True)
-    embed.add_field(name="'help veto", value="Commands for tracking in veto mode.", inline=True)
+    #embed.add_field(name="'help veto", value="Commands for tracking in veto mode.", inline=True)
 
     embed.set_thumbnail(url=help_thumbnail)
     embed.set_author(name=author_text, icon_url=author_icon)
@@ -92,7 +92,7 @@ For queue management commands, type `'help queuemanagement`""" % (qname, qname),
 
 
 async def mapchannel():
-    embed = discord.Embed(title="With this command, you can create a mod notification channel for collaborators.",
+    embed = discord.Embed(title="With this command, you can create a mapset channel for collaborators.",
                               description="""**__Mapset channel creation command:__**: 
 `'request mapset (mapset id) (song name)` - This is the general command to create a channel.
 `(song name)` is an optional argument that is not required. But it must be written in quotes if supplied.
@@ -102,7 +102,8 @@ If the mapset is not yet uploaded, `(mapset id)` can be set to `0` but in that c
 `'request mapset 817793` - Example usage with mapset id.
 `'request mapset 0 "Futanari Nari ni"` - Example usage with just song name.
 
-For mapset channel management commands, type `'help mapchannelmanagement`""", color=0xbd3661)
+For mapset channel management commands, type `'help mapchannelmanagement`
+**And __DO NOT__ create a mapset channel for single person sets. Only do it if you have guest difficulties or if this is a collab.**""", color=0xbd3661)
     embed.set_author(name=author_text, icon_url=author_icon)
     embed.set_footer(text=footer_text, icon_url=footer_icon)
     return embed

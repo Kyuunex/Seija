@@ -19,7 +19,7 @@ from modules import aprilfools
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190419"
+appversion = "b20190422"
 
 
 @client.event

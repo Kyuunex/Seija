@@ -19,7 +19,7 @@ from modules import aprilfools
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190422"
+appversion = "b20190425"
 
 
 @client.event
@@ -164,9 +164,9 @@ async def forcetrack(ctx, mapsetid: str):
 
 
 @client.command(name="forceuntrack", brief="Force untrack a mapset in the current channel", description="", pass_context=True)
-async def forceuntrack(ctx, mapsetid: str, untrackall = False):
+async def forceuntrack(ctx, mapsetid: str):
     if await permissions.check(ctx.message.author.id):
-        if await modchecker.untrack(mapsetid, ctx.message.channel.id, bool(untrackall)):
+        if await modchecker.untrack(mapsetid, ctx.message.channel.id):
             await ctx.send("Untracked")
         else:
             await ctx.send("No tracking record found")
@@ -175,8 +175,8 @@ async def forceuntrack(ctx, mapsetid: str, untrackall = False):
 
 
 @client.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="", pass_context=True)
-async def veto(ctx, mapsetid: int, mapsethostdiscordid: int = None):
-    if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["vetochannelid", str(ctx.guild.id)]]))[0][0]):
+async def veto(ctx, mapsetid: int):
+    if await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ? AND value = ?", ["vetochannelid", str(ctx.guild.id), str(ctx.message.channel.id)]]):
         if await modchecker.track(mapsetid, ctx.message.channel.id, "1"):
             await ctx.send("Tracked in veto mode", embed=await osuembed.mapset(await osuapi.get_beatmaps(mapsetid)))
         else:
@@ -187,8 +187,8 @@ async def veto(ctx, mapsetid: int, mapsethostdiscordid: int = None):
 
 @client.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode", description="", pass_context=True)
 async def unveto(ctx, mapsetid: int):
-    if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["vetochannelid", str(ctx.guild.id)]]))[0][0]):   
-        if await modchecker.untrack(mapsetid, ctx.message.channel.id, False):
+    if await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ? AND value = ?", ["vetochannelid", str(ctx.guild.id), str(ctx.message.channel.id)]]):   
+        if await modchecker.untrack(mapsetid, ctx.message.channel.id):
             embed = await osuembed.mapset(await osuapi.get_beatmaps(mapsetid))
             await ctx.send("Untracked this", embed=embed)
         else:

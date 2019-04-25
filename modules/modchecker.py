@@ -15,16 +15,7 @@ async def populatedb(discussions, channelid):
             if onemod:
                 for subpost in onemod["posts"]:
                     if subpost:
-                        allposts.append(
-                            [
-                                "INSERT INTO modposts VALUES (?,?,?)", 
-                                [
-                                    str(subpost["id"]), 
-                                    str(onemod["beatmapset_id"]), 
-                                    str(channelid)
-                                ]
-                            ]
-                        )
+                        allposts.append(["INSERT INTO modposts VALUES (?,?,?)", [str(subpost["id"]), str(onemod["beatmapset_id"]), str(channelid)]])
         except Exception as e:
             print(time.strftime('%X %x %Z'))
             print("in modchecker.populatedb")
@@ -46,21 +37,13 @@ async def track(mapsetid, channelid, tracking_mode = "0"):
         return False
 
 
-async def untrack(mapsetid, channelid, untrackall = False):
-    if untrackall:
-        if await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE mapsetid = ?", [str(mapsetid)]]):
-            await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ?", [str(mapsetid)]])
-            await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ?", [str(mapsetid)]])
-            return True
-        else:
-            return False
+async def untrack(mapsetid, channelid):
+    if await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channelid)]]):
+        await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channelid)]])
+        await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channelid)]])
+        return True
     else:
-        if await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channelid)]]):
-            await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channelid)]])
-            await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channelid)]])
-            return True
-        else:
-            return False
+        return False
 
 
 async def check_status(channel, mapsetid, beatmapset_discussions):
@@ -107,16 +90,7 @@ async def main(client):
                                     for subpostobject in discussion['posts']:
                                         if subpostobject:
                                             if not await dbhandler.query(["SELECT postid FROM modposts WHERE postid = ? AND channelid = ?", [str(subpostobject['id']), str(channel.id)]]):
-                                                await dbhandler.query(
-                                                    [
-                                                        "INSERT INTO modposts VALUES (?,?,?)", 
-                                                        [
-                                                            str(subpostobject["id"]), 
-                                                            str(mapsetid), 
-                                                            str(channel.id)
-                                                        ]
-                                                    ]
-                                                )
+                                                await dbhandler.query(["INSERT INTO modposts VALUES (?,?,?)", [str(subpostobject["id"]), str(mapsetid), str(channel.id)]])
                                                 if (not subpostobject['system']) and (not subpostobject["message"] == "r") and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
                                                     modtopost = await modpost(subpostobject, beatmapset_discussions, discussion, tracking_mode)
                                                     if modtopost:

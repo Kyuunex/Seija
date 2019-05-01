@@ -34,13 +34,11 @@ async def demographics(client, ctx): #TODO" do this
         stats = await statscalc(masterlist)
 
         rank = 0
-        count = 0
         contents = ""
         memberamount = len(masterlist)
 
         for oneentry in stats:
             rank += 1
-            count += 1
             amount = str(oneentry[1])+" Members"
             percentage = str(round(float(int(oneentry[1]) * 100 / memberamount), 2))
             try:
@@ -51,8 +49,7 @@ async def demographics(client, ctx): #TODO" do this
                 countryflag = ":gay_pride_flag:"
                 countryname = oneentry[0]
             contents += "**[%s]** : %s **%s** : %s : %s %% \n" % (rank, countryflag, countryname, amount, percentage)
-            if count == 20:
-                count = 0
+            if len(contents) > 1800:
                 statsembed = discord.Embed(description=contents, color=0xbd3661)
                 statsembed.set_author(name="Server Demographics")
                 await ctx.send(embed=statsembed)

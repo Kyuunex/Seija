@@ -18,8 +18,8 @@ async def send_notice(notice, channel, now):
         await dbhandler.query(["INSERT INTO notices VALUES (?, ?)", [str(now.isoformat()), notice]])
 
 
-async def statscalc(messageadata):
-    results = dict(Counter(messageadata))
+async def statscalc(data):
+    results = dict(Counter(data))
     return reversed(sorted(results.items(), key=operator.itemgetter(1)))
 
 
@@ -34,11 +34,13 @@ async def demographics(client, ctx): #TODO" do this
         stats = await statscalc(masterlist)
 
         rank = 0
-        contents = "Here are how many members are from which country:" + "\n\n"
+        count = 0
+        contents = ""
 
         for oneentry in stats:
-            amount = str(oneentry[1])+" Members"
             rank += 1
+            count += 1
+            amount = str(oneentry[1])+" Members"
             try:
                 countryobject = pycountry.countries.get(alpha_2=oneentry[0])
                 countryname = countryobject.name
@@ -47,13 +49,12 @@ async def demographics(client, ctx): #TODO" do this
                 countryflag = ":gay_pride_flag:"
                 countryname = oneentry[0]
             contents += "**[%s]** : %s %s : %s\n" % (rank, countryflag, countryname, amount)
-            if rank == 40:
-                break
-
-        statsembed = discord.Embed(description=contents, color=0xffffff)
-        statsembed.set_author(name="Server Demographics")
-        statsembed.set_footer(text="Made by Kyuunex")
-    await ctx.send(embed=statsembed)
+            if count == 40:
+                count = 0
+                statsembed = discord.Embed(description=contents, color=0xffffff)
+                statsembed.set_author(name="Server Demographics")
+                await ctx.send(embed=statsembed)
+                contents = 0
 
 
 async def verify(channel, member, role, osulookup, response):

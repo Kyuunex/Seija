@@ -7,12 +7,53 @@ import time
 import datetime
 import asyncio
 import upsidedown
+import pycountry
+from collections import Counter
+import operator
 
 
 async def send_notice(notice, channel, now):
     if not await dbhandler.query(["SELECT notice FROM notices WHERE notice = ?", [notice]]):
         await channel.send(notice)
         await dbhandler.query(["INSERT INTO notices VALUES (?, ?)", [str(now.isoformat()), notice]])
+
+
+async def statscalc(messageadata):
+    results = dict(Counter(messageadata))
+    return reversed(sorted(results.items(), key=operator.itemgetter(1)))
+
+
+async def demographics(client, ctx): #TODO" do this
+    async with ctx.channel.typing():
+        masterlist = []
+        for member in ctx.guild.members:
+            if not member.bot:
+                query = await dbhandler.query(["SELECT country FROM users WHERE discordid = ?", [str(member.id)]])
+                if query: # [5]
+                    masterlist.append(query[0][0])
+        stats = await statscalc(masterlist)
+
+        rank = 0
+        contents = "Here are how many members are from which country:" + "\n\n"
+
+        for oneentry in stats:
+            amount = str(oneentry[1])+" Members"
+            rank += 1
+            try:
+                countryobject = pycountry.countries.get(alpha_2=oneentry[0])
+                countryname = countryobject.name
+                countryflag = ":flag_%s:" % (oneentry[0].lower())
+            except:
+                countryflag = ":gay_pride_flag:"
+                countryname = oneentry[0]
+            contents += "**[%s]** : %s %s : %s\n" % (rank, countryflag, countryname, amount)
+            if rank == 40:
+                break
+
+        statsembed = discord.Embed(description=contents, color=0xffffff)
+        statsembed.set_author(name="Server Demographics")
+        statsembed.set_footer(text="Made by Kyuunex")
+    await ctx.send(embed=statsembed)
 
 
 async def verify(channel, member, role, osulookup, response):
@@ -312,3 +353,5 @@ async def mverify(ctx, osuid, discordid, preverify):
         print(time.strftime('%X %x %Z'))
         print("in verify")
         print(e)
+
+#TODO: add general welcome message with one message template chosen from db

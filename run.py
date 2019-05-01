@@ -36,6 +36,7 @@ async def on_ready():
         await dbhandler.query("CREATE TABLE admins (discordid, permissions)")
         await dbhandler.query("CREATE TABLE modposts (postid, mapsetid, channelid)")
         await dbhandler.query("CREATE TABLE modtracking (mapsetid, channelid, mode)")
+        await dbhandler.query("CREATE TABLE mapsetstatus (mapsetid, channelid, unresolved)")
         await dbhandler.query("CREATE TABLE notices (timestamp, notice)")
         await dbhandler.query("CREATE TABLE queues (channelid, discordid, guildid)")
         await dbhandler.query("CREATE TABLE mapchannels (channelid, roleid, discordid, mapsetid, guildid)")
@@ -237,6 +238,14 @@ async def af(ctx, action):
             await aprilfools.restore_roles(client, ctx)
             await aprilfools.rotate_logo(client, ctx)
             await ctx.send(":ok_hand:")
+    else:
+        await ctx.send(embed=await permissions.ownererror())
+
+
+@client.command(name="demographics", brief="demographics", description="", pass_context=True)
+async def demographics(ctx):
+    if await permissions.checkowner(ctx.message.author.id):
+        await users.demographics(client, ctx)
     else:
         await ctx.send(embed=await permissions.ownererror())
 

@@ -49,7 +49,7 @@ async def untrack(mapsetid, channelid):
 async def check_status(channel, mapsetid, beatmapset_discussions):
     status = beatmapset_discussions["beatmapset"]["status"]
     if (status == "wip") or (status == "qualified") or (status == "pending"):
-        discussions = beatmapset_discussions["beatmapset"]["discussions"]
+        discussions = True
     elif status == "ranked":
         discussions = None
         if await untrack(mapsetid, channel.id):
@@ -69,6 +69,43 @@ async def check_status(channel, mapsetid, beatmapset_discussions):
     return discussions
 
 
+async def timeline_mode_tracking(beatmapset_discussions, channel, mapsetid, tracking_mode):
+    for discussion in beatmapset_discussions["beatmapset"]["discussions"]:
+        try:
+            if discussion:
+                for subpostobject in discussion['posts']:
+                    if subpostobject:
+                        if not await dbhandler.query(["SELECT postid FROM modposts WHERE postid = ? AND channelid = ?", [str(subpostobject['id']), str(channel.id)]]):
+                            await dbhandler.query(["INSERT INTO modposts VALUES (?,?,?)", [str(subpostobject["id"]), str(mapsetid), str(channel.id)]])
+                            if (not subpostobject['system']) and (not subpostobject["message"] == "r") and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
+                                modtopost = await modpost(subpostobject, beatmapset_discussions, discussion, tracking_mode)
+                                if modtopost:
+                                    try:
+                                        await channel.send(embed=modtopost)
+                                    except Exception as e:
+                                        print(e)
+        except Exception as e:
+            print(time.strftime('%X %x %Z'))
+            print("while looping through discussions")
+            print(e)
+            print(discussion)
+
+    
+async def notification_mode_tracking(beatmapset_discussions, channel, mapsetid, tracking_mode): # channel is important
+    return None
+    # cachedstatus = dbhandler.query(["SELECT unresolved FROM mapsetstatus WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channel.id)]])
+    # for discussion in beatmapset_discussions["beatmapset"]["discussions"]:
+    #     try:
+    #         if discussion:
+    #             discussion['resolved'] == False
+                
+    #     except Exception as e:
+    #         print(time.strftime('%X %x %Z'))
+    #         print("while looping through discussions")
+    #         print(e)
+    #         print(discussion)
+
+
 async def main(client):
     try:
         await asyncio.sleep(120)
@@ -82,27 +119,12 @@ async def main(client):
                 beatmapset_discussions = await osuwebapipreview.discussion(mapsetid)
 
                 if beatmapset_discussions:
-                    discussions = await check_status(channel, mapsetid, beatmapset_discussions)
-                    if discussions:
-                        for discussion in discussions:
-                            try:
-                                if discussion:
-                                    for subpostobject in discussion['posts']:
-                                        if subpostobject:
-                                            if not await dbhandler.query(["SELECT postid FROM modposts WHERE postid = ? AND channelid = ?", [str(subpostobject['id']), str(channel.id)]]):
-                                                await dbhandler.query(["INSERT INTO modposts VALUES (?,?,?)", [str(subpostobject["id"]), str(mapsetid), str(channel.id)]])
-                                                if (not subpostobject['system']) and (not subpostobject["message"] == "r") and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
-                                                    modtopost = await modpost(subpostobject, beatmapset_discussions, discussion, tracking_mode)
-                                                    if modtopost:
-                                                        try:
-                                                            await channel.send(embed=modtopost)
-                                                        except Exception as e:
-                                                            print(e)
-                            except Exception as e:
-                                print(time.strftime('%X %x %Z'))
-                                print("while looping through discussions")
-                                print(e)
-                                print(discussion)
+                    status = await check_status(channel, mapsetid, beatmapset_discussions)
+                    if status:
+                        if tracking_mode == "0" or tracking_mode == "1":
+                            await timeline_mode_tracking(beatmapset_discussions, channel, mapsetid, tracking_mode)
+                        elif tracking_mode == "2":
+                            await notification_mode_tracking(beatmapset_discussions, channel, mapsetid, tracking_mode)
                     else:
                         print("No actual discussions found at %s or mapset untracked automatically" % (mapsetid))
                 else:

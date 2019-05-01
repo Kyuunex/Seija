@@ -36,11 +36,13 @@ async def demographics(client, ctx): #TODO" do this
         rank = 0
         count = 0
         contents = ""
+        memberamount = len(masterlist)
 
         for oneentry in stats:
             rank += 1
             count += 1
             amount = str(oneentry[1])+" Members"
+            percentage = str(round(float(int(oneentry[1]) * 100 / memberamount), 2))
             try:
                 countryobject = pycountry.countries.get(alpha_2=oneentry[0])
                 countryname = countryobject.name
@@ -48,17 +50,17 @@ async def demographics(client, ctx): #TODO" do this
             except:
                 countryflag = ":gay_pride_flag:"
                 countryname = oneentry[0]
-            contents += "**[%s]** : %s %s : %s\n" % (rank, countryflag, countryname, amount)
-            if count == 40:
+            contents += "**[%s]** : %s **%s** : %s : %s %% \n" % (rank, countryflag, countryname, amount, percentage)
+            if count == 20:
                 count = 0
-                statsembed = discord.Embed(description=contents, color=0xffffff)
+                statsembed = discord.Embed(description=contents, color=0xbd3661)
                 statsembed.set_author(name="Server Demographics")
                 await ctx.send(embed=statsembed)
                 contents = ""
         
         if contents == "":
             contents = "\n"
-        statsembed = discord.Embed(description=contents, color=0xffffff)
+        statsembed = discord.Embed(description=contents, color=0xbd3661)
         statsembed.set_author(name="Server Demographics")
     await ctx.send(embed=statsembed)
 

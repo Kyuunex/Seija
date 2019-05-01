@@ -54,7 +54,13 @@ async def demographics(client, ctx): #TODO" do this
                 statsembed = discord.Embed(description=contents, color=0xffffff)
                 statsembed.set_author(name="Server Demographics")
                 await ctx.send(embed=statsembed)
-                contents = 0
+                contents = ""
+        
+        if contents == "":
+            contents = "\n"
+        statsembed = discord.Embed(description=contents, color=0xffffff)
+        statsembed.set_author(name="Server Demographics")
+    await ctx.send(embed=statsembed)
 
 
 async def verify(channel, member, role, osulookup, response):

@@ -226,7 +226,7 @@ async def af(ctx, action):
             await aprilfools.apply_channels(client, ctx)
             await asyncio.sleep(10)
             await aprilfools.apply_roles(client, ctx)
-            await aprilfools.rotate_logo(client, ctx)
+            #await aprilfools.rotate_logo(client, ctx)
             try:
                 await ctx.send(file=discord.File("data/imsorry.png"))
             except:
@@ -236,7 +236,7 @@ async def af(ctx, action):
             await aprilfools.restore_channels(client, ctx)
             await asyncio.sleep(10)
             await aprilfools.restore_roles(client, ctx)
-            await aprilfools.rotate_logo(client, ctx)
+            #await aprilfools.rotate_logo(client, ctx)
             await ctx.send(":ok_hand:")
     else:
         await ctx.send(embed=await permissions.ownererror())

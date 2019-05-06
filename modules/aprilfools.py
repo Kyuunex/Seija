@@ -3,7 +3,7 @@ import upsidedown
 import aiohttp
 import io
 import asyncio
-from PIL import Image
+#from PIL import Image
 
 async def apply_channels(client, ctx):
     guild = ctx.guild
@@ -91,25 +91,25 @@ async def restore_guild(client, ctx):
         await dbhandler.query(["DELETE FROM namebackups WHERE id = ?", [str(guild.id)]])
 
 
-async def rotate_logo(client, ctx):
-    guild = ctx.guild
-    oldiconurl = guild.icon_url
-    if oldiconurl:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(oldiconurl) as imageresponse:
-                buffer = (await imageresponse.read())
-                im = Image.open(io.BytesIO(buffer))
-                im = im.rotate(180)
-                im = im.convert('RGBA')
-                newbytes = io.BytesIO()
-                im.save(newbytes, format='PNG')
-                newbytes = newbytes.getvalue()
-        try:
-            await guild.edit(icon=newbytes)
-        except Exception as e:
-            print(e)
-            print("in rotate_logo")
-            await asyncio.sleep(10)
+# async def rotate_logo(client, ctx):
+#     guild = ctx.guild
+#     oldiconurl = guild.icon_url
+#     if oldiconurl:
+#         async with aiohttp.ClientSession() as session:
+#             async with session.get(oldiconurl) as imageresponse:
+#                 buffer = (await imageresponse.read())
+#                 im = Image.open(io.BytesIO(buffer))
+#                 im = im.rotate(180)
+#                 im = im.convert('RGBA')
+#                 newbytes = io.BytesIO()
+#                 im.save(newbytes, format='PNG')
+#                 newbytes = newbytes.getvalue()
+#         try:
+#             await guild.edit(icon=newbytes)
+#         except Exception as e:
+#             print(e)
+#             print("in rotate_logo")
+#             await asyncio.sleep(10)
 
 
 

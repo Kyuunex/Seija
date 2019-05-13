@@ -21,14 +21,14 @@ This bot is built using discord.py rewrite library and uses sqlite3 database.
 
 1. Type following commands in chat. (the first id in each command is the id if the Mapset Management Server.)
 ```
-'sql INSERT INTO config VALUES ('verifychannelid', '460935664712548366', '460952470634496001', '0')
-'sql INSERT INTO config VALUES ('vetochannelid', '460935664712548366', '502705804990742573', '0')
-'sql INSERT INTO config VALUES ('verifyroleid', '460935664712548366', '463790447912026132', '0')
-'sql INSERT INTO config VALUES ('dbdumpchannelid', '460935664712548366', '532397839784083458', '0')
+'sql INSERT INTO config VALUES ('verifychannel_id', '460935664712548366', '460952470634496001', '0')
+'sql INSERT INTO config VALUES ('vetochannel_id', '460935664712548366', '502705804990742573', '0')
+'sql INSERT INTO config VALUES ('verifyrole_id', '460935664712548366', '463790447912026132', '0')
+'sql INSERT INTO config VALUES ('dbdumpchannel_id', '460935664712548366', '532397839784083458', '0')
 'sql INSERT INTO config VALUES ('guildmapsetcategory', '460935664712548366', '460935665165795328', '0')
 'sql INSERT INTO config VALUES ('guildqueuecategory', '460935664712548366', '488831339634753546', '0')
 'sql INSERT INTO config VALUES ('guildarchivecategory', '460935664712548366', '491572368221929472', '0')
 ```
 2. Use `'makeadmin <new admin discord id>` to make users bot admins.
-3. Use `'track <mapsetid> <mapset host discord id>` to track mapsets.
+3. Use `'track <mapset_id> <mapset host discord id>` to track mapsets.
 4. Figure out the rest yourselves. `'help` and `'help admin` commands exist.

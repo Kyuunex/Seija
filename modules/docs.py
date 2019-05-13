@@ -17,7 +17,7 @@ async def main(ctx, subhelp):
         else:
             await ctx.send(embed=await permissions.error())
     elif subhelp == "veto":
-        if await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND value = ?", ["vetochannelid", str(ctx.message.channel.id)]]):
+        if await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND value = ?", ["vetochannel_id", str(ctx.message.channel.id)]]):
             await ctx.send(embed=await veto())
     elif subhelp == "mapchannel":
         await ctx.send(embed=await mapchannel())
@@ -51,8 +51,8 @@ async def admin():
     embed = discord.Embed(title="Seija teaches you how to be a bot master.", description="These commands are intended only for bot admins.", color=0xbd3661)
 
     embed.add_field(name="'adminlist", value="Shows a list of bot admins.", inline=True)
-    embed.add_field(name="'forcetrack <mapsetid>", value="Subscribe to a beatmapset discussions in this channel.", inline=True)
-    embed.add_field(name="'forceuntrack <mapsetid>", value="Unsubscribe from a beatmapset discussions in this channel.", inline=True)
+    embed.add_field(name="'forcetrack <mapset_id>", value="Subscribe to a beatmapset discussions in this channel.", inline=True)
+    embed.add_field(name="'forceuntrack <mapset_id>", value="Unsubscribe from a beatmapset discussions in this channel.", inline=True)
     embed.add_field(name="'sublist", value="Lists all channels and mapsets being tracked.", inline=True)
     embed.add_field(name="'restart", value="Restart the bot.", inline=True)
 
@@ -65,8 +65,8 @@ async def admin():
 async def veto():
     embed = discord.Embed(title="Seija teaches you how to be a bot master.", description="~~BNS PLEZ MUTUAL~~ Here are veto tracking commands.", color=0xbd3661)
 
-    embed.add_field(name="'veto <mapsetid>", value="Track a mapset in this channel in veto mode.", inline=True)
-    embed.add_field(name="'unveto <mapsetid>", value="Untrack a mapset in this channel in veto mode.", inline=True)
+    embed.add_field(name="'veto <mapset_id>", value="Track a mapset in this channel in veto mode.", inline=True)
+    embed.add_field(name="'unveto <mapset_id>", value="Untrack a mapset in this channel in veto mode.", inline=True)
 
     embed.set_thumbnail(url=help_thumbnail)
     embed.set_author(name=author_text, icon_url=author_icon)

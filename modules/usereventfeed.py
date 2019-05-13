@@ -16,13 +16,13 @@ async def comparelists(list2, list1):
     return difference
 
 
-async def compare(result, osuid, table):
-    if not await dbhandler.query(["SELECT osuid FROM %s WHERE osuid = ?" % (table), [osuid]]):
-        await dbhandler.query(["INSERT INTO %s VALUES (?,?)" % (table), [osuid, json.dumps(result)]])
+async def compare(result, osu_id, table):
+    if not await dbhandler.query(["SELECT osu_id FROM %s WHERE osu_id = ?" % (table), [osu_id]]):
+        await dbhandler.query(["INSERT INTO %s VALUES (?,?)" % (table), [osu_id, json.dumps(result)]])
         return None
     else:
-        localdata = json.loads((await dbhandler.query(["SELECT contents FROM %s WHERE osuid = ?" % (table), [osuid]]))[0][0])
-        await dbhandler.query(["UPDATE %s SET contents = ? WHERE osuid = ?" % (table), [json.dumps(result), osuid]])
+        localdata = json.loads((await dbhandler.query(["SELECT contents FROM %s WHERE osu_id = ?" % (table), [osu_id]]))[0][0])
+        await dbhandler.query(["UPDATE %s SET contents = ? WHERE osu_id = ?" % (table), [json.dumps(result), osu_id]])
         if type(result) is None:
             print('usereventfeed connection problems?')
             await asyncio.sleep(120)

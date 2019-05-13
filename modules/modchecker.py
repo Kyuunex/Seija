@@ -7,7 +7,7 @@ from modules import osuembed
 from modules import osuwebapipreview
 
 
-async def populatedb(discussions, channelid):
+async def populatedb(discussions, channel_id):
     modposts = discussions["beatmapset"]["discussions"]
     allposts = []
     for onemod in modposts:
@@ -15,7 +15,7 @@ async def populatedb(discussions, channelid):
             if onemod:
                 for subpost in onemod["posts"]:
                     if subpost:
-                        allposts.append(["INSERT INTO modposts VALUES (?,?,?)", [str(subpost["id"]), str(onemod["beatmapset_id"]), str(channelid)]])
+                        allposts.append(["INSERT INTO modposts VALUES (?,?,?)", [str(subpost["id"]), str(onemod["beatmapset_id"]), str(channel_id)]])
         except Exception as e:
             print(time.strftime('%X %x %Z'))
             print("in modchecker.populatedb")
@@ -24,12 +24,12 @@ async def populatedb(discussions, channelid):
     await dbhandler.massquery(allposts)
 
 
-async def track(mapsetid, channelid, tracking_mode = "0"):
-    if not await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channelid)]]):
-        beatmapset_discussions = await osuwebapipreview.discussion(str(mapsetid))
+async def track(mapset_id, channel_id, tracking_mode = "0"):
+    if not await dbhandler.query(["SELECT mapset_id FROM modtracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]]):
+        beatmapset_discussions = await osuwebapipreview.discussion(str(mapset_id))
         if beatmapset_discussions:
-            await populatedb(beatmapset_discussions, str(channelid))
-            await dbhandler.query(["INSERT INTO modtracking VALUES (?,?,?)", [str(mapsetid), str(channelid), tracking_mode]])
+            await populatedb(beatmapset_discussions, str(channel_id))
+            await dbhandler.query(["INSERT INTO modtracking VALUES (?,?,?)", [str(mapset_id), str(channel_id), tracking_mode]])
             return True
         else:
             return False
@@ -37,46 +37,46 @@ async def track(mapsetid, channelid, tracking_mode = "0"):
         return False
 
 
-async def untrack(mapsetid, channelid):
-    if await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channelid)]]):
-        await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channelid)]])
-        await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channelid)]])
+async def untrack(mapset_id, channel_id):
+    if await dbhandler.query(["SELECT mapset_id FROM modtracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]]):
+        await dbhandler.query(["DELETE FROM modtracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]])
+        await dbhandler.query(["DELETE FROM modposts WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]])
         return True
     else:
         return False
 
 
-async def check_status(channel, mapsetid, beatmapset_discussions):
+async def check_status(channel, mapset_id, beatmapset_discussions):
     status = beatmapset_discussions["beatmapset"]["status"]
     if (status == "wip") or (status == "qualified") or (status == "pending"):
         discussions = True
     elif status == "ranked":
         discussions = None
-        if await untrack(mapsetid, channel.id):
-            await channel.send(content='I detected that this map is ranked now. Since the modding stage is finished, and the map is moved to the ranked section, I will no longer be checking for mods on this mapset.', embed=await osuembed.mapset(await osuapi.get_beatmaps(mapsetid)))
+        if await untrack(mapset_id, channel.id):
+            await channel.send(content='I detected that this map is ranked now. Since the modding stage is finished, and the map is moved to the ranked section, I will no longer be checking for mods on this mapset.', embed=await osuembed.mapset(await osuapi.get_beatmaps(mapset_id)))
     elif status == "graveyard":
         discussions = None
-        if await untrack(mapsetid, channel.id):
-            await channel.send(content='I detected that this map is graveyarded now and so, I am untracking it. Ping a manager when this set is back in pending section. Please understand that we don\'t wanna track dead sets.', embed=await osuembed.mapset(await osuapi.get_beatmaps(mapsetid)))
+        if await untrack(mapset_id, channel.id):
+            await channel.send(content='I detected that this map is graveyarded now and so, I am untracking it. Ping a manager when this set is back in pending section. Please understand that we don\'t wanna track dead sets.', embed=await osuembed.mapset(await osuapi.get_beatmaps(mapset_id)))
     elif status == "deleted":
         discussions = None
-        if await untrack(mapsetid, channel.id):
-            await channel.send(content='I detected that the mapset with the id %s has been deleted, so I am untracking.' % (str(mapsetid)))
+        if await untrack(mapset_id, channel.id):
+            await channel.send(content='I detected that the mapset with the id %s has been deleted, so I am untracking.' % (str(mapset_id)))
     else:
         discussions = None
         await channel.send(content='<@155976140073205761> something went wrong, please check the console output.')
-        print("%s / %s" % (status, mapsetid))
+        print("%s / %s" % (status, mapset_id))
     return discussions
 
 
-async def timeline_mode_tracking(beatmapset_discussions, channel, mapsetid, tracking_mode):
+async def timeline_mode_tracking(beatmapset_discussions, channel, mapset_id, tracking_mode):
     for discussion in beatmapset_discussions["beatmapset"]["discussions"]:
         try:
             if discussion:
                 for subpostobject in discussion['posts']:
                     if subpostobject:
-                        if not await dbhandler.query(["SELECT postid FROM modposts WHERE postid = ? AND channelid = ?", [str(subpostobject['id']), str(channel.id)]]):
-                            await dbhandler.query(["INSERT INTO modposts VALUES (?,?,?)", [str(subpostobject["id"]), str(mapsetid), str(channel.id)]])
+                        if not await dbhandler.query(["SELECT post_id FROM modposts WHERE post_id = ? AND channel_id = ?", [str(subpostobject['id']), str(channel.id)]]):
+                            await dbhandler.query(["INSERT INTO modposts VALUES (?,?,?)", [str(subpostobject["id"]), str(mapset_id), str(channel.id)]])
                             if (not subpostobject['system']) and (not subpostobject["message"] == "r") and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
                                 modtopost = await modpost(subpostobject, beatmapset_discussions, discussion, tracking_mode)
                                 if modtopost:
@@ -91,9 +91,9 @@ async def timeline_mode_tracking(beatmapset_discussions, channel, mapsetid, trac
             print(discussion)
 
     
-async def notification_mode_tracking(beatmapset_discussions, channel, mapsetid, tracking_mode): # channel is important
+async def notification_mode_tracking(beatmapset_discussions, channel, mapset_id, tracking_mode): # channel is important
     return None
-    # cachedstatus = dbhandler.query(["SELECT unresolved FROM mapsetstatus WHERE mapsetid = ? AND channelid = ?", [str(mapsetid), str(channel.id)]])
+    # cachedstatus = dbhandler.query(["SELECT unresolved FROM mapsetstatus WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel.id)]])
     # for discussion in beatmapset_discussions["beatmapset"]["discussions"]:
     #     try:
     #         if discussion:
@@ -112,21 +112,21 @@ async def main(client):
         for oneentry in await dbhandler.query("SELECT * FROM modtracking"):
             channel = client.get_channel(int(oneentry[1]))
             if channel:
-                mapsetid = str(oneentry[0])
+                mapset_id = str(oneentry[0])
                 tracking_mode = str(oneentry[2])
                 print(time.strftime('%X %x %Z')+' | '+oneentry[0])
 
-                beatmapset_discussions = await osuwebapipreview.discussion(mapsetid)
+                beatmapset_discussions = await osuwebapipreview.discussion(mapset_id)
 
                 if beatmapset_discussions:
-                    status = await check_status(channel, mapsetid, beatmapset_discussions)
+                    status = await check_status(channel, mapset_id, beatmapset_discussions)
                     if status:
                         if tracking_mode == "0" or tracking_mode == "1":
-                            await timeline_mode_tracking(beatmapset_discussions, channel, mapsetid, tracking_mode)
+                            await timeline_mode_tracking(beatmapset_discussions, channel, mapset_id, tracking_mode)
                         elif tracking_mode == "2":
-                            await notification_mode_tracking(beatmapset_discussions, channel, mapsetid, tracking_mode)
+                            await notification_mode_tracking(beatmapset_discussions, channel, mapset_id, tracking_mode)
                     else:
-                        print("No actual discussions found at %s or mapset untracked automatically" % (mapsetid))
+                        print("No actual discussions found at %s or mapset untracked automatically" % (mapset_id))
                 else:
                     print("%s | modchecker connection issues" % (time.strftime('%X %x %Z')))
                     await asyncio.sleep(300)

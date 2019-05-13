@@ -7,19 +7,19 @@ import random
 import asyncio
 
 
-async def make_mapset_channel(client, ctx, mapsetid, mapsetname):
+async def make_mapset_channel(client, ctx, mapset_id, mapsetname):
     guildmapsetcategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildmapsetcategory", str(ctx.guild.id)]])
     if guildmapsetcategory:
         try:
             await ctx.send("sure, gimme a moment")
-            if int(mapsetid) == 0 or mapsetid == None:
+            if int(mapset_id) == 0 or mapset_id == None:
                 mapset = None
-                mapsetid = "0"
+                mapset_id = "0"
                 #desc = ""
             else:
-                mapset = await osuapi.get_beatmap(mapsetid)
-                mapsetid = str(mapsetid)
-                #desc = "https://osu.ppy.sh/beatmapsets/%s" % (mapsetid)
+                mapset = await osuapi.get_beatmap(mapset_id)
+                mapset_id = str(mapset_id)
+                #desc = "https://osu.ppy.sh/beatmapsets/%s" % (mapset_id)
 
             if mapsetname:
                 discordfriendlychannelname = mapsetname.replace(
@@ -64,7 +64,7 @@ async def make_mapset_channel(client, ctx, mapsetid, mapsetname):
                 channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category)
                 await ctx.message.author.add_roles(mapsetrole)
                 await channel.send("%s done!" % (ctx.message.author.mention), embed=await docs.mapchannelmanagement())
-                await dbhandler.query(["INSERT INTO mapchannels VALUES (?, ?, ?, ?, ?)", [str(channel.id), str(mapsetrole.id), str(ctx.message.author.id), str(mapsetid), str(ctx.guild.id)]])
+                await dbhandler.query(["INSERT INTO mapchannels VALUES (?, ?, ?, ?, ?)", [str(channel.id), str(mapsetrole.id), str(ctx.message.author.id), str(mapset_id), str(ctx.guild.id)]])
             else:
                 await ctx.send("You are not using this command correctly")
         except Exception as e:
@@ -74,12 +74,12 @@ async def make_mapset_channel(client, ctx, mapsetid, mapsetname):
         await ctx.send("Not enabled in this server yet.")
 
 
-async def mapchannelsettings(client, ctx, action, discordid):
-    roleidlist = await dbhandler.query(["SELECT roleid FROM mapchannels WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])
-    if roleidlist:
+async def mapchannelsettings(client, ctx, action, user_id):
+    role_idlist = await dbhandler.query(["SELECT role_id FROM mapchannels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])
+    if role_idlist:
         try:
-            member = ctx.guild.get_member(int(discordid))
-            role = discord.utils.get(ctx.guild.roles, id=int(roleidlist[0][0]))
+            member = ctx.guild.get_member(int(user_id))
+            role = discord.utils.get(ctx.guild.roles, id=int(role_idlist[0][0]))
             if action == "add":
                 await member.add_roles(role, reason="added to mapset")
                 await ctx.send("added %s in this channel" % (member.mention))
@@ -93,21 +93,21 @@ async def mapchannelsettings(client, ctx, action, discordid):
 
 
 async def nuke_mapset_channel(client, ctx):
-    roleidlist = await dbhandler.query(["SELECT roleid FROM mapchannels WHERE channelid = ?", [str(ctx.message.channel.id)]])
-    if roleidlist:
+    role_idlist = await dbhandler.query(["SELECT role_id FROM mapchannels WHERE channel_id = ?", [str(ctx.message.channel.id)]])
+    if role_idlist:
         try:
             await ctx.send("nuking channel and role in 2 seconds! untracking also")
             await asyncio.sleep(2)
-            role = discord.utils.get(ctx.guild.roles, id=int(roleidlist[0][0]))
+            role = discord.utils.get(ctx.guild.roles, id=int(role_idlist[0][0]))
 
-            mapsetid = await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE channelid = ?", [str(ctx.message.channel.id)]])
-            if mapsetid:
-                await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ? AND channelid = ?",[str(mapsetid[0][0]), str(ctx.message.channel.id)]])
-                await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ? AND channelid = ?",[str(mapsetid[0][0]), str(ctx.message.channel.id)]])
+            mapset_id = await dbhandler.query(["SELECT mapset_id FROM modtracking WHERE channel_id = ?", [str(ctx.message.channel.id)]])
+            if mapset_id:
+                await dbhandler.query(["DELETE FROM modtracking WHERE mapset_id = ? AND channel_id = ?",[str(mapset_id[0][0]), str(ctx.message.channel.id)]])
+                await dbhandler.query(["DELETE FROM modposts WHERE mapset_id = ? AND channel_id = ?",[str(mapset_id[0][0]), str(ctx.message.channel.id)]])
                 await ctx.send("untracked")
                 await asyncio.sleep(2)
 
-            await dbhandler.query(["DELETE FROM mapchannels WHERE channelid = ?", [str(ctx.message.channel.id)]])
+            await dbhandler.query(["DELETE FROM mapchannels WHERE channel_id = ?", [str(ctx.message.channel.id)]])
             await role.delete(reason="Manually nuked the role due to abuse")
             await ctx.message.channel.delete(reason="Manually nuked the channel due to abuse")
         except Exception as e:
@@ -119,12 +119,12 @@ async def nuke_mapset_channel(client, ctx):
 async def abandon(client, ctx):
     guildarchivecategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildarchivecategory", str(ctx.guild.id)]])
     if guildarchivecategory:
-        if (await dbhandler.query(["SELECT * FROM mapchannels WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await dbhandler.query(["SELECT * FROM queues WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
+        if (await dbhandler.query(["SELECT * FROM mapchannels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await dbhandler.query(["SELECT * FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
             try:
-                mapsetid = await dbhandler.query(["SELECT mapsetid FROM modtracking WHERE channelid = ?", [str(ctx.message.channel.id)]])
-                if mapsetid:
-                    await dbhandler.query(["DELETE FROM modtracking WHERE mapsetid = ? AND channelid = ?",[str(mapsetid[0][0]), str(ctx.message.channel.id)]])
-                    await dbhandler.query(["DELETE FROM modposts WHERE mapsetid = ? AND channelid = ?",[str(mapsetid[0][0]), str(ctx.message.channel.id)]])
+                mapset_id = await dbhandler.query(["SELECT mapset_id FROM modtracking WHERE channel_id = ?", [str(ctx.message.channel.id)]])
+                if mapset_id:
+                    await dbhandler.query(["DELETE FROM modtracking WHERE mapset_id = ? AND channel_id = ?",[str(mapset_id[0][0]), str(ctx.message.channel.id)]])
+                    await dbhandler.query(["DELETE FROM modposts WHERE mapset_id = ? AND channel_id = ?",[str(mapset_id[0][0]), str(ctx.message.channel.id)]])
                     await ctx.send("untracked")
                     await asyncio.sleep(1)
 

@@ -7,7 +7,7 @@ import asyncio
 async def make_queue_channel(client, ctx, queuetype):
     guildqueuecategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildqueuecategory", str(ctx.guild.id)]])
     if guildqueuecategory:
-        if not await dbhandler.query(["SELECT discordid FROM queues WHERE discordid = ? AND guildid = ?", [str(ctx.message.author.id), str(ctx.guild.id)]]):
+        if not await dbhandler.query(["SELECT user_id FROM queues WHERE user_id = ? AND guild_id = ?", [str(ctx.message.author.id), str(ctx.guild.id)]]):
             try:
                 await ctx.send("sure, gimme a moment")
                 if not queuetype:
@@ -49,7 +49,7 @@ async def make_queue_channel(client, ctx, queuetype):
 
 
 async def queuesettings(client, ctx, action, embed_title = None, embed_desc = None):
-    if (await dbhandler.query(["SELECT discordid FROM queues WHERE discordid = ? AND channelid = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
+    if (await dbhandler.query(["SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
         try:
             if embed_title:
                 embed = discord.Embed(title=embed_title, color=0xbd3661, description=embed_desc)

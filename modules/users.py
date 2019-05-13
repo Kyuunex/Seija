@@ -142,7 +142,7 @@ async def mapping_username_loop(client):
     try:
         await asyncio.sleep(3600)
         print(time.strftime('%X %x %Z')+' | user event tracker')
-        memberfeedchannellist = await dbhandler.query(["SELECT * FROM config WHERE setting = ?", ["usereventtracker"]])
+        memberfeedchannellist = await dbhandler.query(["SELECT * FROM config WHERE setting = ?", ["guild_user_event_tracker"]])
         if memberfeedchannellist:
             now = datetime.datetime.now()
             for onechannel in memberfeedchannellist:
@@ -156,7 +156,7 @@ async def mapping_username_loop(client):
                             osuprofile = await osuapi.get_user(query[0][1])
                             if osuprofile:
                                 await one_guild_member_sync(auditchannel, query, now, member, osuprofile)
-                                await usereventfeed.usereventtrack(client, feedchannel, osuprofile, "userevents")
+                                await usereventfeed.usereventtrack(client, feedchannel, osuprofile, "user_events")
                             else:
                                 await send_notice("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])), auditchannel, now)
                         else:
@@ -189,7 +189,7 @@ async def one_guild_member_sync(auditchannel, query, now, member, osuprofile):
             await auditchannel.send("%s | `%s` | `%s` | nickname updated, old nickname %s" % (member.mention, osuusername, str(query[0][1]), str(query[0][2])))
     await dbhandler.query(
         [
-            "UPDATE users SET country = ?, pp = ?, osu_join_date = ?, username = ? WHERE user_id = ?;",
+            "UPDATE users SET country = ?, pp = ?, osu_join_date = ?, osu_username = ? WHERE user_id = ?;",
             [
                 str(osuprofile['country']),
                 str(osuprofile['pp_raw']),
@@ -203,7 +203,7 @@ async def one_guild_member_sync(auditchannel, query, now, member, osuprofile):
 
 async def on_member_join(client, member):
     try:
-        guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannel_id", str(member.guild.id)]])
+        guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_channel", str(member.guild.id)]])
         if guildverifychannel:
             join_channel_object = client.get_channel(int((guildverifychannel)[0][0]))
             if not member.bot:
@@ -211,7 +211,7 @@ async def on_member_join(client, member):
                 if lookupuser:
                     print("user %s joined with osu_id %s" %
                         (str(member.id), str(lookupuser[0][0])))
-                    role = discord.utils.get(member.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifyrole_id", str(member.guild.id)]]))[0][0]))
+                    role = discord.utils.get(member.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(member.guild.id)]]))[0][0]))
                     osulookup = "u/%s" % (lookupuser[0][0])
                     verifyattempt = await verify(join_channel_object, member, role, osulookup, "Welcome aboard %s! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.mention))
 
@@ -234,11 +234,11 @@ async def on_member_join(client, member):
 
 async def on_member_remove(client, member):
     try:
-        guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannel_id", str(member.guild.id)]])
+        guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_channel", str(member.guild.id)]])
         if guildverifychannel:
             join_channel_object = client.get_channel(int((guildverifychannel)[0][0]))
             if not member.bot:
-                osu_id = await dbhandler.query(["SELECT username FROM users WHERE user_id = ?", [str(member.id)]])
+                osu_id = await dbhandler.query(["SELECT osu_username FROM users WHERE user_id = ?", [str(member.id)]])
                 if osu_id:
                     embed = await osuembed.osuprofile(await osuapi.get_user(osu_id[0][0]))
                 else:
@@ -255,13 +255,13 @@ async def on_member_remove(client, member):
 async def on_message(client, message):
     if message.author.id != client.user.id:
         try:
-            verifychannel_id = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifychannel_id", str(message.guild.id)]])
+            verifychannel_id = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_channel", str(message.guild.id)]])
             if verifychannel_id:
                 if message.channel.id == int(verifychannel_id[0][0]):
                     split_message = []
                     if '/' in message.content:
                         split_message = message.content.split('/')
-                    role = discord.utils.get(message.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifyrole_id", str(message.guild.id)]]))[0][0]))
+                    role = discord.utils.get(message.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(message.guild.id)]]))[0][0]))
 
                     if 'https://osu.ppy.sh/u' in message.content:
                         osulookup = "u/%s" % (split_message[4].split(' ')[0])
@@ -353,7 +353,7 @@ async def mverify(ctx, osu_id, user_id, preverify):
         if preverify == "preverify":
             await verify(ctx.message.channel, str(user_id), None, osu_id, "Preverified: %s" % (str(user_id)))
         else:
-            role = discord.utils.get(ctx.message.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["verifyrole_id", str(ctx.guild.id)]]))[0][0]))
+            role = discord.utils.get(ctx.message.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(ctx.guild.id)]]))[0][0]))
             await verify(ctx.message.channel, ctx.guild.get_member(user_id), role, osu_id, "Manually Verified: %s" % (ctx.guild.get_member(user_id).name))
     except Exception as e:
         print(time.strftime('%X %x %Z'))

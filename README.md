@@ -21,14 +21,15 @@ This bot is built using discord.py rewrite library and uses sqlite3 database.
 
 1. Type following commands in chat. (the first id in each command is the id if the Mapset Management Server.)
 ```
-'sql INSERT INTO config VALUES ('verifychannel_id', '460935664712548366', '460952470634496001', '0')
-'sql INSERT INTO config VALUES ('vetochannel_id', '460935664712548366', '502705804990742573', '0')
-'sql INSERT INTO config VALUES ('verifyrole_id', '460935664712548366', '463790447912026132', '0')
-'sql INSERT INTO config VALUES ('dbdumpchannel_id', '460935664712548366', '532397839784083458', '0')
-'sql INSERT INTO config VALUES ('guildmapsetcategory', '460935664712548366', '460935665165795328', '0')
-'sql INSERT INTO config VALUES ('guildqueuecategory', '460935664712548366', '488831339634753546', '0')
-'sql INSERT INTO config VALUES ('guildarchivecategory', '460935664712548366', '491572368221929472', '0')
+'sql INSERT INTO config VALUES ('guild_verify_channel', '460935664712548366', '460952470634496001', '0')
+'sql INSERT INTO config VALUES ('guild_veto_channel', '460935664712548366', '502705804990742573', '0')
+'sql INSERT INTO config VALUES ('guild_verify_role', '460935664712548366', '463790447912026132', '0')
+'sql INSERT INTO config VALUES ('guild_db_dump_channel', '460935664712548366', '532397839784083458', '0')
+'sql INSERT INTO config VALUES ('guild_mapset_category', '460935664712548366', '460935665165795328', '0')
+'sql INSERT INTO config VALUES ('guild_queue_category', '460935664712548366', '488831339634753546', '0')
+'sql INSERT INTO config VALUES ('guild_archive_category', '460935664712548366', '491572368221929472', '0')
+'sql INSERT INTO config VALUES ('guild_user_event_tracker', '460935664712548366', '478293735315341322', '546583491270279169')
 ```
-2. Use `'makeadmin <new admin discord id>` to make users bot admins.
-3. Use `'track <mapset_id> <mapset host discord id>` to track mapsets.
+2. Use `'makeadmin <new_admin_user_id>` to make users bot admins.
+3. Use `'track <mapset_id> <mapset_host_user_id>` to track mapsets.
 4. Figure out the rest yourselves. `'help` and `'help admin` commands exist.

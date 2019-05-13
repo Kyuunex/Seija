@@ -17,7 +17,7 @@ async def main(ctx, subhelp):
         else:
             await ctx.send(embed=await permissions.error())
     elif subhelp == "veto":
-        if await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND value = ?", ["vetochannel_id", str(ctx.message.channel.id)]]):
+        if await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND value = ?", ["guild_veto_channel", str(ctx.message.channel.id)]]):
             await ctx.send(embed=await veto())
     elif subhelp == "mapchannel":
         await ctx.send(embed=await mapchannel())

@@ -5,7 +5,7 @@ import discord
 import asyncio
 
 async def make_queue_channel(client, ctx, queuetype):
-    guildqueuecategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guildqueuecategory", str(ctx.guild.id)]])
+    guildqueuecategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_queue_category", str(ctx.guild.id)]])
     if guildqueuecategory:
         if not await dbhandler.query(["SELECT user_id FROM queues WHERE user_id = ? AND guild_id = ?", [str(ctx.message.author.id), str(ctx.guild.id)]]):
             try:

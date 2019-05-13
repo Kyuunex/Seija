@@ -8,14 +8,14 @@ from modules import osuwebapipreview
 
 
 async def populatedb(discussions, channel_id):
-    modposts = discussions["beatmapset"]["discussions"]
+    mod_posts = discussions["beatmapset"]["discussions"]
     allposts = []
-    for onemod in modposts:
+    for onemod in mod_posts:
         try:
             if onemod:
                 for subpost in onemod["posts"]:
                     if subpost:
-                        allposts.append(["INSERT INTO modposts VALUES (?,?,?)", [str(subpost["id"]), str(onemod["beatmapset_id"]), str(channel_id)]])
+                        allposts.append(["INSERT INTO mod_posts VALUES (?,?,?)", [str(subpost["id"]), str(onemod["beatmapset_id"]), str(channel_id)]])
         except Exception as e:
             print(time.strftime('%X %x %Z'))
             print("in modchecker.populatedb")
@@ -25,11 +25,11 @@ async def populatedb(discussions, channel_id):
 
 
 async def track(mapset_id, channel_id, tracking_mode = "0"):
-    if not await dbhandler.query(["SELECT mapset_id FROM modtracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]]):
+    if not await dbhandler.query(["SELECT mapset_id FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]]):
         beatmapset_discussions = await osuwebapipreview.discussion(str(mapset_id))
         if beatmapset_discussions:
             await populatedb(beatmapset_discussions, str(channel_id))
-            await dbhandler.query(["INSERT INTO modtracking VALUES (?,?,?)", [str(mapset_id), str(channel_id), tracking_mode]])
+            await dbhandler.query(["INSERT INTO mod_tracking VALUES (?,?,?)", [str(mapset_id), str(channel_id), tracking_mode]])
             return True
         else:
             return False
@@ -38,9 +38,9 @@ async def track(mapset_id, channel_id, tracking_mode = "0"):
 
 
 async def untrack(mapset_id, channel_id):
-    if await dbhandler.query(["SELECT mapset_id FROM modtracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]]):
-        await dbhandler.query(["DELETE FROM modtracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]])
-        await dbhandler.query(["DELETE FROM modposts WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]])
+    if await dbhandler.query(["SELECT mapset_id FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]]):
+        await dbhandler.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]])
+        await dbhandler.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]])
         return True
     else:
         return False
@@ -75,8 +75,8 @@ async def timeline_mode_tracking(beatmapset_discussions, channel, mapset_id, tra
             if discussion:
                 for subpostobject in discussion['posts']:
                     if subpostobject:
-                        if not await dbhandler.query(["SELECT post_id FROM modposts WHERE post_id = ? AND channel_id = ?", [str(subpostobject['id']), str(channel.id)]]):
-                            await dbhandler.query(["INSERT INTO modposts VALUES (?,?,?)", [str(subpostobject["id"]), str(mapset_id), str(channel.id)]])
+                        if not await dbhandler.query(["SELECT post_id FROM mod_posts WHERE post_id = ? AND channel_id = ?", [str(subpostobject['id']), str(channel.id)]]):
+                            await dbhandler.query(["INSERT INTO mod_posts VALUES (?,?,?)", [str(subpostobject["id"]), str(mapset_id), str(channel.id)]])
                             if (not subpostobject['system']) and (not subpostobject["message"] == "r") and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
                                 modtopost = await modpost(subpostobject, beatmapset_discussions, discussion, tracking_mode)
                                 if modtopost:
@@ -93,7 +93,7 @@ async def timeline_mode_tracking(beatmapset_discussions, channel, mapset_id, tra
     
 async def notification_mode_tracking(beatmapset_discussions, channel, mapset_id, tracking_mode): # channel is important
     return None
-    # cachedstatus = dbhandler.query(["SELECT unresolved FROM mapsetstatus WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel.id)]])
+    # cachedstatus = dbhandler.query(["SELECT unresolved FROM mapset_status WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel.id)]])
     # for discussion in beatmapset_discussions["beatmapset"]["discussions"]:
     #     try:
     #         if discussion:
@@ -109,7 +109,7 @@ async def notification_mode_tracking(beatmapset_discussions, channel, mapset_id,
 async def main(client):
     try:
         await asyncio.sleep(120)
-        for oneentry in await dbhandler.query("SELECT * FROM modtracking"):
+        for oneentry in await dbhandler.query("SELECT * FROM mod_tracking"):
             channel = client.get_channel(int(oneentry[1]))
             if channel:
                 mapset_id = str(oneentry[0])

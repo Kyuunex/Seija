@@ -34,13 +34,14 @@ async def compare(result, osu_id, table):
 
 async def main(client):
     try:
+        await asyncio.sleep(10)
         print(time.strftime('%X %x %Z')+' | manual loop')
-        tracklist = await dbhandler.query("SELECT * FROM usereventfeed_tracklist")
+        tracklist = await dbhandler.query("SELECT * FROM user_event_feed_track_list")
         if tracklist:
             for oneentry in tracklist:
                 osuprofile = await osuapi.get_user(oneentry[0])
                 if osuprofile: #
-                    await usereventtrack(client, oneentry[1].split(","), osuprofile, "usereventfeed_json_data")
+                    await usereventtrack(client, oneentry[1].split(","), osuprofile, "user_event_feed_json_data")
                 else:
                     print("`%s` | `%s` | restricted" % (str(oneentry[0])))
         await asyncio.sleep(1200)
@@ -61,7 +62,7 @@ async def usereventtrack(client, channel, osuprofile, table):
                 if eventcolor:
                     embed = await osuembed.mapset(await osuapi.get_beatmaps(newevent['beatmapset_id']), eventcolor)
                     if embed:
-                        display_text = unescape(re.sub('<[^<]+?>', '', newevent['display_html']))
+                        display_text = (unescape(re.sub('<[^<]+?>', '', newevent['display_html']))).replace("@", "")
                         try:
                             print(display_text)
                         except:

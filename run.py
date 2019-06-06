@@ -267,17 +267,17 @@ async def nuke(ctx):
 
 
 @client.command(name="open", brief="Open the queue", description="", pass_context=True)
-async def openq(ctx, *, params = None):
+async def openq(ctx, *params):
     await queuechannel.queuesettings(client, ctx, "open", params)
 
 
 @client.command(name="close", brief="Close the queue", description="", pass_context=True)
-async def closeq(ctx, *, params = None):
+async def closeq(ctx, *params):
     await queuechannel.queuesettings(client, ctx, "close", params)
 
 
 @client.command(name="hide", brief="Hide the queue", description="", pass_context=True)
-async def hideq(ctx, *, params = None):
+async def hideq(ctx, *params):
     await queuechannel.queuesettings(client, ctx, "hide", params)
 
 

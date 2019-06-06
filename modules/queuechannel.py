@@ -51,13 +51,14 @@ async def make_queue_channel(client, ctx, queuetype):
 async def queuesettings(client, ctx, action, params):
     if (await dbhandler.query(["SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
         try:
-            if len(params) > 2:
-                embed = discord.Embed(title="Message", color=0xbd3661, description=" ".join(params))
-                embed.set_author(name=ctx.message.author.display_name, icon_url=ctx.message.author.avatar_url)
-                await ctx.message.delete()
-            elif len(params) == 2:
-                embed_title = params[0] 
-                embed_desc = params[1]
+            print(params)
+            if params:
+                if len(params) == 2:
+                    embed_title = params[0] 
+                    embed_desc = params[1]
+                else:
+                    embed_title = "Message" 
+                    embed_desc = " ".join(params)
                 embed = discord.Embed(title=embed_title, color=0xbd3661, description=embed_desc)
                 embed.set_author(name=ctx.message.author.display_name, icon_url=ctx.message.author.avatar_url)
                 await ctx.message.delete()
@@ -71,7 +72,7 @@ async def queuesettings(client, ctx, action, params):
                 await ctx.send("queue closed!", embed=embed)
             elif action == "hide":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=False, send_messages=False)
-                await ctx.send("queue hidden!")
+                await ctx.send("queue hidden!", embed=embed)
         except Exception as e:
             await ctx.send(e)
     else:

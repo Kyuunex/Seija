@@ -57,7 +57,7 @@ async def queuesettings(client, ctx, action, params):
                 await ctx.message.delete()
             elif len(params) == 2:
                 embed_title = params[0] 
-                embed_desc = params[0]
+                embed_desc = params[1]
                 embed = discord.Embed(title=embed_title, color=0xbd3661, description=embed_desc)
                 embed.set_author(name=ctx.message.author.display_name, icon_url=ctx.message.author.avatar_url)
                 await ctx.message.delete()

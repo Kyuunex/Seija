@@ -19,7 +19,7 @@ from modules import aprilfools
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190513"
+appversion = "b20190606"
 
 
 @client.event
@@ -267,18 +267,18 @@ async def nuke(ctx):
 
 
 @client.command(name="open", brief="Open the queue", description="", pass_context=True)
-async def openq(ctx, title = None, desc = ""):
-    await queuechannel.queuesettings(client, ctx, "open", title, desc)
+async def openq(ctx, *, params = None):
+    await queuechannel.queuesettings(client, ctx, "open", params)
 
 
 @client.command(name="close", brief="Close the queue", description="", pass_context=True)
-async def closeq(ctx, title = None, desc = ""):
-    await queuechannel.queuesettings(client, ctx, "close", title, desc)
+async def closeq(ctx, *, params = None):
+    await queuechannel.queuesettings(client, ctx, "close", params)
 
 
 @client.command(name="hide", brief="Hide the queue", description="", pass_context=True)
-async def hideq(ctx):
-    await queuechannel.queuesettings(client, ctx, "hide")
+async def hideq(ctx, *, params = None):
+    await queuechannel.queuesettings(client, ctx, "hide", params)
 
 
 @client.command(name="add", brief="Add a user in the current mapset channel", description="", pass_context=True)

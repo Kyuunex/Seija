@@ -295,10 +295,13 @@ async def check_ranked(ctx, mention):
             lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
             if lookupuser:
                 maps_by_that_user = await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))
-                for onemap in maps_by_that_user:
-                    if onemap["approved"] == "1" or onemap["approved"] == "2":
-                        output += "%s\n" % (member.mention)
-                        break
+                if maps_by_that_user:
+                    for onemap in maps_by_that_user:
+                        if onemap["approved"] == "1" or onemap["approved"] == "2":
+                            output += "%s\n" % (member.mention)
+                            break
+                else:
+                    print("problem with %s" % (member.display_name))
         await ctx.send(output)
     else:
         await ctx.send("Nope")

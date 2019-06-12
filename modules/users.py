@@ -302,6 +302,7 @@ async def check_ranked(ctx, mention):
                             break
                 else:
                     print("problem with %s" % (member.display_name))
+            await asyncio.sleep(0.5)
         await ctx.send(output)
     else:
         await ctx.send("Nope")

@@ -57,6 +57,18 @@ async def get_beatmaps(mapset_id):
         return None
 
 
+async def get_beatmaps_by_user(osu_id):
+    # This should not exist but it does because I am lazy. Deal with it.
+    query = {
+        'u': osu_id,
+    }
+    requestobject = await request('get_beatmaps', query)
+    if requestobject:
+        return requestobject
+    else:
+        return None
+
+
 async def get_beatmap(mapset_id, lookup = "s"):
     query = {
         lookup: mapset_id,

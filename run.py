@@ -19,7 +19,7 @@ from modules import aprilfools
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190606"
+appversion = "b20190612"
 
 
 @client.event
@@ -118,9 +118,16 @@ async def verify(ctx, osu_id: str, user_id: int, preverify: str = None):
 @client.command(name="userdb", brief="Guild member and Database related commands", description="", pass_context=True)
 async def userdb(ctx, command: str = None, mention: str = None):
     if await permissions.checkowner(ctx.message.author.id):
-        #await users.userdb(ctx, command, mention)
-        #await users.guildnamesync(ctx)
-        print("temporarly disabled")
+        if command == "check_ranked":
+            await users.check_ranked(ctx, mention)
+        elif command == "mass_verify":
+            await users.mass_verify(ctx, mention)
+        elif command == "print_all":
+            await users.print_all(ctx, mention)
+        elif command == "server_check":
+            await users.server_check(ctx, mention)
+        else:
+            pass
     else:
         await ctx.send(embed=await permissions.ownererror())
 

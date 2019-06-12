@@ -209,8 +209,7 @@ async def on_member_join(client, member):
             if not member.bot:
                 lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
                 if lookupuser:
-                    print("user %s joined with osu_id %s" %
-                        (str(member.id), str(lookupuser[0][0])))
+                    print("user %s joined with osu_id %s" % (str(member.id), str(lookupuser[0][0])))
                     role = discord.utils.get(member.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(member.guild.id)]]))[0][0]))
                     osulookup = "u/%s" % (lookupuser[0][0])
                     verifyattempt = await verify(join_channel_object, member, role, osulookup, "Welcome aboard %s! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.mention))
@@ -288,7 +287,24 @@ async def on_message(client, message):
             print(e)
 
 
-async def userdbprintall(ctx, command, mention):
+async def check_ranked(ctx, mention):
+    role = discord.utils.get(ctx.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(ctx.guild.id)]]))[0][0]))
+    if role:
+        output = ""
+        for member in role.members:
+            lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
+            if lookupuser:
+                maps_by_that_user = await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))
+                for onemap in maps_by_that_user:
+                    if onemap["approved"] == "1" or onemap["approved"] == "2":
+                        output += "%s\n" % (member.mention)
+                        break
+        await ctx.send(output)
+    else:
+        await ctx.send("Nope")
+
+
+async def print_all(ctx, mention):
     try:
         if mention == "m":
             tag = "<@%s> / %s"
@@ -304,10 +320,9 @@ async def userdbprintall(ctx, command, mention):
         print(e)
 
 
-async def userdbmassverify(ctx, command, mention):
+async def mass_verify(ctx, mention):
     try:
-        userarray = open("data/users.csv",
-                            encoding="utf8").read().splitlines()
+        userarray = open("data/users.csv", encoding="utf8").read().splitlines()
         if mention == "m":
             tag = "Preverified: <@%s>"
         else:
@@ -322,7 +337,7 @@ async def userdbmassverify(ctx, command, mention):
         print(e)
 
 
-async def userdbservercheck(ctx, command, mention):
+async def server_check(ctx, mention):
     try:
         responce = "These users are not in my database:\n"
         count = 0
@@ -333,8 +348,7 @@ async def userdbservercheck(ctx, command, mention):
                     if mention == "m":
                         responce += ("<@%s>\n" % (str(member.id)))
                     else:
-                        responce += ("\"%s\" %s\n" %
-                                        (str(member.display_name), str(member.id)))
+                        responce += ("\"%s\" %s\n" % (str(member.display_name), str(member.id)))
                     if count > 40:
                         count = 0
                         responce += ""

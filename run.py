@@ -134,15 +134,11 @@ async def userdb(ctx, command: str = None, mention: str = None):
 
 @client.command(name="mapset", brief="Show mapset info", description="", pass_context=True)
 async def mapset(ctx, mapset_id: str, text: str = None):
-    if await permissions.check(ctx.message.author.id):
-        embed = await osuembed.mapset(await osuapi.get_beatmaps(mapset_id))
-        if embed:
-            await ctx.send(content=text, embed=embed)
-            # await ctx.message.delete()
-        else:
-            await ctx.send(content='`No mapset found with that ID`')
+    embed = await osuembed.mapset(await osuapi.get_beatmaps(mapset_id))
+    if embed:
+        await ctx.send(content=text, embed=embed)
     else:
-        await ctx.send(embed=await permissions.error())
+        await ctx.send(content='`No mapset found with that ID`')
 
 
 @client.command(name="user", brief="Show osu user info", description="", pass_context=True)
@@ -251,10 +247,10 @@ async def af(ctx, action):
 
 @client.command(name="demographics", brief="demographics", description="", pass_context=True)
 async def demographics(ctx):
-    if await permissions.checkowner(ctx.message.author.id):
+    if await permissions.check(ctx.message.author.id):
         await users.demographics(client, ctx)
     else:
-        await ctx.send(embed=await permissions.ownererror())
+        await ctx.send(embed=await permissions.error())
 
 
 @client.command(name="request", brief="Request ether a queue or mod channel", description="", pass_context=True)

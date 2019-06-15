@@ -62,24 +62,17 @@ async def demographics(client, ctx): #TODO" do this
     await ctx.send(embed=statsembed)
 
 
-async def verify(channel, member, role, osulookup, response):
+async def verify(channel, member, guild, lookup_type, lookup_string, response):
     # Defaults
     osuusername = None
     osu_join_date = ""
     pp = "0"
     country = ""
-    ranked_maps_amount = "0"
+    ranked_amount = "0"
     args = "[]"
 
-    if "/" in osulookup:
-        osulookup = osulookup.split('/')
-        verificationtype = str(osulookup[0])
-        lookupstr = str(osulookup[1])
-    else:
-        verificationtype == None
-
-    if verificationtype == "u":
-        osuprofile = await osuapi.get_user(lookupstr)
+    if lookup_type == "u":
+        osuprofile = await osuapi.get_user(lookup_string)
         if osuprofile:
             osuusername = str(osuprofile['username'])
             osuaccountid = str(osuprofile['user_id'])
@@ -87,14 +80,24 @@ async def verify(channel, member, role, osulookup, response):
             pp = str(osuprofile['pp_raw'])
             country = str(osuprofile['country'])
             embed = await osuembed.osuprofile(osuprofile)
-    elif verificationtype == "s":
-        authorsmapset = await osuapi.get_beatmaps(lookupstr)
+    elif lookup_type == "s":
+        authorsmapset = await osuapi.get_beatmaps(lookup_string)
         if authorsmapset:
             osuusername = str(authorsmapset[0]['creator'])
             osuaccountid = str(authorsmapset[0]['creator_id'])
             embed = await osuembed.mapset(authorsmapset)
 
     if osuusername:
+
+        ranked_amount = len(await get_ranked_maps(await osuapi.get_beatmaps_by_user(str(osuaccountid))))
+
+        if ranked_amount >= 10:
+            role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_experienced_mapper_role", str(guild.id)]]))[0][0]))
+        elif ranked_amount >= 1:
+            role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_ranked_mapper_role", str(guild.id)]]))[0][0]))
+        else:
+            role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(guild.id)]]))[0][0]))
+
         if type(member) is str:
             user_id = member
         else:
@@ -112,7 +115,7 @@ async def verify(channel, member, role, osulookup, response):
             # possibly force update the entry in future
         else:
             print("adding user %s in database" % (user_id,))
-            await dbhandler.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osuaccountid, osuusername, osu_join_date, pp, country, ranked_maps_amount, args]])
+            await dbhandler.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osuaccountid, osuusername, osu_join_date, pp, country, ranked_amount, args]])
 
         if not response:
             response = "verified <@%s>" % (user_id)
@@ -210,9 +213,7 @@ async def on_member_join(client, member):
                 lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
                 if lookupuser:
                     print("user %s joined with osu_id %s" % (str(member.id), str(lookupuser[0][0])))
-                    role = discord.utils.get(member.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(member.guild.id)]]))[0][0]))
-                    osulookup = "u/%s" % (lookupuser[0][0])
-                    verifyattempt = await verify(join_channel_object, member, role, osulookup, "Welcome aboard %s! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.mention))
+                    verifyattempt = await verify(join_channel_object, member, member.guild, "u", lookupuser[0][0], "Welcome aboard %s! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.mention))
 
                     if not verifyattempt:
                         await join_channel_object.send("Hello %s. It seems like you are in my database but the profile I know of you is restricted. If this is correct, please link any of your uploaded maps (new website only) and I'll verify you instantly. If this is not correct, tag Kyuunex." % (member.mention))
@@ -260,21 +261,17 @@ async def on_message(client, message):
                     split_message = []
                     if '/' in message.content:
                         split_message = message.content.split('/')
-                    role = discord.utils.get(message.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(message.guild.id)]]))[0][0]))
 
                     if 'https://osu.ppy.sh/u' in message.content:
-                        osulookup = "u/%s" % (split_message[4].split(' ')[0])
-                        verifyattempt = await verify(message.channel, message.author, role, osulookup, "Verified: %s" % (message.author.name))
+                        verifyattempt = await verify(message.channel, message.author, message.guild, "u", (split_message[4].split(' ')[0]), "Verified: %s" % (message.author.name))
                         if not verifyattempt:
                             await message.channel.send('verification failure, I can\'t find any profile from that link. If you are restricted, link any of your recently uploaded maps (new website only).')
                     elif 'https://osu.ppy.sh/beatmapsets/' in message.content:
-                        osulookup = "s/%s" % (split_message[4].split('#')[0])
-                        verifyattempt = await verify(message.channel, message.author, role, osulookup, "Verified through mapset: %s" % (message.author.name))
+                        verifyattempt = await verify(message.channel, message.author, message.guild, "s", (split_message[4].split('#')[0]), "Verified through mapset: %s" % (message.author.name))
                         if not verifyattempt:
                             await message.channel.send('verification failure, I can\'t find any map with that link')
                     elif message.content.lower() == 'yes':
-                        osulookup = "u/%s" % (message.author.name)
-                        verifyattempt = await verify(message.channel, message.author, role, osulookup, "Verified: %s" % (message.author.name))
+                        verifyattempt = await verify(message.channel, message.author, message.guild, "u", message.author.name, "Verified: %s" % (message.author.name))
                         if not verifyattempt:
                             await message.channel.send('verification failure, your discord username does not match a username of any osu account. possible reason can be that you changed your discord username before typing `yes`. In this case, link your profile.')
                     elif 'https://ripple.moe/u' in message.content:
@@ -287,6 +284,20 @@ async def on_message(client, message):
             print(e)
 
 
+async def get_ranked_maps(beatmaps):
+    try:
+        ranked_maps = []
+        if beatmaps:
+            for beatmap in beatmaps:
+                if beatmap["approved"] == "1" or beatmap["approved"] == "2":
+                    if not beatmap["beatmapset_id"] in ranked_maps:
+                        ranked_maps.append(beatmap["beatmapset_id"])
+        return ranked_maps
+    except Exception as e:
+        print(e)
+        return []
+
+
 async def check_ranked(ctx, mention):
     role = discord.utils.get(ctx.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(ctx.guild.id)]]))[0][0]))
     if role:
@@ -294,12 +305,9 @@ async def check_ranked(ctx, mention):
         for member in role.members:
             lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
             if lookupuser:
-                maps_by_that_user = await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))
-                if maps_by_that_user:
-                    for onemap in maps_by_that_user:
-                        if onemap["approved"] == "1" or onemap["approved"] == "2":
-                            output += "%s\n" % (member.mention)
-                            break
+                ranked_amount = len(await get_ranked_maps(await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))))
+                if bool(ranked_amount):
+                    output += "%s\n" % (member.mention)
                 else:
                     print("problem with %s" % (member.display_name))
             await asyncio.sleep(0.5)
@@ -333,7 +341,7 @@ async def mass_verify(ctx, mention):
             tag = "Preverified: %s"
         for oneuser in userarray:
             uzer = oneuser.split(',')
-            await verify(ctx.message.channel, str(uzer[1]), None, "u/%s" % (uzer[0]), tag % (str(uzer[1])))
+            await verify(ctx.message.channel, str(uzer[1]), None, "u", uzer[0], tag % (str(uzer[1])))
             await asyncio.sleep(1)
     except Exception as e:
         print(time.strftime('%X %x %Z'))
@@ -366,13 +374,12 @@ async def server_check(ctx, mention):
         print(e)
 
 
-async def mverify(ctx, osu_id, user_id, preverify):
+async def mverify(ctx, lookup_type, osu_id, user_id, preverify):
     try:
         if preverify == "preverify":
-            await verify(ctx.message.channel, str(user_id), None, osu_id, "Preverified: %s" % (str(user_id)))
+            await verify(ctx.message.channel, str(user_id), None, lookup_type, osu_id, "Preverified: %s" % (str(user_id)))
         else:
-            role = discord.utils.get(ctx.message.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(ctx.guild.id)]]))[0][0]))
-            await verify(ctx.message.channel, ctx.guild.get_member(user_id), role, osu_id, "Manually Verified: %s" % (ctx.guild.get_member(user_id).name))
+            await verify(ctx.message.channel, ctx.guild.get_member(user_id), ctx.message.guild, lookup_type, osu_id, "Manually Verified: %s" % (ctx.guild.get_member(user_id).name))
     except Exception as e:
         print(time.strftime('%X %x %Z'))
         print("in verify")

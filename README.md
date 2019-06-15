@@ -24,6 +24,8 @@ This bot is built using discord.py rewrite library and uses sqlite3 database.
 'sql INSERT INTO config VALUES ('guild_verify_channel', '460935664712548366', '460952470634496001', '0')
 'sql INSERT INTO config VALUES ('guild_veto_channel', '460935664712548366', '502705804990742573', '0')
 'sql INSERT INTO config VALUES ('guild_verify_role', '460935664712548366', '463790447912026132', '0')
+'sql INSERT INTO config VALUES ('guild_ranked_mapper_role', '460935664712548366', '504247029359443969', '0')
+'sql INSERT INTO config VALUES ('guild_experienced_mapper_role', '460935664712548366', '548236293428084757', '0')
 'sql INSERT INTO config VALUES ('guild_db_dump_channel', '460935664712548366', '532397839784083458', '0')
 'sql INSERT INTO config VALUES ('guild_mapset_category', '460935664712548366', '460935665165795328', '0')
 'sql INSERT INTO config VALUES ('guild_queue_category', '460935664712548366', '488831339634753546', '0')

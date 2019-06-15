@@ -37,7 +37,7 @@ async def on_ready():
         await dbhandler.query("CREATE TABLE mod_posts (post_id, mapset_id, channel_id)")
         await dbhandler.query("CREATE TABLE mod_tracking (mapset_id, channel_id, mode)")
         await dbhandler.query("CREATE TABLE mod_tracking_pauselist (mapset_id, channel_id, mode)")
-        await dbhandler.query("CREATE TABLE mapset_status (mapset_id, channel_id, unresolved)")
+        await dbhandler.query("CREATE TABLE mapset_status (mapset_id, map_id, channel_id, unresolved)")
         await dbhandler.query("CREATE TABLE notices (timestamp, notice)")
         await dbhandler.query("CREATE TABLE queues (channel_id, user_id, guild_id)")
         await dbhandler.query("CREATE TABLE mapset_channels (channel_id, role_id, user_id, mapset_id, guild_id)")
@@ -109,9 +109,9 @@ async def sql(ctx, *, query):
 
 
 @client.command(name="verify", brief="Manually verify a user", description="", pass_context=True)
-async def verify(ctx, osu_id: str, user_id: int, preverify: str = None):
+async def verify(ctx, lookup_type: str, osu_id: str, user_id: int, preverify: str = None):
     if await permissions.check(ctx.message.author.id):
-        await users.mverify(ctx, osu_id, user_id, preverify)
+        await users.mverify(ctx, lookup_type, osu_id, user_id, preverify)
     else:
         await ctx.send(embed=await permissions.error())
 
@@ -268,6 +268,14 @@ async def nuke(ctx):
         await mapchannel.nuke_mapset_channel(client, ctx)
     else:
         await ctx.send(embed=await permissions.error())
+
+
+@client.command(name="test", brief="test", description="", pass_context=True)
+async def test(ctx, u):
+    if await permissions.checkowner(ctx.message.author.id):
+        print("test")
+    else:
+        await ctx.send(embed=await permissions.ownererror())
 
 
 @client.command(name="open", brief="Open the queue", description="", pass_context=True)

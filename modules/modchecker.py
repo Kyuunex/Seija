@@ -24,7 +24,7 @@ async def populatedb(discussions, channel_id):
     await dbhandler.massquery(allposts)
 
 
-async def track(mapset_id, channel_id, tracking_mode = "0"):
+async def track(mapset_id, channel_id, tracking_mode = "classic"):
     if not await dbhandler.query(["SELECT mapset_id FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]]):
         beatmapset_discussions = await osuwebapipreview.discussion(str(mapset_id))
         if beatmapset_discussions:
@@ -121,9 +121,9 @@ async def main(client):
                 if beatmapset_discussions:
                     status = await check_status(channel, mapset_id, beatmapset_discussions)
                     if status:
-                        if tracking_mode == "0" or tracking_mode == "1":
+                        if tracking_mode == "veto" or tracking_mode == "classic":
                             await timeline_mode_tracking(beatmapset_discussions, channel, mapset_id, tracking_mode)
-                        elif tracking_mode == "2":
+                        elif tracking_mode == "notification":
                             await notification_mode_tracking(beatmapset_discussions, channel, mapset_id, tracking_mode)
                     else:
                         print("No actual discussions found at %s or mapset untracked automatically" % (mapset_id))
@@ -211,9 +211,9 @@ async def get_modtype(newevent):
 
 async def modpost(subpostobject, beatmapset_discussions, newevent, tracking_mode):
     if subpostobject:
-        if tracking_mode == "0":
+        if tracking_mode == "classic":
             title = str(await get_diffname(beatmapset_discussions, newevent))
-        elif tracking_mode == "1":
+        elif tracking_mode == "veto":
             title = "%s / %s" % (str(beatmapset_discussions["beatmapset"]["title"]), str(await get_diffname(beatmapset_discussions, newevent)))
             if newevent['message_type'] == "hype":
                 return None

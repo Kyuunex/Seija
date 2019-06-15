@@ -130,11 +130,14 @@ async def queuemanagement():
 
 
 async def mapchannelmanagement():
-    embed = discord.Embed(title="Mapset channel management commands", description="""`(discord user id)` is a discord account user id. To get it, you need developer mode enabled in your discord client settings, right click on the user and click \"Copy ID\"""", color=0xbd3661)
-    embed.add_field(name="'add (discord user id)", value="Add a user in the mapset channel.", inline=False)
-    embed.add_field(name="'remove (discord user id)", value="Remove a user from the mapset channel.", inline=False)
+    embed = discord.Embed(title="Mapset channel management commands", description="""`(user)` can be ether a name of the user or a discord account user id. To get user id, you need developer mode enabled in your discord client settings, right click on the user and click \"Copy ID\". Using IDs are recommended rather than names.""", color=0xbd3661)
+    embed.add_field(name="'add (user)", value="Add a user in the mapset channel.", inline=False)
+    embed.add_field(name="'remove (user)", value="Remove a user from the mapset channel.", inline=False)
     embed.add_field(name="'abandon", value="If you abandoning the set, whether temporarily or permanently, this will stop all tracking and move the channel to archive category.", inline=False)
-    embed.add_field(name="'track", value="(command not yet finished, ping kyuunex to track)", inline=False)
+    embed.add_field(name="'setid (mapset_id)", value="Set a mapset id for this channel. Useful if you created this channel without setting an id.", inline=False)
+    #embed.add_field(name="'track (tracking_mode)", value="Track the mapset in this channel. For tracking_mode, specify 'classic' for discussion/timeline type, specify 'notification' for notification type.", inline=False)
+    embed.add_field(name="'track", value="Track the mapset in this channel", inline=False)
+    embed.add_field(name="'untrack", value="Untrack everything in this channel.", inline=False)
     embed.set_author(name=author_text, icon_url=author_icon)
     embed.set_footer(text=footer_text, icon_url=footer_icon)
     return embed

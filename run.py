@@ -19,7 +19,7 @@ from modules import aprilfools
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190612"
+appversion = "b20190615"
 
 
 @client.event
@@ -36,6 +36,7 @@ async def on_ready():
         await dbhandler.query("CREATE TABLE admins (user_id, permissions)")
         await dbhandler.query("CREATE TABLE mod_posts (post_id, mapset_id, channel_id)")
         await dbhandler.query("CREATE TABLE mod_tracking (mapset_id, channel_id, mode)")
+        await dbhandler.query("CREATE TABLE mod_tracking_pauselist (mapset_id, channel_id, mode)")
         await dbhandler.query("CREATE TABLE mapset_status (mapset_id, channel_id, unresolved)")
         await dbhandler.query("CREATE TABLE notices (timestamp, notice)")
         await dbhandler.query("CREATE TABLE queues (channel_id, user_id, guild_id)")
@@ -181,7 +182,7 @@ async def forceuntrack(ctx, mapset_id: str):
 @client.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="", pass_context=True)
 async def veto(ctx, mapset_id: int):
     if await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ? AND value = ?", ["guild_veto_channel", str(ctx.guild.id), str(ctx.message.channel.id)]]):
-        if await modchecker.track(mapset_id, ctx.message.channel.id, "1"):
+        if await modchecker.track(mapset_id, ctx.message.channel.id, "veto"):
             await ctx.send("Tracked in veto mode", embed=await osuembed.mapset(await osuapi.get_beatmaps(mapset_id)))
         else:
             await ctx.send("Error")
@@ -212,10 +213,10 @@ async def sublist(ctx):
         
         
 @client.command(name="chanlist", brief="List all mapset channel", description="", pass_context=True)
-async def chanlist(ctx):
+async def chanlist(ctx): # DELETE FROM mapset_channels WHERE role_id = ""
     if await permissions.checkowner(ctx.message.author.id):
         for oneentry in await dbhandler.query("SELECT * FROM mapset_channels"):
-            await ctx.send(content="channel_id <#%s> | role_id %s | user_id <@%s> | mapset_id %s | guild_id %s | " % (oneentry))
+            await ctx.send(content="channel_id <#%s> | role_id %s | user_id <@%s> | mapset_id %s | guild_id %s " % (oneentry))
     else:
         await ctx.send(embed=await permissions.ownererror())
 
@@ -279,24 +280,44 @@ async def closeq(ctx, *params):
     await queuechannel.queuesettings(client, ctx, "close", params)
 
 
+@client.command(name="show", brief="Show the queue", description="", pass_context=True)
+async def showq(ctx, *params):
+    await queuechannel.queuesettings(client, ctx, "show", params)
+
+
 @client.command(name="hide", brief="Hide the queue", description="", pass_context=True)
 async def hideq(ctx, *params):
     await queuechannel.queuesettings(client, ctx, "hide", params)
 
 
 @client.command(name="add", brief="Add a user in the current mapset channel", description="", pass_context=True)
-async def addm(ctx, user_id: int):
+async def addm(ctx, user_id: str):
     await mapchannel.mapset_channelsettings(client, ctx, "add", user_id)
 
 
 @client.command(name="remove", brief="Remove a user from the current mapset channel", description="", pass_context=True)
-async def removem(ctx, user_id: int):
+async def removem(ctx, user_id: str):
     await mapchannel.mapset_channelsettings(client, ctx, "remove", user_id)
 
 
 @client.command(name="abandon", brief="Abandon the mapset and untrack", description="", pass_context=True)
 async def abandon(ctx):
     await mapchannel.abandon(client, ctx)
+
+
+@client.command(name="setid", brief="", description="", pass_context=True)
+async def set_mapset_id(ctx, mapset_id: int):
+    await mapchannel.set_mapset_id(client, ctx, mapset_id)
+
+
+@client.command(name="track", brief="", description="", pass_context=True)
+async def track(ctx, tracking_mode = "classic"):
+    await mapchannel.track_mapset(client, ctx, tracking_mode)
+
+
+@client.command(name="untrack", brief="", description="", pass_context=True)
+async def untrack(ctx):
+    await mapchannel.untrack_mapset(client, ctx)
 
 
 @client.event
@@ -313,6 +334,12 @@ async def on_member_join(member):
 @client.event
 async def on_member_remove(member):
     await users.on_member_remove(client, member)
+
+
+@client.event
+async def on_guild_channel_delete(deleted_channel):
+    await mapchannel.on_guild_channel_delete(client, deleted_channel)
+    await queuechannel.on_guild_channel_delete(client, deleted_channel)
 
 
 async def modchecker_background_loop():

@@ -70,6 +70,9 @@ async def queuesettings(client, ctx, action, params):
             elif action == "close":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=False)
                 await ctx.send("queue closed!", embed=embed)
+            elif action == "show":
+                await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=False)
+                await ctx.send("queue is visible to everyone, but it's still closed. use 'open command if you want people to post in it.", embed=embed)
             elif action == "hide":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=False, send_messages=False)
                 await ctx.send("queue hidden!", embed=embed)
@@ -78,3 +81,11 @@ async def queuesettings(client, ctx, action, params):
     else:
         await ctx.message.delete()
         await ctx.send("%s not your queue" % (ctx.message.author.mention), delete_after=3)
+
+
+async def on_guild_channel_delete(client, deleted_channel):
+    try:
+        await dbhandler.query(["DELETE FROM queues WHERE channel_id = ?",[str(deleted_channel.id)]])
+        print("channel %s is deleted" % (deleted_channel.name))
+    except Exception as e:
+        print(e)

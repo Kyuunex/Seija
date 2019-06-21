@@ -162,6 +162,7 @@ async def mapping_username_loop(client):
                                 await usereventfeed.usereventtrack(client, feedchannel, osuprofile, "user_events")
                             else:
                                 await send_notice("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])), auditchannel, now)
+                                await asyncio.sleep(120)
                         else:
                             await send_notice("%s | not in db" % (member.mention), auditchannel, now)
                         await asyncio.sleep(1)
@@ -265,7 +266,7 @@ async def on_message(client, message):
                     if 'https://osu.ppy.sh/u' in message.content:
                         verifyattempt = await verify(message.channel, message.author, message.guild, "u", (split_message[4].split(' ')[0]), "Verified: %s" % (message.author.name))
                         if not verifyattempt:
-                            await message.channel.send('verification failure, I can\'t find any profile from that link. If you are restricted, link any of your recently uploaded maps (new website only).')
+                            await message.channel.send('verification failure, I can\'t find any profile from that link. If you are restricted, link any of your recently uploaded maps (new website only). if you are not restricted, then maybe osu website is down at this moment and in that case, ping Kyuunex or try again later.')
                     elif 'https://osu.ppy.sh/beatmapsets/' in message.content:
                         verifyattempt = await verify(message.channel, message.author, message.guild, "s", (split_message[4].split('#')[0]), "Verified through mapset: %s" % (message.author.name))
                         if not verifyattempt:

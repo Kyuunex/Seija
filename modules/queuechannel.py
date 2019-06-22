@@ -1,6 +1,7 @@
 from modules import dbhandler
 from modules import docs
 from modules import permissions
+from modules import reputation
 import discord
 import asyncio
 
@@ -36,7 +37,7 @@ async def make_queue_channel(client, ctx, queuetype):
                 }
                 discordfriendlychannelname = "%s-%s-queue" % (
                     ctx.message.author.display_name.replace(" ", "_").lower(), queuetype)
-                category = client.get_channel(int(guildqueuecategory[0][0]))
+                category = await reputation.validate_reputation_queues(client, ctx.message.author)
                 channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category)
                 await dbhandler.query(["INSERT INTO queues VALUES (?, ?, ?)", [str(channel.id), str(ctx.message.author.id), str(ctx.guild.id)]])
                 await channel.send("%s done!" % (ctx.message.author.mention), embed=await docs.queuemanagement())
@@ -66,6 +67,7 @@ async def queuesettings(client, ctx, action, params):
                 embed = None
             if action == "open":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=True)
+                await reputation.unarchive_queue(client, ctx, ctx.message.author)
                 await ctx.send("queue open!", embed=embed)
             elif action == "close":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=False)

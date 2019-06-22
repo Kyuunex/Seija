@@ -16,6 +16,7 @@ from modules import mapchannel
 from modules import queuechannel
 from modules import docs
 from modules import aprilfools
+from modules import configmaker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
@@ -278,6 +279,22 @@ async def test(ctx, u):
         await ctx.send(embed=await permissions.ownererror())
 
 
+@client.command(name="config", brief="", description="", pass_context=True)
+async def config(ctx, setting, role_name):
+    if await permissions.checkowner(ctx.message.author.id):
+        await configmaker.role_setup(client, ctx, setting, role_name)
+    else:
+        await ctx.send(embed=await permissions.ownererror())
+
+
+@client.command(name="cfg", brief="", description="", pass_context=True)
+async def cfg(ctx, setting, an_id):
+    if await permissions.checkowner(ctx.message.author.id):
+        await configmaker.cfg_setup(client, ctx, setting, an_id)
+    else:
+        await ctx.send(embed=await permissions.ownererror())
+
+
 @client.command(name="open", brief="Open the queue", description="", pass_context=True)
 async def openq(ctx, *params):
     await queuechannel.queuesettings(client, ctx, "open", params)
@@ -316,6 +333,11 @@ async def abandon(ctx):
 @client.command(name="setid", brief="", description="", pass_context=True)
 async def set_mapset_id(ctx, mapset_id: int):
     await mapchannel.set_mapset_id(client, ctx, mapset_id)
+
+
+@client.command(name="setowner", brief="", description="", pass_context=True)
+async def set_owner_id(ctx, user_id: int):
+    await mapchannel.set_owner_id(client, ctx, user_id)
 
 
 @client.command(name="track", brief="", description="", pass_context=True)

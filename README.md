@@ -23,14 +23,20 @@ This bot is built using discord.py rewrite library and uses sqlite3 database.
 ```
 'sql INSERT INTO config VALUES ('guild_verify_channel', '460935664712548366', '460952470634496001', '0')
 'sql INSERT INTO config VALUES ('guild_veto_channel', '460935664712548366', '502705804990742573', '0')
+'sql INSERT INTO config VALUES ('guild_db_dump_channel', '460935664712548366', '532397839784083458', '0')
+'sql INSERT INTO config VALUES ('guild_user_event_tracker', '460935664712548366', '478293735315341322', '546583491270279169')
+
 'sql INSERT INTO config VALUES ('guild_verify_role', '460935664712548366', '463790447912026132', '0')
 'sql INSERT INTO config VALUES ('guild_ranked_mapper_role', '460935664712548366', '504247029359443969', '0')
 'sql INSERT INTO config VALUES ('guild_experienced_mapper_role', '460935664712548366', '548236293428084757', '0')
-'sql INSERT INTO config VALUES ('guild_db_dump_channel', '460935664712548366', '532397839784083458', '0')
+'sql INSERT INTO config VALUES ('guild_bn_role', '460935664712548366', '489555825665507328', '0')
+'sql INSERT INTO config VALUES ('guild_nat_role', '460935664712548366', '510923463368769536', '0')
+
 'sql INSERT INTO config VALUES ('guild_mapset_category', '460935664712548366', '460935665165795328', '0')
 'sql INSERT INTO config VALUES ('guild_queue_category', '460935664712548366', '488831339634753546', '0')
+'sql INSERT INTO config VALUES ('guild_ranked_queue_category', '460935664712548366', '580708804006772736', '0')
+'sql INSERT INTO config VALUES ('guild_bn_nat_queue_category', '460935664712548366', '534640743432847360', '0')
 'sql INSERT INTO config VALUES ('guild_archive_category', '460935664712548366', '491572368221929472', '0')
-'sql INSERT INTO config VALUES ('guild_user_event_tracker', '460935664712548366', '478293735315341322', '546583491270279169')
 ```
 2. Use `'makeadmin <new_admin_user_id>` to make users bot admins.
 3. Use `'track <mapset_id> <mapset_host_user_id>` to track mapsets.

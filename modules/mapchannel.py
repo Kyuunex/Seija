@@ -4,10 +4,25 @@ from modules import docs
 from modules import permissions
 from modules import modchecker
 from modules import osuembed
+from modules import reputation
 import discord
 import random
 import asyncio
 
+
+mapset_owner_default_permissions = discord.PermissionOverwrite(
+    create_instant_invite=True,
+    manage_channels=True,
+    manage_roles=True,
+    manage_webhooks=True,
+    read_messages=True,
+    send_messages=True,
+    manage_messages=True,
+    embed_links=True,
+    attach_files=True,
+    read_message_history=True,
+    mention_everyone=False
+)
 
 async def make_mapset_channel(client, ctx, mapset_id, mapsetname):
     guildmapsetcategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapset_category", str(ctx.guild.id)]])
@@ -40,19 +55,7 @@ async def make_mapset_channel(client, ctx, mapset_id, mapsetname):
                 category = client.get_channel(int(guildmapsetcategory[0][0]))
                 channeloverwrites = {
                     guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                    ctx.message.author: discord.PermissionOverwrite(
-                        create_instant_invite=True,
-                        manage_channels=True,
-                        manage_roles=True,
-                        manage_webhooks=True,
-                        read_messages=True,
-                        send_messages=True,
-                        manage_messages=True,
-                        embed_links=True,
-                        attach_files=True,
-                        read_message_history=True,
-                        mention_everyone=False
-                    ),
+                    ctx.message.author: mapset_owner_default_permissions,
                     mapsetrole: discord.PermissionOverwrite(read_messages=True),
                     guild.me: discord.PermissionOverwrite(
                         manage_channels=True,
@@ -148,6 +151,18 @@ async def set_mapset_id(client, ctx, mapset_id):
         except Exception as e:
             await ctx.send(e)
 
+    
+async def set_owner_id(client, ctx, user_id):
+    if (await dbhandler.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
+        try:
+            member = ctx.guild.get_member(int(user_id))
+            if member:
+                await dbhandler.query(["UPDATE mapset_channels SET user_id = ? WHERE channel_id = ?;", [str(user_id), str(ctx.message.channel.id)]])
+                await ctx.message.channel.set_permissions(target=member, overwrite=mapset_owner_default_permissions)
+                await ctx.send("Owner updated for this channel")
+        except Exception as e:
+            await ctx.send(e)
+
 
 async def track_mapset(client, ctx, tracking_mode):
     if (await dbhandler.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
@@ -162,6 +177,7 @@ async def track_mapset(client, ctx, tracking_mode):
             if mapset_id:
                 if await modchecker.track(str(mapset_id[0][0]), ctx.message.channel.id):
                     await ctx.send("Tracked", embed=await osuembed.mapset(await osuapi.get_beatmaps(str(mapset_id[0][0]))))
+                    await reputation.unarchive_channel(client, ctx, "guild_mapset_category")
                 else:
                     await ctx.send("Error")
             else:

@@ -135,6 +135,7 @@ async def mapchannelmanagement():
     embed.add_field(name="'remove (user)", value="Remove a user from the mapset channel.", inline=False)
     embed.add_field(name="'abandon", value="If you abandoning the set, whether temporarily or permanently, this will stop all tracking and move the channel to archive category.", inline=False)
     embed.add_field(name="'setid (mapset_id)", value="Set a mapset id for this channel. Useful if you created this channel without setting an id.", inline=False)
+    embed.add_field(name="'setowner (user_id)", value="Transfer set ownership to another discord account. user_id can only be that discord account's id.", inline=False)
     #embed.add_field(name="'track (tracking_mode)", value="Track the mapset in this channel. For tracking_mode, specify 'classic' for discussion/timeline type, specify 'notification' for notification type.", inline=False)
     embed.add_field(name="'track", value="Track the mapset in this channel", inline=False)
     embed.add_field(name="'untrack", value="Untrack everything in this channel.", inline=False)

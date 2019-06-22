@@ -57,7 +57,7 @@ async def check_status(channel, mapset_id, beatmapset_discussions):
     elif status == "graveyard":
         discussions = None
         if await untrack(mapset_id, channel.id):
-            await channel.send(content='I detected that this map is graveyarded now and so, I am untracking it. Ping a manager when this set is back in pending section. Please understand that we don\'t wanna track dead sets.', embed=await osuembed.mapset(await osuapi.get_beatmaps(mapset_id)))
+            await channel.send(content="I detected that this map is graveyarded now and so, I am untracking it. Type `'track` after you ungraveyard it, to continue tracking it. Please understand that we don't wanna track dead sets.", embed=await osuembed.mapset(await osuapi.get_beatmaps(mapset_id)))
     elif status == "deleted":
         discussions = None
         if await untrack(mapset_id, channel.id):

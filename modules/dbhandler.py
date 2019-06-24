@@ -32,6 +32,7 @@ async def query(query):
         conn.commit()
         conn.close()
         return result
-    except Exception as result:
-        return result
+    except Exception as e:
+        print(e)
+        return []
 

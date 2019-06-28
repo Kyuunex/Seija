@@ -175,11 +175,14 @@ async def track_mapset(client, ctx, tracking_mode):
 
             mapset_id = await dbhandler.query(["SELECT mapset_id FROM mapset_channels WHERE channel_id = ?", [str(ctx.message.channel.id)]])
             if mapset_id:
-                if await modchecker.track(str(mapset_id[0][0]), ctx.message.channel.id):
-                    await ctx.send("Tracked", embed=await osuembed.mapset(await osuapi.get_beatmaps(str(mapset_id[0][0]))))
-                    await reputation.unarchive_channel(client, ctx, "guild_mapset_category")
+                if str(mapset_id[0][0]) != "0":
+                    if await modchecker.track(str(mapset_id[0][0]), ctx.message.channel.id):
+                        await ctx.send("Tracked", embed=await osuembed.mapset(await osuapi.get_beatmaps(str(mapset_id[0][0]))))
+                        await reputation.unarchive_channel(client, ctx, "guild_mapset_category")
+                    else:
+                        await ctx.send("Error")
                 else:
-                    await ctx.send("Error")
+                    await ctx.send("Set a mapset id for this channel first, using the `'setid (mapset_id)` command.")
             else:
                 await ctx.send("Set a mapset id for this channel first, using the `'setid (mapset_id)` command.")
         except Exception as e:

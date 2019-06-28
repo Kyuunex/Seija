@@ -6,6 +6,27 @@ from modules import osuapi
 from modules import osuembed
 from modules import osuwebapipreview
 
+async def return_clickable(author, string):
+    if "-" in string:
+        timestamp_data = string.split("-")
+        timestamp_link = (timestamp_data[0]).strip().replace(" ", "_")
+        try:
+            timestamp_desc = "- " + timestamp_data[1]
+        except:
+            timestamp_desc = ""
+    else:
+        timestamp_link = (string).strip().replace(" ", "_")
+        timestamp_desc = ""
+    timestamp_embed = discord.Embed(
+        description=str("<osu://edit/%s> %s" % (timestamp_link, timestamp_desc)),
+        color=author.colour
+    )
+    timestamp_embed.set_author(
+        name=author.display_name,
+        icon_url=author.avatar_url
+    )
+    return timestamp_embed
+
 
 async def populatedb(discussions, channel_id):
     mod_posts = discussions["beatmapset"]["discussions"]

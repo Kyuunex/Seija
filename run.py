@@ -20,7 +20,7 @@ from modules import configmaker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190622"
+appversion = "b20190628"
 
 
 @client.event
@@ -88,6 +88,16 @@ async def echo(ctx, *, string):
         await ctx.send(upsidedown.transform(string))
     else:
         await ctx.send(embed=await permissions.error())
+
+
+@client.command(name="ts", brief="", description="", pass_context=True)
+async def ts(ctx, *, string):
+    embed = await modchecker.return_clickable(ctx.author, string)
+    try:
+        await ctx.send(embed=embed)
+        await ctx.message.delete()
+    except Exception as e:
+        print(e)
 
 
 @client.command(name="dbdump", brief="Perform a database dump", description="", pass_context=True)

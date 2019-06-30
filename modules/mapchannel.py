@@ -83,7 +83,11 @@ async def mapset_channelsettings(client, ctx, action, user_id):
         try:
             member = ctx.guild.get_member_named(user_id)
             if not member:
-                member = ctx.guild.get_member(int(user_id))
+                try:
+                    member = ctx.guild.get_member(int(user_id))
+                except Exception as e:
+                    print(e)
+                    member = None
             if member:
                 role = discord.utils.get(ctx.guild.roles, id=int(role_idlist[0][0]))
                 if action == "add":
@@ -92,6 +96,8 @@ async def mapset_channelsettings(client, ctx, action, user_id):
                 elif action == "remove":
                     await member.remove_roles(role, reason="removed from mapset")
                     await ctx.send("removed %s from this channel" % (member.mention))
+            else:
+                await ctx.send("No member found with what you specified. If you are specifying a name, names are case sensetive.")
         except Exception as e:
             await ctx.send(e)
     else:

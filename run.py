@@ -20,7 +20,7 @@ from modules import configmaker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190628"
+appversion = "b20190630"
 
 
 @client.event

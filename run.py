@@ -20,7 +20,7 @@ from modules import configmaker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190630"
+appversion = "b20190701"
 
 
 @client.event
@@ -138,6 +138,8 @@ async def userdb(ctx, command: str = None, mention: str = None):
             await users.print_all(ctx, mention)
         elif command == "server_check":
             await users.server_check(ctx, mention)
+        elif command == "unverify":
+            await users.unverify(ctx, mention)
         else:
             pass
     else:
@@ -393,8 +395,6 @@ async def users_background_loop():
     while not client.is_closed():
         await users.mapping_username_loop(client)
 
-
-# TODO: detect when channel is deleted and automatically untrack
 
 client.loop.create_task(modchecker_background_loop())
 client.loop.create_task(users_background_loop())

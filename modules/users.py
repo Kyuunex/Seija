@@ -126,6 +126,16 @@ async def verify(channel, member, guild, lookup_type, lookup_string, response):
         return None
 
 
+async def unverify(ctx, user_id):
+    await dbhandler.query(["DELETE FROM users WHERE user_id = ?", [user_id, ]])
+    member = ctx.guild.get_member(int(user_id))
+    if member:
+        try:
+            await member.edit(roles=[])
+            await ctx.send("Done")
+        except Exception as e:
+            await ctx.send(e)
+
 async def guildnamesync(ctx):
     now = datetime.datetime.now()
     for member in ctx.guild.members:

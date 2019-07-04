@@ -39,6 +39,8 @@ async def help():
     embed.add_field(name="'help mapchannelmanagement", value="To bring mapset channel management commands.", inline=True)
     embed.add_field(name="'help queuemanagement", value="To bring up queue channel management commands.", inline=True)
     embed.add_field(name="'help admin", value="Commands for admins.", inline=True)
+    embed.add_field(name="'from (country_name)", value="Retrive a list of server members that are in the specified country. Takes Alpha-2, Alpha-3 codes and full country names.", inline=True)
+    embed.add_field(name="'ts (mod)", value="Send an osu editor clickable timestamp. Must start with a timestamp.", inline=True)
     #embed.add_field(name="'help veto", value="Commands for tracking in veto mode.", inline=True)
 
     embed.set_thumbnail(url=help_thumbnail)

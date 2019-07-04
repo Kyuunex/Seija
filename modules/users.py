@@ -62,6 +62,46 @@ async def demographics(client, ctx): #TODO" do this
     await ctx.send(embed=statsembed)
 
 
+async def users_from(client, ctx, country_code): #TODO" do this
+    async with ctx.channel.typing():
+        try:
+            if len(country_code) == 2:
+                countryobject = pycountry.countries.get(alpha_2=country_code.upper())
+            elif len(country_code) == 3:
+                countryobject = pycountry.countries.get(alpha_3=country_code.upper())
+            else:
+                countryobject = pycountry.countries.get(name=country_code)
+            countryname = countryobject.name
+            countryflag = ":flag_%s:" % (countryobject.alpha_2.lower())
+        except:
+            countryobject = None
+            countryflag = "\n"
+            countryname = "Country not found. Keep in mind that full country names are case-sensetive.\nYou can also try searching with alpha 2 codes."
+        masterlist = []
+        if countryobject:
+            for member in ctx.guild.members:
+                if not member.bot:
+                    query = await dbhandler.query(["SELECT osu_username FROM users WHERE country = ? AND user_id = ?", [str(countryobject.alpha_2.upper()), str(member.id)]])
+                    if query:
+                        masterlist.append(query[0][0])
+        memberamount = len(masterlist)
+        contents = "%s members from %s %s\n" % (str(memberamount), countryflag, countryname)
+
+        for one_member in masterlist:
+            contents += "%s\n" % (one_member)
+            if len(contents) > 1800:
+                statsembed = discord.Embed(description=contents, color=0xbd3661)
+                statsembed.set_author(name="Country Demographics")
+                await ctx.send(embed=statsembed)
+                contents = ""
+        
+        if contents == "":
+            contents = "\n"
+        statsembed = discord.Embed(description=contents, color=0xbd3661)
+        statsembed.set_author(name="Country Demographics")
+    await ctx.send(embed=statsembed)
+
+
 async def verify(channel, member, guild, lookup_type, lookup_string, response):
     # Defaults
     osuusername = None

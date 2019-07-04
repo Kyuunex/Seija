@@ -20,7 +20,7 @@ from modules import configmaker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190701"
+appversion = "b20190704"
 
 
 @client.event
@@ -65,6 +65,7 @@ async def makeadmin(ctx, user_id: str, perms = str("0")):
 async def restart(ctx):
     if await permissions.check(ctx.message.author.id):
         await ctx.send("Restarting")
+        quit()
         quit()
     else:
         await ctx.send(embed=await permissions.error())
@@ -265,6 +266,11 @@ async def demographics(ctx):
         await users.demographics(client, ctx)
     else:
         await ctx.send(embed=await permissions.error())
+
+
+@client.command(name="from", brief="from", description="", pass_context=True)
+async def users_from(ctx, *, country_code = "US"):
+    await users.users_from(client, ctx, country_code)
 
 
 @client.command(name="request", brief="Request ether a queue or mod channel", description="", pass_context=True)

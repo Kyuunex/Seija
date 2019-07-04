@@ -85,6 +85,7 @@ async def users_from(client, ctx, country_code): #TODO" do this
                     if query:
                         masterlist.append(query[0])
         memberamount = len(masterlist)
+        masterlist.sort()
         contents = "%s members from %s %s\n" % (str(memberamount), countryflag, countryname)
 
         for one_member in masterlist:

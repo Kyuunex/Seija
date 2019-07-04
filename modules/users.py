@@ -81,14 +81,14 @@ async def users_from(client, ctx, country_code): #TODO" do this
         if countryobject:
             for member in ctx.guild.members:
                 if not member.bot:
-                    query = await dbhandler.query(["SELECT osu_username FROM users WHERE country = ? AND user_id = ?", [str(countryobject.alpha_2.upper()), str(member.id)]])
+                    query = await dbhandler.query(["SELECT osu_username, osu_id FROM users WHERE country = ? AND user_id = ?", [str(countryobject.alpha_2.upper()), str(member.id)]])
                     if query:
-                        masterlist.append(query[0][0])
+                        masterlist.append(query[0])
         memberamount = len(masterlist)
         contents = "%s members from %s %s\n" % (str(memberamount), countryflag, countryname)
 
         for one_member in masterlist:
-            contents += "%s\n" % (one_member)
+            contents += "[%s](https://osu.ppy.sh/users/%s)\n" % (one_member[0], one_member[1])
             if len(contents) > 1800:
                 statsembed = discord.Embed(description=contents, color=0xbd3661)
                 statsembed.set_author(name="Country Demographics")

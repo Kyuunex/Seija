@@ -193,7 +193,7 @@ async def guildnamesync(ctx):
 
 async def roleless(ctx, mention):
     for member in ctx.guild.members:
-        if len(member.roles) > 1:
+        if len(member.roles) < 2:
             await ctx.send(member.mention)
 
 

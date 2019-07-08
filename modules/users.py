@@ -195,6 +195,14 @@ async def roleless(ctx, mention):
     for member in ctx.guild.members:
         if len(member.roles) < 2:
             await ctx.send(member.mention)
+            if mention:
+                try:
+                    query = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
+                    if query:
+                        await ctx.send("person above is in my database and linked to <https://osu.ppy.sh/users/%s" % (query[0][0]))
+                except Exception as e:
+                    await ctx.send(e)
+
 
 
 async def mapping_username_loop(client):

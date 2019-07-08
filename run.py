@@ -20,7 +20,7 @@ from modules import configmaker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190704"
+appversion = "b20190708"
 
 
 @client.event
@@ -53,9 +53,19 @@ async def adminlist(ctx):
 
 @client.command(name="makeadmin", brief="Add a user to bot admin list", description="", pass_context=True)
 async def makeadmin(ctx, user_id: str, perms = str("0")):
-    appinfo = await client.application_info()
-    if await permissions.checkowner(ctx.message.author.id) or await permissions.checkowner(str(appinfo.owner.id)):
+    if await permissions.checkowner(ctx.message.author.id):
         await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(user_id), str(perms)]])
+        await ctx.send(":ok_hand:")
+    else:
+        await ctx.send(embed=await permissions.ownererror())
+
+
+@client.command(name="resetadminlist", brief="Scrap the current admin list and make the bot owner the bot admin", description="", pass_context=True)
+async def resetadminlist(ctx,):
+    appinfo = await client.application_info()
+    if str(ctx.message.author.id) == str(appinfo.owner.id):
+        await dbhandler.query("DELETE FROM admins")
+        await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), str(1)]])
         await ctx.send(":ok_hand:")
     else:
         await ctx.send(embed=await permissions.ownererror())
@@ -141,6 +151,8 @@ async def userdb(ctx, command: str = None, mention: str = None):
             await users.server_check(ctx, mention)
         elif command == "unverify":
             await users.unverify(ctx, mention)
+        elif command == "roleless":
+            await users.roleless(ctx, mention)
         else:
             pass
     else:

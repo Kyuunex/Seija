@@ -191,6 +191,11 @@ async def guildnamesync(ctx):
             else:
                 await ctx.send("%s | not in db" % (member.mention))
 
+async def roleless(ctx, mention):
+    for member in ctx.guild.members:
+        if len(member.roles) > 1:
+            await ctx.send(member.mention)
+
 
 async def mapping_username_loop(client):
     try:

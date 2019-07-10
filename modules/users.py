@@ -110,7 +110,7 @@ async def verify(channel, member, guild, lookup_type, lookup_string, response):
     pp = "0"
     country = ""
     ranked_amount = "0"
-    args = "[]"
+    no_sync = "0"
 
     try:
         if lookup_type == "u":
@@ -161,7 +161,7 @@ async def verify(channel, member, guild, lookup_type, lookup_string, response):
             # possibly force update the entry in future
         else:
             print("adding user %s in database" % (user_id,))
-            await dbhandler.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osuaccountid, osuusername, osu_join_date, pp, country, ranked_amount, args]])
+            await dbhandler.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osuaccountid, osuusername, osu_join_date, pp, country, ranked_amount, no_sync]])
 
         if not response:
             response = "verified <@%s>" % (user_id)
@@ -230,12 +230,19 @@ async def mapping_username_loop(client):
                         query = await dbhandler.query(["SELECT * FROM users WHERE user_id = ?", [str(member.id)]])
                         if query:
                             try:
+                                check_if_restricted_user_in_db = await dbhandler.query(["SELECT osu_id FROM restricted_users WHERE guild_id = ? AND osu_id = ?", [str(guild.id), str(query[0][1])]])
                                 osuprofile = await osuapi.get_user(query[0][1])
                                 if osuprofile:
                                     await one_guild_member_sync(auditchannel, query, now, member, osuprofile)
                                     await usereventfeed.usereventtrack(client, feedchannel, osuprofile, "user_events")
+                                    if check_if_restricted_user_in_db:
+                                        await auditchannel.send("%s | `%s` | `%s` | unrestricted lol" % (member.mention, str(query[0][2]), str(query[0][1])))
+                                        await dbhandler.query(["DELETE FROM restricted_users WHERE guild_id = ? AND osu_id = ?", [str(guild.id), str(query[0][1])]])
                                 else:
-                                    await send_notice("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])), auditchannel, now)
+                                    # at this point we are sure that the user is restricted.
+                                    if not check_if_restricted_user_in_db:
+                                        await auditchannel.send("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])))
+                                        await dbhandler.query(["INSERT INTO restricted_users VALUES (?,?)", [str(guild.id), str(query[0][1])]])
                             except Exception as e:
                                 print(e)
                                 print("Connection issues?")
@@ -254,20 +261,24 @@ async def mapping_username_loop(client):
 
 async def one_guild_member_sync(auditchannel, query, now, member, osuprofile):
     if "04-01T" in str(now.isoformat()):
-        osuusername = upsidedown.transform(
-            osuprofile['username'])
+        osuusername = upsidedown.transform(osuprofile['username'])
     else:
         osuusername = osuprofile['username']
+    if str(query[0][2]) != osuusername:
+        await auditchannel.send("`%s` namechanged to `%s`. osu_id = `%s`" % (str(query[0][2]), osuusername, str(query[0][1])))
+        if str(query[0][1]) == str(4116573):
+            await auditchannel.send("This is bor btw. Yes, I actually added this specific message for bor in this bot.")
     if member.display_name != osuusername:
-        if "nosync" in str(query[0][7]):
-            await send_notice("%s | `%s` | `%s` | username not updated as `nosync` was set for this user" % (str(member.id), osuusername, str(query[0][1])), auditchannel, now)
+        if "1" in str(query[0][7]):
+            await send_notice("%s | `%s` | `%s` | username not updated as `no_sync` was set for this user" % (str(member.mention), osuusername, str(query[0][1])), auditchannel, now)
         else:
+            old_nickname = member.display_name
             try:
                 await member.edit(nick=osuusername)
             except Exception as e:
                 await auditchannel.send(e)
                 await auditchannel.send("%s | `%s` | `%s` | no perms to update" % (member.mention, osuusername, str(query[0][1])))
-            await auditchannel.send("%s | `%s` | `%s` | nickname updated, old nickname %s" % (member.mention, osuusername, str(query[0][1]), str(query[0][2])))
+            await auditchannel.send("%s | `%s` | `%s` | nickname updated, old nickname %s" % (member.mention, osuusername, str(query[0][1]), old_nickname))
     await dbhandler.query(
         [
             "UPDATE users SET country = ?, pp = ?, osu_join_date = ?, osu_username = ? WHERE user_id = ?;",

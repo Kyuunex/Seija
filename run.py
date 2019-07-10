@@ -31,7 +31,7 @@ async def on_ready():
     print('------')
     if not os.path.exists('data/maindb.sqlite3'):
         appinfo = await client.application_info()
-        await dbhandler.query("CREATE TABLE users (user_id, osu_id, osu_username, osu_join_date, pp, country, ranked_maps_amount, args)")
+        await dbhandler.query("CREATE TABLE users (user_id, osu_id, osu_username, osu_join_date, pp, country, ranked_maps_amount, no_sync)")
         await dbhandler.query("CREATE TABLE user_events (osu_id, contents)")
         await dbhandler.query("CREATE TABLE config (setting, parent, value, flag)")
         await dbhandler.query("CREATE TABLE admins (user_id, permissions)")
@@ -40,6 +40,7 @@ async def on_ready():
         await dbhandler.query("CREATE TABLE mod_tracking_pauselist (mapset_id, channel_id, mode)")
         await dbhandler.query("CREATE TABLE mapset_status (mapset_id, map_id, channel_id, unresolved)")
         await dbhandler.query("CREATE TABLE notices (timestamp, notice)")
+        await dbhandler.query("CREATE TABLE restricted_users (guild_id, osu_id)")
         await dbhandler.query("CREATE TABLE queues (channel_id, user_id, guild_id)")
         await dbhandler.query("CREATE TABLE mapset_channels (channel_id, role_id, user_id, mapset_id, guild_id)")
         await dbhandler.query("CREATE TABLE name_backups (id, name)")

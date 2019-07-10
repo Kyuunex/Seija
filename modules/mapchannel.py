@@ -34,7 +34,11 @@ async def make_mapset_channel(client, ctx, mapset_id, mapsetname):
                 mapset_id = "0"
                 desc = ""
             else:
-                mapset = await osuapi.get_beatmap(mapset_id)
+                try:
+                    mapset = await osuapi.get_beatmap(mapset_id)
+                except:
+                    mapset = None
+                    print("Connection issues?")
                 mapset_id = str(mapset_id)
                 desc = "https://osu.ppy.sh/beatmapsets/%s" % (mapset_id)
 
@@ -183,8 +187,14 @@ async def track_mapset(client, ctx, tracking_mode):
             if mapset_id:
                 if str(mapset_id[0][0]) != "0":
                     if await modchecker.track(str(mapset_id[0][0]), ctx.message.channel.id):
-                        await ctx.send("Tracked", embed=await osuembed.mapset(await osuapi.get_beatmaps(str(mapset_id[0][0]))))
-                        await reputation.unarchive_channel(client, ctx, "guild_mapset_category")
+                        try:
+                            beatmap_objects = await osuapi.get_beatmaps(str(mapset_id[0][0]))
+                            tracked_embed = await osuembed.mapset(beatmap_objects)
+                            await ctx.send("Tracked", embed=tracked_embed)
+                            await reputation.unarchive_channel(client, ctx, "guild_mapset_category")
+                        except:
+                            print("Connection issues?")
+                            await ctx.send("Connection issues? try again")
                     else:
                         await ctx.send("Error")
                 else:

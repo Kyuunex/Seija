@@ -39,11 +39,15 @@ async def main(client):
         tracklist = await dbhandler.query("SELECT * FROM user_event_feed_track_list")
         if tracklist:
             for oneentry in tracklist:
-                osuprofile = await osuapi.get_user(oneentry[0])
-                if osuprofile: #
-                    await usereventtrack(client, oneentry[1].split(","), osuprofile, "user_event_feed_json_data")
-                else:
-                    print("`%s` | `%s` | restricted" % (str(oneentry[0])))
+                try:
+                    osuprofile = await osuapi.get_user(oneentry[0])
+                    if osuprofile: #
+                        await usereventtrack(client, oneentry[1].split(","), osuprofile, "user_event_feed_json_data")
+                    else:
+                        print("`%s` | `%s` | restricted" % (str(oneentry[0])))
+                except Exception as e:
+                    print("Connection issues?")
+                    await asyncio.sleep(120)
         await asyncio.sleep(1200)
     except Exception as e:
         print(time.strftime('%X %x %Z'))
@@ -60,7 +64,13 @@ async def usereventtrack(client, channel, osuprofile, table):
             if newevent:
                 eventcolor = await determineevent(newevent['display_html'])
                 if eventcolor:
-                    embed = await osuembed.mapset(await osuapi.get_beatmaps(newevent['beatmapset_id']), eventcolor)
+                    try:
+                        beatmappobjects = await osuapi.get_beatmaps(newevent['beatmapset_id'])
+                        embed = await osuembed.mapset(beatmappobjects, eventcolor)
+                    except:
+                        print("Connection issues?")
+                        embed = None
+                        await asyncio.sleep(120)
                     if embed:
                         display_text = (unescape(re.sub('<[^<]+?>', '', newevent['display_html']))).replace("@", "")
                         try:

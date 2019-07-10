@@ -20,7 +20,7 @@ from modules import configmaker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190708"
+appversion = "b20190710"
 
 
 @client.event
@@ -161,21 +161,29 @@ async def userdb(ctx, command: str = None, mention: str = None):
 
 @client.command(name="mapset", brief="Show mapset info", description="", pass_context=True)
 async def mapset(ctx, mapset_id: str, text: str = None):
-    embed = await osuembed.mapset(await osuapi.get_beatmaps(mapset_id))
-    if embed:
-        await ctx.send(content=text, embed=embed)
-    else:
-        await ctx.send(content='`No mapset found with that ID`')
+    try:
+        embed = await osuembed.mapset(await osuapi.get_beatmaps(mapset_id))
+        if embed:
+            await ctx.send(content=text, embed=embed)
+        else:
+            await ctx.send(content='`No mapset found with that ID`')
+    except:
+        print("Connection issues?")
+        await ctx.send("Connection issues?")
 
 
 @client.command(name="user", brief="Show osu user info", description="", pass_context=True)
 async def user(ctx, *, username):
-    embed = await osuembed.osuprofile(await osuapi.get_user(username))
-    if embed:
-        await ctx.send(embed=embed)
-        # await ctx.message.delete()
-    else:
-        await ctx.send(content='`No user found with that username`')
+    try:
+        embed = await osuembed.osuprofile(await osuapi.get_user(username))
+        if embed:
+            await ctx.send(embed=embed)
+            # await ctx.message.delete()
+        else:
+            await ctx.send(content='`No user found with that username`')
+    except:
+        print("Connection issues?")
+        await ctx.send("Connection issues?")
 
 
 @client.command(name="help", brief="The pretty help command", description="", pass_context=True)
@@ -187,7 +195,13 @@ async def help(ctx, subhelp: str = None):  # TODO: rewrite help
 async def forcetrack(ctx, mapset_id: str):
     if await permissions.check(ctx.message.author.id):
         if await modchecker.track(mapset_id, ctx.message.channel.id):
-            await ctx.send("Tracked", embed=await osuembed.mapset(await osuapi.get_beatmaps(mapset_id)))
+            try:
+                mapsetobject = await osuapi.get_beatmaps(mapset_id)
+                embed = await osuembed.mapset(mapsetobject)
+                await ctx.send("Tracked", embed=embed)
+            except:
+                print("Connection issues?")
+                await ctx.send("Connection issues?")
         else:
             await ctx.send("Error")
     else:
@@ -209,7 +223,13 @@ async def forceuntrack(ctx, mapset_id: str):
 async def veto(ctx, mapset_id: int):
     if await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ? AND value = ?", ["guild_veto_channel", str(ctx.guild.id), str(ctx.message.channel.id)]]):
         if await modchecker.track(mapset_id, ctx.message.channel.id, "veto"):
-            await ctx.send("Tracked in veto mode", embed=await osuembed.mapset(await osuapi.get_beatmaps(mapset_id)))
+            try:
+                mapsetobject = await osuapi.get_beatmaps(mapset_id)
+                embed = await osuembed.mapset(mapsetobject)
+                await ctx.send("Tracked in veto mode", embed=embed)
+            except:
+                print("Connection issues?")
+                await ctx.send("Connection issues?")
         else:
             await ctx.send("Error")
     else:
@@ -220,8 +240,13 @@ async def veto(ctx, mapset_id: int):
 async def unveto(ctx, mapset_id: int):
     if await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ? AND value = ?", ["guild_veto_channel", str(ctx.guild.id), str(ctx.message.channel.id)]]):   
         if await modchecker.untrack(mapset_id, ctx.message.channel.id):
-            embed = await osuembed.mapset(await osuapi.get_beatmaps(mapset_id))
-            await ctx.send("Untracked this", embed=embed)
+            try:
+                mapsetobject = await osuapi.get_beatmaps(mapset_id)
+                embed = await osuembed.mapset(mapsetobject)
+                await ctx.send("Untracked this", embed=embed)
+            except:
+                print("Connection issues?")
+                await ctx.send("Connection issues?")
         else:
             await ctx.send("No tracking record found")
     else:
@@ -232,8 +257,13 @@ async def unveto(ctx, mapset_id: int):
 async def sublist(ctx):
     if await permissions.check(ctx.message.author.id):
         for oneentry in await dbhandler.query("SELECT * FROM mod_tracking"):
-            embed = await osuembed.mapset(await osuapi.get_beatmaps(str(oneentry[0])))
-            await ctx.send(content="mapset_id %s | channel <#%s> | tracking_mode %s" % (oneentry), embed=embed)
+            try:
+                mapsetobject = await osuapi.get_beatmaps(str(oneentry[0]))
+                embed = await osuembed.mapset(mapsetobject)
+                await ctx.send(content="mapset_id %s | channel <#%s> | tracking_mode %s" % (oneentry), embed=embed)
+            except:
+                print("Connection issues?")
+                await ctx.send("Connection issues?")
     else:
         await ctx.send(embed=await permissions.error())
         

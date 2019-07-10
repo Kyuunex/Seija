@@ -112,21 +112,26 @@ async def verify(channel, member, guild, lookup_type, lookup_string, response):
     ranked_amount = "0"
     args = "[]"
 
-    if lookup_type == "u":
-        osuprofile = await osuapi.get_user(lookup_string)
-        if osuprofile:
-            osuusername = str(osuprofile['username'])
-            osuaccountid = str(osuprofile['user_id'])
-            osu_join_date = str(osuprofile['join_date'])
-            pp = str(osuprofile['pp_raw'])
-            country = str(osuprofile['country'])
-            embed = await osuembed.osuprofile(osuprofile)
-    elif lookup_type == "s":
-        authorsmapset = await osuapi.get_beatmaps(lookup_string)
-        if authorsmapset:
-            osuusername = str(authorsmapset[0]['creator'])
-            osuaccountid = str(authorsmapset[0]['creator_id'])
-            embed = await osuembed.mapset(authorsmapset)
+    try:
+        if lookup_type == "u":
+            osuprofile = await osuapi.get_user(lookup_string)
+            if osuprofile:
+                osuusername = str(osuprofile['username'])
+                osuaccountid = str(osuprofile['user_id'])
+                osu_join_date = str(osuprofile['join_date'])
+                pp = str(osuprofile['pp_raw'])
+                country = str(osuprofile['country'])
+                embed = await osuembed.osuprofile(osuprofile)
+        elif lookup_type == "s":
+            authorsmapset = await osuapi.get_beatmaps(lookup_string)
+            if authorsmapset:
+                osuusername = str(authorsmapset[0]['creator'])
+                osuaccountid = str(authorsmapset[0]['creator_id'])
+                embed = await osuembed.mapset(authorsmapset)
+    except Exception as e:
+        print(e)
+        print("Connection issues?")
+        await channel.send(content="It looks like osu's website is down so I can't verify at this moment. Ping managers or something or try again later.")
 
     if osuusername:
 
@@ -183,11 +188,15 @@ async def guildnamesync(ctx):
         if not member.bot:
             query = await dbhandler.query(["SELECT * FROM users WHERE user_id = ?", [str(member.id)]])
             if query:
-                osuprofile = await osuapi.get_user(query[0][1])
-                if osuprofile:
-                    await one_guild_member_sync(ctx.channel, query, now, member, osuprofile)
-                else:
-                    await ctx.channel.send("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])))
+                try:
+                    osuprofile = await osuapi.get_user(query[0][1])
+                    if osuprofile:
+                        await one_guild_member_sync(ctx.channel, query, now, member, osuprofile)
+                    else:
+                        await ctx.channel.send("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])))
+                except Exception as e:
+                    print(e)
+                    print("Connection issues?")
             else:
                 await ctx.send("%s | not in db" % (member.mention))
 
@@ -220,12 +229,16 @@ async def mapping_username_loop(client):
                     if not member.bot:
                         query = await dbhandler.query(["SELECT * FROM users WHERE user_id = ?", [str(member.id)]])
                         if query:
-                            osuprofile = await osuapi.get_user(query[0][1])
-                            if osuprofile:
-                                await one_guild_member_sync(auditchannel, query, now, member, osuprofile)
-                                await usereventfeed.usereventtrack(client, feedchannel, osuprofile, "user_events")
-                            else:
-                                await send_notice("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])), auditchannel, now)
+                            try:
+                                osuprofile = await osuapi.get_user(query[0][1])
+                                if osuprofile:
+                                    await one_guild_member_sync(auditchannel, query, now, member, osuprofile)
+                                    await usereventfeed.usereventtrack(client, feedchannel, osuprofile, "user_events")
+                                else:
+                                    await send_notice("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])), auditchannel, now)
+                            except Exception as e:
+                                print(e)
+                                print("Connection issues?")
                                 await asyncio.sleep(120)
                         else:
                             await send_notice("%s | not in db" % (member.mention), auditchannel, now)
@@ -284,7 +297,12 @@ async def on_member_join(client, member):
                         await join_channel_object.send("Hello %s. It seems like you are in my database but the profile I know of you is restricted. If this is correct, please link any of your uploaded maps (new website only) and I'll verify you instantly. If this is not correct, tag Kyuunex." % (member.mention))
                 else:
                     await join_channel_object.send("Welcome %s! We have a verification system in this server so we know who you are, give you appropriate roles and keep raids/spam out." % (member.mention))
-                    osuprofile = await osuapi.get_user(member.name)
+                    try:
+                        osuprofile = await osuapi.get_user(member.name)
+                    except Exception as e:
+                        print(e)
+                        print("Connection issues?")
+                        osuprofile = None
                     if osuprofile:
                         await join_channel_object.send(content='Is this your osu profile? If yes, type `yes`, if not, link your profile.', embed=await osuembed.osuprofile(osuprofile))
                     else:
@@ -305,7 +323,13 @@ async def on_member_remove(client, member):
             if not member.bot:
                 osu_id = await dbhandler.query(["SELECT osu_username FROM users WHERE user_id = ?", [str(member.id)]])
                 if osu_id:
-                    embed = await osuembed.osuprofile(await osuapi.get_user(osu_id[0][0]))
+                    try:
+                        memberprofile = await osuapi.get_user(osu_id[0][0])
+                        embed = await osuembed.osuprofile(memberprofile)
+                    except Exception as e:
+                        print(e)
+                        print("Connection issues?")
+                        embed = None
                 else:
                     embed = None
                 await join_channel_object.send("%s left this server. Godspeed!" % (str(member.name)), embed=embed)
@@ -370,7 +394,12 @@ async def check_ranked(ctx, mention):
         for member in role.members:
             lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
             if lookupuser:
-                ranked_amount = len(await get_ranked_maps(await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))))
+                try:
+                    ranked_amount = len(await get_ranked_maps(await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))))
+                except Exception as e:
+                    print(e)
+                    print("Connection issues?")
+                    ranked_amount = None
                 if bool(ranked_amount):
                     output += "%s\n" % (member.mention)
                 else:
@@ -388,7 +417,14 @@ async def print_all(ctx, mention):
         else:
             tag = "%s / %s"
         for oneuser in await dbhandler.query("SELECT * FROM users"):
-            embed = await osuembed.osuprofile(await osuapi.get_user(oneuser[1]))
+            try:
+                userprofile = await osuapi.get_user(oneuser[1])
+                embed = await osuembed.osuprofile(userprofile)
+            except:
+                print("Connection issues?")
+                await ctx.send("Connection issues?")
+                await asyncio.sleep(10)
+                embed = None
             if embed:
                 await ctx.send(content=tag % (oneuser[0], oneuser[2]), embed=embed)
     except Exception as e:

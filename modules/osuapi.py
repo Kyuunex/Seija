@@ -10,16 +10,10 @@ baseurl = "https://osu.ppy.sh/api/"
 
 async def request(endpoint, query):
     query['k'] = osuapikey
-    try:
-        url = baseurl+endpoint+'?'+urllib.parse.urlencode(query)
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                return (await response.json())
-    except Exception as e:
-        print(time.strftime('%X %x %Z'))
-        print("in osuapi.request")
-        print(e)
-        return None
+    url = baseurl+endpoint+'?'+urllib.parse.urlencode(query)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return (await response.json())
 
 
 async def get_user(username):

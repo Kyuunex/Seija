@@ -128,49 +128,48 @@ async def verify(channel, member, guild, lookup_type, lookup_string, response):
                 osuusername = str(authorsmapset[0]['creator'])
                 osuaccountid = str(authorsmapset[0]['creator_id'])
                 embed = await osuembed.mapset(authorsmapset)
+
+        if osuusername:
+
+            ranked_amount = len(await get_ranked_maps(await osuapi.get_beatmaps_by_user(str(osuaccountid))))
+
+            if ranked_amount >= 10:
+                role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_experienced_mapper_role", str(guild.id)]]))[0][0]))
+            elif ranked_amount >= 1:
+                role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_ranked_mapper_role", str(guild.id)]]))[0][0]))
+            else:
+                role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(guild.id)]]))[0][0]))
+
+            if type(member) is str:
+                user_id = member
+            else:
+                user_id = str(member.id)
+                try:
+                    await member.add_roles(role)
+                    await member.edit(nick=osuusername)
+                except Exception as e:
+                    print(time.strftime('%X %x %Z'))
+                    print("in users.verify")
+                    print(e)
+
+            if await dbhandler.query(["SELECT user_id FROM users WHERE user_id = ?", [user_id, ]]):
+                print("user %s already in database" % (user_id,))
+                # possibly force update the entry in future
+            else:
+                print("adding user %s in database" % (user_id,))
+                await dbhandler.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osuaccountid, osuusername, osu_join_date, pp, country, ranked_amount, no_sync]])
+
+            if not response:
+                response = "verified <@%s>" % (user_id)
+
+            await channel.send(content=response, embed=embed)
+            return True
+        else:
+            return None
     except Exception as e:
         print(e)
         print("Connection issues?")
         await channel.send(content="It looks like osu's website is down so I can't verify at this moment. Ping managers or something or try again later.")
-
-    if osuusername:
-
-        ranked_amount = len(await get_ranked_maps(await osuapi.get_beatmaps_by_user(str(osuaccountid))))
-
-        if ranked_amount >= 10:
-            role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_experienced_mapper_role", str(guild.id)]]))[0][0]))
-        elif ranked_amount >= 1:
-            role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_ranked_mapper_role", str(guild.id)]]))[0][0]))
-        else:
-            role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(guild.id)]]))[0][0]))
-
-        if type(member) is str:
-            user_id = member
-        else:
-            user_id = str(member.id)
-            try:
-                await member.add_roles(role)
-                await member.edit(nick=osuusername)
-            except Exception as e:
-                print(time.strftime('%X %x %Z'))
-                print("in users.verify")
-                print(e)
-
-        if await dbhandler.query(["SELECT user_id FROM users WHERE user_id = ?", [user_id, ]]):
-            print("user %s already in database" % (user_id,))
-            # possibly force update the entry in future
-        else:
-            print("adding user %s in database" % (user_id,))
-            await dbhandler.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osuaccountid, osuusername, osu_join_date, pp, country, ranked_amount, no_sync]])
-
-        if not response:
-            response = "verified <@%s>" % (user_id)
-
-        await channel.send(content=response, embed=embed)
-        return True
-    else:
-        return None
-
 
 async def unverify(ctx, user_id):
     await dbhandler.query(["DELETE FROM users WHERE user_id = ?", [user_id, ]])
@@ -193,7 +192,7 @@ async def guildnamesync(ctx):
                     if osuprofile:
                         await one_guild_member_sync(ctx.channel, query, now, member, osuprofile)
                     else:
-                        await ctx.channel.send("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])))
+                        await ctx.channel.send("%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | restricted" % (member.mention, str(query[0][2]), str(query[0][1]), str(query[0][1])))
                 except Exception as e:
                     print(e)
                     print("Connection issues?")
@@ -236,12 +235,12 @@ async def mapping_username_loop(client):
                                     await one_guild_member_sync(auditchannel, query, now, member, osuprofile)
                                     await usereventfeed.usereventtrack(client, feedchannel, osuprofile, "user_events")
                                     if check_if_restricted_user_in_db:
-                                        await auditchannel.send("%s | `%s` | `%s` | unrestricted lol" % (member.mention, str(query[0][2]), str(query[0][1])))
+                                        await auditchannel.send("%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | unrestricted lol" % (member.mention, str(query[0][2]), str(query[0][1]), str(query[0][1])))
                                         await dbhandler.query(["DELETE FROM restricted_users WHERE guild_id = ? AND osu_id = ?", [str(guild.id), str(query[0][1])]])
                                 else:
                                     # at this point we are sure that the user is restricted.
                                     if not check_if_restricted_user_in_db:
-                                        await auditchannel.send("%s | `%s` | `%s` | restricted" % (member.mention, str(query[0][2]), str(query[0][1])))
+                                        await auditchannel.send("%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | restricted" % (member.mention, str(query[0][2]), str(query[0][1]), str(query[0][1])))
                                         await dbhandler.query(["INSERT INTO restricted_users VALUES (?,?)", [str(guild.id), str(query[0][1])]])
                             except Exception as e:
                                 print(e)

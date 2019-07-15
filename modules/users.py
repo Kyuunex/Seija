@@ -277,7 +277,7 @@ async def one_guild_member_sync(auditchannel, query, now, member, osuprofile):
             except Exception as e:
                 await auditchannel.send(e)
                 await auditchannel.send("%s | `%s` | `%s` | no perms to update" % (member.mention, osuusername, str(query[0][1])))
-            await auditchannel.send("%s | `%s` | `%s` | nickname updated, old nickname %s" % (member.mention, osuusername, str(query[0][1]), old_nickname))
+            await auditchannel.send("%s | `%s` | `%s` | nickname updated, old nickname `%s`" % (member.mention, osuusername, str(query[0][1]), old_nickname))
     await dbhandler.query(
         [
             "UPDATE users SET country = ?, pp = ?, osu_join_date = ?, osu_username = ? WHERE user_id = ?;",
@@ -304,9 +304,9 @@ async def on_member_join(client, member):
                     verifyattempt = await verify(join_channel_object, member, member.guild, "u", lookupuser[0][0], "Welcome aboard %s! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.mention))
 
                     if not verifyattempt:
-                        await join_channel_object.send("Hello %s. It seems like you are in my database but the profile I know of you is restricted. If this is correct, please link any of your uploaded maps (new website only) and I'll verify you instantly. If this is not correct, tag Kyuunex." % (member.mention))
+                        await join_channel_object.send("Hello %s. We have a verification system in this server, to keep raids and spam out. It seems like you are in my database but the profile I know of you is restricted. If this is correct, please link any of your uploaded maps (new website only) and I'll verify you instantly. If this is not correct, tag Kyuunex." % (member.mention))
                 else:
-                    await join_channel_object.send("Welcome %s! We have a verification system in this server so we know who you are, give you appropriate roles and keep raids/spam out." % (member.mention))
+                    await join_channel_object.send("Welcome %s! We have a verification system in this server so that we know who you are, give you appropriate roles and keep raids/spam out." % (member.mention))
                     try:
                         osuprofile = await osuapi.get_user(member.name)
                     except Exception as e:
@@ -362,15 +362,15 @@ async def on_message(client, message):
                         split_message = message.content.split('/')
 
                     if 'https://osu.ppy.sh/u' in message.content:
-                        verifyattempt = await verify(message.channel, message.author, message.guild, "u", (split_message[4].split(' ')[0]), "Verified: %s" % (message.author.name))
+                        verifyattempt = await verify(message.channel, message.author, message.guild, "u", (split_message[4].split(' ')[0]), "`Verified: %s`" % (message.author.name))
                         if not verifyattempt:
                             await message.channel.send('verification failure, I can\'t find any profile from that link. If you are restricted, link any of your recently uploaded maps (new website only). if you are not restricted, then maybe osu website is down at this moment and in that case, ping Kyuunex or try again later.')
                     elif 'https://osu.ppy.sh/beatmapsets/' in message.content:
-                        verifyattempt = await verify(message.channel, message.author, message.guild, "s", (split_message[4].split('#')[0]), "Verified through mapset: %s" % (message.author.name))
+                        verifyattempt = await verify(message.channel, message.author, message.guild, "s", (split_message[4].split('#')[0]), "`Verified through mapset: %s`" % (message.author.name))
                         if not verifyattempt:
                             await message.channel.send('verification failure, I can\'t find any map with that link')
                     elif message.content.lower() == 'yes':
-                        verifyattempt = await verify(message.channel, message.author, message.guild, "u", message.author.name, "Verified: %s" % (message.author.name))
+                        verifyattempt = await verify(message.channel, message.author, message.guild, "u", message.author.name, "`Verified: %s`" % (message.author.name))
                         if not verifyattempt:
                             await message.channel.send('verification failure, your discord username does not match a username of any osu account. possible reason can be that you changed your discord username before typing `yes`. In this case, link your profile.')
                     elif 'https://ripple.moe/u' in message.content:

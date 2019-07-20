@@ -404,14 +404,16 @@ async def check_ranked(ctx, mention):
         for member in role.members:
             lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
             if lookupuser:
-                try:
-                    ranked_amount = len(await get_ranked_maps(await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))))
-                except Exception as e:
-                    print(e)
-                    print("Connection issues?")
-                    ranked_amount = None
-                if bool(ranked_amount):
-                    output += "%s\n" % (member.mention)
+                mapsbythisguy = await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))
+                if mapsbythisguy:
+                    try:
+                        ranked_amount = len(await get_ranked_maps(mapsbythisguy))
+                    except Exception as e:
+                        print(e)
+                        print("Connection issues?")
+                        ranked_amount = 0
+                    if ranked_amount >= 1:
+                        output += "%s\n" % (member.mention)
                 else:
                     print("problem with %s" % (member.display_name))
             await asyncio.sleep(0.5)
@@ -427,14 +429,16 @@ async def check_experienced(ctx, mention):
         for member in role.members:
             lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
             if lookupuser:
-                try:
-                    ranked_amount = len(await get_ranked_maps(await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))))
-                except Exception as e:
-                    print(e)
-                    print("Connection issues?")
-                    ranked_amount = 0
-                if ranked_amount >= 10:
-                    output += "%s\n" % (member.mention)
+                mapsbythisguy = await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))
+                if mapsbythisguy:
+                    try:
+                        ranked_amount = len(await get_ranked_maps(mapsbythisguy))
+                    except Exception as e:
+                        print(e)
+                        print("Connection issues?")
+                        ranked_amount = 0
+                    if ranked_amount >= 10:
+                        output += "%s\n" % (member.mention)
                 else:
                     print("problem with %s" % (member.display_name))
             await asyncio.sleep(0.5)

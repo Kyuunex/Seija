@@ -142,14 +142,25 @@ async def verify(ctx, lookup_type: str, osu_id: str, user_id: int, preverify: st
 @client.command(name="userdb", brief="Guild member and Database related commands", description="", pass_context=True)
 async def userdb(ctx, command: str = None, mention: str = None):
     if await permissions.checkowner(ctx.message.author.id):
-        if command == "check_ranked":
-            await users.check_ranked(ctx, mention)
-        elif command == "mass_verify":
+        if command == "mass_verify":
             await users.mass_verify(ctx, mention)
         elif command == "print_all":
             await users.print_all(ctx, mention)
         elif command == "server_check":
             await users.server_check(ctx, mention)
+        else:
+            pass
+    else:
+        await ctx.send(embed=await permissions.ownererror())
+
+
+@client.command(name="u", brief="", description="", pass_context=True)
+async def uuu(ctx, command: str = None, mention: str = None):
+    if await permissions.check(ctx.message.author.id):
+        if command == "check_ranked":
+            await users.check_ranked(ctx, mention)
+        elif command == "check_experienced":
+            await users.check_experienced(ctx, mention)
         elif command == "unverify":
             await users.unverify(ctx, mention)
         elif command == "roleless":
@@ -157,7 +168,7 @@ async def userdb(ctx, command: str = None, mention: str = None):
         else:
             pass
     else:
-        await ctx.send(embed=await permissions.ownererror())
+        await ctx.send(embed=await permissions.error())
 
 
 @client.command(name="mapset", brief="Show mapset info", description="", pass_context=True)

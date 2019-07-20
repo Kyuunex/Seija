@@ -401,22 +401,23 @@ async def check_ranked(ctx, mention):
     role = discord.utils.get(ctx.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(ctx.guild.id)]]))[0][0]))
     if role:
         output = "These fella's have at least 1 ranked map:\n"
-        for member in role.members:
-            lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
-            if lookupuser:
-                mapsbythisguy = await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))
-                if mapsbythisguy:
-                    try:
-                        ranked_amount = len(await get_ranked_maps(mapsbythisguy))
-                    except Exception as e:
-                        print(e)
-                        print("Connection issues?")
-                        ranked_amount = 0
-                    if ranked_amount >= 1:
-                        output += "%s\n" % (member.mention)
-                else:
-                    print("problem with %s" % (member.display_name))
-            await asyncio.sleep(0.5)
+        async with ctx.channel.typing():
+            for member in role.members:
+                lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
+                if lookupuser:
+                    mapsbythisguy = await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))
+                    if mapsbythisguy:
+                        try:
+                            ranked_amount = len(await get_ranked_maps(mapsbythisguy))
+                        except Exception as e:
+                            print(e)
+                            print("Connection issues?")
+                            ranked_amount = 0
+                        if ranked_amount >= 1:
+                            output += "%s\n" % (member.mention)
+                    else:
+                        print("problem with %s" % (member.display_name))
+                await asyncio.sleep(0.5)
         await ctx.send(output)
     else:
         await ctx.send("Nope")
@@ -426,22 +427,23 @@ async def check_experienced(ctx, mention):
     role = discord.utils.get(ctx.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_ranked_mapper_role", str(ctx.guild.id)]]))[0][0]))
     if role:
         output = "These fella's have at least 10 ranked maps:\n"
-        for member in role.members:
-            lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
-            if lookupuser:
-                mapsbythisguy = await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))
-                if mapsbythisguy:
-                    try:
-                        ranked_amount = len(await get_ranked_maps(mapsbythisguy))
-                    except Exception as e:
-                        print(e)
-                        print("Connection issues?")
-                        ranked_amount = 0
-                    if ranked_amount >= 10:
-                        output += "%s\n" % (member.mention)
-                else:
-                    print("problem with %s" % (member.display_name))
-            await asyncio.sleep(0.5)
+        async with ctx.channel.typing():
+            for member in role.members:
+                lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
+                if lookupuser:
+                    mapsbythisguy = await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))
+                    if mapsbythisguy:
+                        try:
+                            ranked_amount = len(await get_ranked_maps(mapsbythisguy))
+                        except Exception as e:
+                            print(e)
+                            print("Connection issues?")
+                            ranked_amount = 0
+                        if ranked_amount >= 10:
+                            output += "%s\n" % (member.mention)
+                    else:
+                        print("problem with %s" % (member.display_name))
+                await asyncio.sleep(0.5)
         await ctx.send(output)
     else:
         await ctx.send("Nope")

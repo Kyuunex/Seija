@@ -518,6 +518,9 @@ async def mverify(ctx, lookup_type, osu_id, user_id, preverify):
     try:
         if preverify == "preverify":
             await verify(ctx.message.channel, str(user_id), None, lookup_type, osu_id, "Preverified: %s" % (str(user_id)))
+        elif preverify == "restricted":
+            await dbhandler.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osu_id, "", "", "", "", "", ""]])
+            await ctx.send("lol ok")
         else:
             await verify(ctx.message.channel, ctx.guild.get_member(user_id), ctx.message.guild, lookup_type, osu_id, "Manually Verified: %s" % (ctx.guild.get_member(user_id).name))
     except Exception as e:

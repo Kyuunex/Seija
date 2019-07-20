@@ -20,7 +20,7 @@ from modules import configmaker
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190715"
+appversion = "b20190720"
 
 
 @client.event
@@ -276,6 +276,18 @@ async def chanlist(ctx): # DELETE FROM mapset_channels WHERE role_id = ""
             await ctx.send(content="channel_id <#%s> | role_id %s | user_id <@%s> | mapset_id %s | guild_id %s " % (oneentry))
     else:
         await ctx.send(embed=await permissions.ownererror())
+        
+        
+@client.command(name="cv", brief="", description="", pass_context=True)
+async def cv(ctx, *, user_id):
+    if await permissions.check(ctx.message.author.id):
+        osu_profile = (await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]]))
+        if osu_profile:
+            osu_id = osu_profile[0][0]
+            embed = await osuembed.osuprofile(await osuapi.get_user(osu_id))
+            await ctx.send("https://osu.ppy.sh/users/%s" % (osu_id), embed=embed)
+    else:
+        await ctx.send(embed=await permissions.error())
 
 
 @client.command(name="af", brief="", description="", pass_context=True)

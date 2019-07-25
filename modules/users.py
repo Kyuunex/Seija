@@ -138,7 +138,7 @@ async def verify(channel, member, guild, lookup_type, lookup_string, response):
             elif ranked_amount >= 1:
                 role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_ranked_mapper_role", str(guild.id)]]))[0][0]))
             else:
-                role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(guild.id)]]))[0][0]))
+                role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapper_role", str(guild.id)]]))[0][0]))
 
             if type(member) is str:
                 user_id = member
@@ -398,7 +398,7 @@ async def get_ranked_maps(beatmaps):
 
 
 async def check_ranked(ctx, mention):
-    role = discord.utils.get(ctx.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_role", str(ctx.guild.id)]]))[0][0]))
+    role = discord.utils.get(ctx.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapper_role", str(ctx.guild.id)]]))[0][0]))
     if role:
         output = "These fella's have at least 1 ranked map:\n"
         async with ctx.channel.typing():

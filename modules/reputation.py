@@ -45,10 +45,10 @@ async def validate_reputation_queues(client, member):
     elif (await get_role_object(client, member.guild, "guild_bn_role")) in member.roles:
         return (await get_category_object(client, member.guild, "guild_bn_nat_queue_category"))
     elif (await get_role_object(client, member.guild, "guild_experienced_mapper_role")) in member.roles:
-        return (await get_category_object(client, member.guild, "guild_ranked_queue_category"))
+        return (await get_category_object(client, member.guild, "guild_ranked_mapper_queue_category"))
     elif (await get_role_object(client, member.guild, "guild_ranked_mapper_role")) in member.roles:
-        return (await get_category_object(client, member.guild, "guild_ranked_queue_category"))
-    elif (await get_role_object(client, member.guild, "guild_verify_role")) in member.roles:
-        return (await get_category_object(client, member.guild, "guild_queue_category"))
+        return (await get_category_object(client, member.guild, "guild_ranked_mapper_queue_category"))
+    elif (await get_role_object(client, member.guild, "guild_mapper_role")) in member.roles:
+        return (await get_category_object(client, member.guild, "guild_mapper_queue_category"))
     else:
         return None

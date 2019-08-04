@@ -3,6 +3,8 @@ This bot is the heart of [The Mapset Management Server](https://discord.gg/8BquK
 
 This bot is built using discord.py rewrite library and uses sqlite3 database.
 
+Please read the LICENSE before using.
+
 ---
 
 ## Installation Instructions

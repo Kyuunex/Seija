@@ -78,6 +78,13 @@ async def queuesettings(client, ctx, action, params):
             elif action == "hide":
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=False, send_messages=False)
                 await ctx.send("queue hidden!", embed=embed)
+            elif action == "archive":
+                guildarchivecategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_archive_category", str(ctx.guild.id)]])
+                if guildarchivecategory:
+                    archivecategory = client.get_channel(int(guildarchivecategory[0][0]))
+                    await ctx.message.channel.edit(reason=None, category=archivecategory)
+                    await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=False, send_messages=False)
+                    await ctx.send("queue archived!", embed=embed)
         except Exception as e:
             await ctx.send(e)
     else:

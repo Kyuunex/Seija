@@ -399,6 +399,11 @@ async def hideq(ctx, *params):
     await queuechannel.queuesettings(client, ctx, "hide", params)
 
 
+@client.command(name="archive", brief="archive the queue", description="", pass_context=True)
+async def archiveq(ctx, *params):
+    await queuechannel.queuesettings(client, ctx, "archive", params)
+
+
 @client.command(name="add", brief="Add a user in the current mapset channel", description="", pass_context=True)
 async def addm(ctx, user_id: str):
     await mapchannel.mapset_channelsettings(client, ctx, "add", user_id)

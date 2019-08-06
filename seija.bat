@@ -1,6 +1,6 @@
 @echo off
 title Seija
 :loop
-python run.py
+python seija.py
 goto loop
 pause

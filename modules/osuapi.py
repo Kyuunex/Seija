@@ -4,7 +4,7 @@ import asyncio
 import time
 import aiohttp
 
-osuapikey = open("data/osu_api_key.txt", "r+").read()
+osuapikey = (open("data/osu_api_key.txt", "r+").read()).rstrip()
 baseurl = "https://osu.ppy.sh/api/"
 
 

@@ -475,4 +475,4 @@ async def users_background_loop():
 
 client.loop.create_task(modchecker_background_loop())
 client.loop.create_task(users_background_loop())
-client.run(open("data/token.txt", "r+").read(), bot=True)
+client.run((open("data/token.txt", "r+").read()).rstrip(), bot=True)

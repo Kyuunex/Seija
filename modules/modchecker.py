@@ -2,9 +2,10 @@ import time
 import asyncio
 import discord
 from modules import db
-from modules import osuapi
-from modules import osuembed
-from modules import osuwebapipreview
+from osuembed import osuembed
+
+from modules.connections import osuweb as osuweb
+from modules.connections import osu as osu
 
 async def return_clickable(author, string):
     if "-" in string:
@@ -47,7 +48,7 @@ async def populatedb(discussions, channel_id):
 
 async def track(mapset_id, channel_id, tracking_mode = "classic"):
     if not db.query(["SELECT mapset_id FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]]):
-        beatmapset_discussions = await osuwebapipreview.discussion(str(mapset_id))
+        beatmapset_discussions = await osuweb.discussion(str(mapset_id))
         if beatmapset_discussions:
             await populatedb(beatmapset_discussions, str(channel_id))
             db.query(["INSERT INTO mod_tracking VALUES (?,?,?)", [str(mapset_id), str(channel_id), tracking_mode]])
@@ -75,8 +76,8 @@ async def check_status(channel, mapset_id, beatmapset_discussions):
         discussions = None
         if await untrack(mapset_id, channel.id):
             try:
-                mapset_object = await osuapi.get_beatmaps(mapset_id)
-                embedthis = await osuembed.mapset(mapset_object)
+                mapset_object = await osu.get_beatmapset(s=mapset_id)
+                embedthis = await osuembed.beatmapset(mapset_object)
             except:
                 print("Connection issues?")
                 embedthis = None
@@ -85,8 +86,8 @@ async def check_status(channel, mapset_id, beatmapset_discussions):
         discussions = None
         if await untrack(mapset_id, channel.id):
             try:
-                mapset_object = await osuapi.get_beatmaps(mapset_id)
-                embedthis = await osuembed.mapset(mapset_object)
+                mapset_object = await osu.get_beatmapset(s=mapset_id)
+                embedthis = await osuembed.beatmapset(mapset_object)
             except:
                 print("Connection issues?")
                 embedthis = None
@@ -151,7 +152,7 @@ async def main(client):
                 tracking_mode = str(oneentry[2])
                 print(time.strftime('%X %x %Z')+' | '+oneentry[0])
 
-                beatmapset_discussions = await osuwebapipreview.discussion(mapset_id)
+                beatmapset_discussions = await osuweb.discussion(mapset_id)
 
                 if beatmapset_discussions:
                     status = await check_status(channel, mapset_id, beatmapset_discussions)

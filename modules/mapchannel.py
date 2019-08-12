@@ -1,14 +1,14 @@
 from modules import db
-from modules import osuapi
 from modules import docs
 from modules import permissions
 from modules import modchecker
-from modules import osuembed
+from osuembed import osuembed
 from modules import reputation
 import discord
 import random
 import asyncio
 
+from modules.connections import osu as osu
 
 mapset_owner_default_permissions = discord.PermissionOverwrite(
     create_instant_invite=True,
@@ -35,7 +35,7 @@ async def make_mapset_channel(client, ctx, mapset_id, mapsetname):
                 desc = ""
             else:
                 try:
-                    mapset = await osuapi.get_beatmap(mapset_id)
+                    mapset = await osu.get_beatmapset(s=mapset_id)
                 except:
                     mapset = None
                     print("Connection issues?")
@@ -46,8 +46,8 @@ async def make_mapset_channel(client, ctx, mapset_id, mapsetname):
                 discordfriendlychannelname = mapsetname.replace(" ", "_").lower()
                 rolename = mapsetname
             elif mapset:
-                discordfriendlychannelname = mapset['title'].replace(" ", "_").lower()
-                rolename = mapset['title']
+                discordfriendlychannelname = mapset.title.replace(" ", "_").lower()
+                rolename = mapset.title
             else:
                 discordfriendlychannelname = None
                 rolename = None
@@ -135,7 +135,7 @@ async def nuke_mapset_channel(client, ctx):
 async def abandon(client, ctx):
     guildarchivecategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_archive_category", str(ctx.guild.id)]])
     if guildarchivecategory:
-        if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (db.query(["SELECT * FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
+        if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (db.query(["SELECT * FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check(ctx.message.author.id)):
             try:
                 mapset_id = db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]])
                 if mapset_id:
@@ -154,7 +154,7 @@ async def abandon(client, ctx):
 
 
 async def set_mapset_id(client, ctx, mapset_id):
-    if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
+    if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check(ctx.message.author.id)):
         try:
             db.query(["UPDATE mapset_channels SET mapset_id = ? WHERE channel_id = ?;", [str(mapset_id), str(ctx.message.channel.id)]])
             await ctx.send("Mapset id updated for this channel")
@@ -163,7 +163,7 @@ async def set_mapset_id(client, ctx, mapset_id):
 
     
 async def set_owner_id(client, ctx, user_id):
-    if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
+    if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check(ctx.message.author.id)):
         try:
             member = ctx.guild.get_member(int(user_id))
             if member:
@@ -175,7 +175,7 @@ async def set_owner_id(client, ctx, user_id):
 
 
 async def track_mapset(client, ctx, tracking_mode):
-    if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
+    if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check(ctx.message.author.id)):
         try:
             if db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]]):
                 db.query(["DELETE FROM mod_tracking WHERE channel_id = ?",[str(ctx.message.channel.id)]])
@@ -188,8 +188,9 @@ async def track_mapset(client, ctx, tracking_mode):
                 if str(mapset_id[0][0]) != "0":
                     if await modchecker.track(str(mapset_id[0][0]), ctx.message.channel.id):
                         try:
-                            beatmap_objects = await osuapi.get_beatmaps(str(mapset_id[0][0]))
-                            tracked_embed = await osuembed.mapset(beatmap_objects)
+                            beatmap_object = await osu.get_beatmapset(s=str(mapset_id[0][0]))
+                            tracked_embed = await osuembed.beatmapset(beatmap_object)
+
                             await ctx.send("Tracked", embed=tracked_embed)
                             await reputation.unarchive_channel(client, ctx, "guild_mapset_category")
                         except:
@@ -206,7 +207,7 @@ async def track_mapset(client, ctx, tracking_mode):
 
 
 async def untrack_mapset(client, ctx):
-    if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
+    if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check(ctx.message.author.id)):
         try:
             if db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]]):
                 db.query(["DELETE FROM mod_tracking WHERE channel_id = ?",[str(ctx.message.channel.id)]])

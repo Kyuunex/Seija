@@ -50,7 +50,7 @@ async def make_queue_channel(client, ctx, queuetype):
 
 
 async def queuesettings(client, ctx, action, params):
-    if (db.query(["SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
+    if (db.query(["SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check(ctx.message.author.id)):
         try:
             print(params)
             if params:

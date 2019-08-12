@@ -12,10 +12,10 @@ footer_text = "Made by Kyuunex"
 
 async def main(ctx, subhelp):
     if subhelp == "admin":
-        if await permissions.check(ctx.message.author.id):
+        if permissions.check(ctx.message.author.id):
             await ctx.send(embed=await admin())
         else:
-            await ctx.send(embed=await permissions.error())
+            await ctx.send(embed=permissions.error())
     elif subhelp == "veto":
         if db.query(["SELECT value FROM config WHERE setting = ? AND value = ?", ["guild_veto_channel", str(ctx.message.channel.id)]]):
             await ctx.send(embed=await veto())

@@ -1,7 +1,5 @@
-from modules import osuapi
-from modules import osuembed
+
 from modules import db
-from modules import usereventfeed
 import discord
 import time
 import datetime
@@ -10,6 +8,9 @@ import upsidedown
 import pycountry
 from collections import Counter
 import operator
+
+from modules.connections import osu as osu
+from osuembed import osuembed
 
 
 async def send_notice(notice, channel, now):
@@ -23,7 +24,7 @@ async def statscalc(data):
     return reversed(sorted(results.items(), key=operator.itemgetter(1)))
 
 
-async def demographics(client, ctx): #TODO" do this
+async def demographics(client, ctx):
     async with ctx.channel.typing():
         masterlist = []
         for member in ctx.guild.members:
@@ -62,7 +63,7 @@ async def demographics(client, ctx): #TODO" do this
     await ctx.send(embed=statsembed)
 
 
-async def users_from(client, ctx, country_code): #TODO" do this
+async def users_from(client, ctx, country_code):
     async with ctx.channel.typing():
         try:
             if len(country_code) == 2:
@@ -114,24 +115,24 @@ async def verify(channel, member, guild, lookup_type, lookup_string, response):
 
     try:
         if lookup_type == "u":
-            osuprofile = await osuapi.get_user(lookup_string)
+            osuprofile = await osu.get_user(u=lookup_string)
             if osuprofile:
-                osuusername = str(osuprofile['username'])
-                osuaccountid = str(osuprofile['user_id'])
-                osu_join_date = str(osuprofile['join_date'])
-                pp = str(osuprofile['pp_raw'])
-                country = str(osuprofile['country'])
-                embed = await osuembed.osuprofile(osuprofile)
+                osuusername = str(osuprofile.name)
+                osuaccountid = str(osuprofile.id)
+                osu_join_date = str(osuprofile.join_date)
+                pp = str(osuprofile.pp_raw)
+                country = str(osuprofile.country)
+                embed = await osuembed.user(osuprofile)
         elif lookup_type == "s":
-            authorsmapset = await osuapi.get_beatmaps(lookup_string)
+            authorsmapset = await osu.get_beatmapset(s=lookup_string)
             if authorsmapset:
-                osuusername = str(authorsmapset[0]['creator'])
-                osuaccountid = str(authorsmapset[0]['creator_id'])
-                embed = await osuembed.mapset(authorsmapset)
+                osuusername = str(authorsmapset.creator)
+                osuaccountid = str(authorsmapset.creator_id)
+                embed = await osuembed.beatmapset(authorsmapset)
 
         if osuusername:
 
-            ranked_amount = len(await get_ranked_maps(await osuapi.get_beatmaps_by_user(str(osuaccountid))))
+            ranked_amount = len(await get_ranked_maps(await osu.get_beatmaps(u=str(osuaccountid))))
 
             if ranked_amount >= 10:
                 role = discord.utils.get(guild.roles, id=int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_experienced_mapper_role", str(guild.id)]]))[0][0]))
@@ -188,7 +189,7 @@ async def guildnamesync(ctx):
             query = db.query(["SELECT * FROM users WHERE user_id = ?", [str(member.id)]])
             if query:
                 try:
-                    osuprofile = await osuapi.get_user(query[0][1])
+                    osuprofile = osu.get_user(u=query[0][1])
                     if osuprofile:
                         await one_guild_member_sync(ctx.channel, query, now, member, osuprofile)
                     else:
@@ -230,10 +231,10 @@ async def mapping_username_loop(client):
                         if query:
                             try:
                                 check_if_restricted_user_in_db = db.query(["SELECT osu_id FROM restricted_users WHERE guild_id = ? AND osu_id = ?", [str(guild.id), str(query[0][1])]])
-                                osuprofile = await osuapi.get_user(query[0][1])
+                                osuprofile = await osu.get_user(u=query[0][1], event_days="1")
                                 if osuprofile:
                                     await one_guild_member_sync(auditchannel, query, now, member, osuprofile)
-                                    await usereventfeed.usereventtrack(client, feedchannel, osuprofile, "user_events")
+                                    await check_events(client, feedchannel, osuprofile, "user_event_history")
                                     if check_if_restricted_user_in_db:
                                         await auditchannel.send("%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | unrestricted lol" % (member.mention, str(query[0][2]), str(query[0][1]), str(query[0][1])))
                                         db.query(["DELETE FROM restricted_users WHERE guild_id = ? AND osu_id = ?", [str(guild.id), str(query[0][1])]])
@@ -258,11 +259,42 @@ async def mapping_username_loop(client):
         await asyncio.sleep(7200)
 
 
+async def check_events(client, channel, user, history_table_name):
+    print(time.strftime('%X %x %Z')+" | currently checking %s" % (user.name))
+    for event in user.events:
+        if not db.query(["SELECT event_id FROM %s WHERE event_id = ?" % (history_table_name), [str(event.id)]]):
+            db.query(["INSERT INTO %s VALUES (?, ?, ?)" % (history_table_name), [str(user.id), str(event.id), str(channel.id)]])
+            event_color = await get_event_color(event.display_text)
+            if event_color:
+                result = await osu.get_beatmapset(s=event.beatmapset_id)
+                embed = await osuembed.beatmapset(result, event_color)
+                if embed:
+                    display_text = (event.display_text).replace("@", "")
+                    print(display_text)
+                    await channel.send(display_text, embed=embed)
+
+
+async def get_event_color(string):
+    if 'has submitted' in string:
+        return 0x2a52b2
+    elif 'has updated' in string:
+        #return 0xb2532a
+        return None
+    elif 'qualified' in string:
+        return 0x2ecc71
+    elif 'has been revived' in string:
+        return 0xff93c9
+    elif 'has been deleted' in string:
+        return 0xf2d7d5
+    else:
+        return None
+
+
 async def one_guild_member_sync(auditchannel, query, now, member, osuprofile):
     if "04-01T" in str(now.isoformat()):
-        osuusername = upsidedown.transform(osuprofile['username'])
+        osuusername = upsidedown.transform(osuprofile.name)
     else:
-        osuusername = osuprofile['username']
+        osuusername = osuprofile.name
     if str(query[0][2]) != osuusername:
         await auditchannel.send("`%s` namechanged to `%s`. osu_id = `%s`" % (str(query[0][2]), osuusername, str(query[0][1])))
         if str(query[0][1]) == str(4116573):
@@ -282,10 +314,10 @@ async def one_guild_member_sync(auditchannel, query, now, member, osuprofile):
         [
             "UPDATE users SET country = ?, pp = ?, osu_join_date = ?, osu_username = ? WHERE user_id = ?;",
             [
-                str(osuprofile['country']),
-                str(osuprofile['pp_raw']),
-                str(osuprofile['join_date']),
-                str(osuprofile['username']),
+                str(osuprofile.country),
+                str(osuprofile.pp_raw),
+                str(osuprofile.join_date),
+                str(osuprofile.name),
                 str(member.id)
             ]
         ]
@@ -308,13 +340,13 @@ async def on_member_join(client, member):
                 else:
                     await join_channel_object.send("Welcome %s! We have a verification system in this server so that we know who you are, give you appropriate roles and keep raids/spam out." % (member.mention))
                     try:
-                        osuprofile = await osuapi.get_user(member.name)
+                        osuprofile = await osu.get_user(u=member.name)
                     except Exception as e:
                         print(e)
                         print("Connection issues?")
                         osuprofile = None
                     if osuprofile:
-                        await join_channel_object.send(content='Is this your osu profile? If yes, type `yes`, if not, link your profile.', embed=await osuembed.osuprofile(osuprofile))
+                        await join_channel_object.send(content='Is this your osu profile? If yes, type `yes`, if not, link your profile.', embed=await osuembed.user(osuprofile))
                     else:
                         await join_channel_object.send('Please post a link to your osu profile and I will verify you instantly.')
             else:
@@ -334,8 +366,8 @@ async def on_member_remove(client, member):
                 osu_id = db.query(["SELECT osu_username FROM users WHERE user_id = ?", [str(member.id)]])
                 if osu_id:
                     try:
-                        memberprofile = await osuapi.get_user(osu_id[0][0])
-                        embed = await osuembed.osuprofile(memberprofile)
+                        memberprofile = await osu.get_user(u=osu_id[0][0])
+                        embed = await osuembed.user(memberprofile)
                     except Exception as e:
                         print(e)
                         print("Connection issues?")
@@ -388,9 +420,9 @@ async def get_ranked_maps(beatmaps):
         ranked_maps = []
         if beatmaps:
             for beatmap in beatmaps:
-                if beatmap["approved"] == "1" or beatmap["approved"] == "2":
-                    if not beatmap["beatmapset_id"] in ranked_maps:
-                        ranked_maps.append(beatmap["beatmapset_id"])
+                if beatmap.approved == "1" or beatmap.approved == "2":
+                    if not beatmap.beatmapset_id in ranked_maps:
+                        ranked_maps.append(beatmap.beatmapset_id)
         return ranked_maps
     except Exception as e:
         print(e)
@@ -405,7 +437,7 @@ async def check_ranked(ctx, mention):
             for member in role.members:
                 lookupuser = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
                 if lookupuser:
-                    mapsbythisguy = await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))
+                    mapsbythisguy = await osu.get_beatmaps(u=str(lookupuser[0][0]))
                     if mapsbythisguy:
                         try:
                             ranked_amount = len(await get_ranked_maps(mapsbythisguy))
@@ -431,7 +463,7 @@ async def check_experienced(ctx, mention):
             for member in role.members:
                 lookupuser = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
                 if lookupuser:
-                    mapsbythisguy = await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))
+                    mapsbythisguy = await osu.get_beatmaps(u=str(lookupuser[0][0]))
                     if mapsbythisguy:
                         try:
                             ranked_amount = len(await get_ranked_maps(mapsbythisguy))
@@ -457,8 +489,8 @@ async def print_all(ctx, mention):
             tag = "%s / %s"
         for oneuser in db.query("SELECT * FROM users"):
             try:
-                userprofile = await osuapi.get_user(oneuser[1])
-                embed = await osuembed.osuprofile(userprofile)
+                userprofile = await osu.get_user(u=oneuser[1])
+                embed = await osuembed.user(userprofile)
             except:
                 print("Connection issues?")
                 await ctx.send("Connection issues?")

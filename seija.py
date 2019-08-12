@@ -18,9 +18,14 @@ from modules import docs
 from modules import aprilfools
 from modules import configmaker
 
+from modules.connections import osu as osu
+from modules.connections import database_file as database_file
+from modules.connections import bot_token as bot_token
+
+
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190806"
+appversion = "b20190812"
 
 
 @client.event
@@ -29,7 +34,7 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('------')
-    if not os.path.exists('data/maindb.sqlite3'):
+    if not os.path.exists(database_file):
         appinfo = await client.application_info()
         await dbhandler.query("CREATE TABLE users (user_id, osu_id, osu_username, osu_join_date, pp, country, ranked_maps_amount, no_sync)")
         await dbhandler.query("CREATE TABLE user_events (osu_id, contents)")
@@ -475,4 +480,4 @@ async def users_background_loop():
 
 client.loop.create_task(modchecker_background_loop())
 client.loop.create_task(users_background_loop())
-client.run((open("data/token.txt", "r+").read()).rstrip(), bot=True)
+client.run(bot_token)

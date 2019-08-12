@@ -437,18 +437,22 @@ async def check_ranked(ctx, mention):
             for member in role.members:
                 lookupuser = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
                 if lookupuser:
-                    mapsbythisguy = await osu.get_beatmaps(u=str(lookupuser[0][0]))
-                    if mapsbythisguy:
-                        try:
-                            ranked_amount = len(await get_ranked_maps(mapsbythisguy))
-                        except Exception as e:
-                            print(e)
-                            print("Connection issues?")
-                            ranked_amount = 0
-                        if ranked_amount >= 1:
-                            output += "%s\n" % (member.mention)
-                    else:
-                        print("problem with %s" % (member.display_name))
+                    try:
+                        mapsbythisguy = await osu.get_beatmaps(u=str(lookupuser[0][0]))
+                        if mapsbythisguy:
+                            try:
+                                ranked_amount = len(await get_ranked_maps(mapsbythisguy))
+                            except Exception as e:
+                                print(e)
+                                print("Connection issues?")
+                                ranked_amount = 0
+                            if ranked_amount >= 1:
+                                output += "%s\n" % (member.mention)
+                        else:
+                            print("problem with %s" % (member.display_name))
+                    except Exception as e:
+                        print(e)
+                        print(str(lookupuser[0][0]))
                 await asyncio.sleep(0.5)
         await ctx.send(output)
     else:
@@ -463,18 +467,22 @@ async def check_experienced(ctx, mention):
             for member in role.members:
                 lookupuser = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
                 if lookupuser:
-                    mapsbythisguy = await osu.get_beatmaps(u=str(lookupuser[0][0]))
-                    if mapsbythisguy:
-                        try:
-                            ranked_amount = len(await get_ranked_maps(mapsbythisguy))
-                        except Exception as e:
-                            print(e)
-                            print("Connection issues?")
-                            ranked_amount = 0
-                        if ranked_amount >= 10:
-                            output += "%s\n" % (member.mention)
-                    else:
-                        print("problem with %s" % (member.display_name))
+                    try:
+                        mapsbythisguy = await osu.get_beatmaps(u=str(lookupuser[0][0]))
+                        if mapsbythisguy:
+                            try:
+                                ranked_amount = len(await get_ranked_maps(mapsbythisguy))
+                            except Exception as e:
+                                print(e)
+                                print("Connection issues?")
+                                ranked_amount = 0
+                            if ranked_amount >= 10:
+                                output += "%s\n" % (member.mention)
+                        else:
+                            print("problem with %s" % (member.display_name))
+                    except Exception as e:
+                        print(e)
+                        print(str(lookupuser[0][0]))
                 await asyncio.sleep(0.5)
         await ctx.send(output)
     else:

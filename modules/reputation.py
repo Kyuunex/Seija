@@ -1,11 +1,11 @@
 import discord
 import asyncio
 
-from modules import dbhandler
+from modules import db
 
 
 async def get_category_object(client, guild, setting, id_only=None):
-    category_id = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", [setting, str(guild.id)]])
+    category_id = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", [setting, str(guild.id)]])
     if category_id:
         category = client.get_channel(int(category_id[0][0]))
         if id_only:
@@ -16,7 +16,7 @@ async def get_category_object(client, guild, setting, id_only=None):
         return False
 
 async def get_role_object(client, guild, setting, id_only=None):
-    role_id = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", [setting, str(guild.id)]])
+    role_id = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", [setting, str(guild.id)]])
     if role_id:
         role = discord.utils.get(guild.roles, id=int(role_id[0][0]))
         if id_only:

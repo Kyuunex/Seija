@@ -3,7 +3,7 @@ import time
 import json
 import re
 from html import unescape
-from modules import dbhandler
+from modules import db
 from modules import osuapi
 from modules import osuembed
 
@@ -17,12 +17,12 @@ async def comparelists(list2, list1):
 
 
 async def compare(result, osu_id, table):
-    if not await dbhandler.query(["SELECT osu_id FROM %s WHERE osu_id = ?" % (table), [osu_id]]):
-        await dbhandler.query(["INSERT INTO %s VALUES (?,?)" % (table), [osu_id, json.dumps(result)]])
+    if not db.query(["SELECT osu_id FROM %s WHERE osu_id = ?" % (table), [osu_id]]):
+        db.query(["INSERT INTO %s VALUES (?,?)" % (table), [osu_id, json.dumps(result)]])
         return None
     else:
-        localdata = json.loads((await dbhandler.query(["SELECT contents FROM %s WHERE osu_id = ?" % (table), [osu_id]]))[0][0])
-        await dbhandler.query(["UPDATE %s SET contents = ? WHERE osu_id = ?" % (table), [json.dumps(result), osu_id]])
+        localdata = json.loads((db.query(["SELECT contents FROM %s WHERE osu_id = ?" % (table), [osu_id]]))[0][0])
+        db.query(["UPDATE %s SET contents = ? WHERE osu_id = ?" % (table), [json.dumps(result), osu_id]])
         if type(result) is None:
             print('usereventfeed connection problems?')
             await asyncio.sleep(120)
@@ -36,7 +36,7 @@ async def main(client):
     try:
         await asyncio.sleep(10)
         print(time.strftime('%X %x %Z')+' | manual loop')
-        tracklist = await dbhandler.query("SELECT * FROM user_event_feed_track_list")
+        tracklist = db.query("SELECT * FROM user_event_feed_track_list")
         if tracklist:
             for oneentry in tracklist:
                 try:

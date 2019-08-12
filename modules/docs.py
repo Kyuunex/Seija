@@ -1,6 +1,6 @@
 import discord
 
-from modules import dbhandler
+from modules import db
 from modules import permissions
 
 help_thumbnail = "https://i.imgur.com/JhL9PV8.png"
@@ -17,7 +17,7 @@ async def main(ctx, subhelp):
         else:
             await ctx.send(embed=await permissions.error())
     elif subhelp == "veto":
-        if await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND value = ?", ["guild_veto_channel", str(ctx.message.channel.id)]]):
+        if db.query(["SELECT value FROM config WHERE setting = ? AND value = ?", ["guild_veto_channel", str(ctx.message.channel.id)]]):
             await ctx.send(embed=await veto())
     elif subhelp == "mapchannel":
         await ctx.send(embed=await mapchannel())

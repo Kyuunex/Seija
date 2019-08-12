@@ -1,4 +1,4 @@
-from modules import dbhandler
+from modules import db
 import upsidedown
 import aiohttp
 import io
@@ -9,10 +9,10 @@ async def apply_channels(client, ctx):
     guild = ctx.guild
     for channel in guild.channels:
         await asyncio.sleep(1)
-        results = await dbhandler.query(["SELECT name FROM name_backups WHERE id = ?", [str(channel.id)]])
+        results = db.query(["SELECT name FROM name_backups WHERE id = ?", [str(channel.id)]])
         if not results:
             try:
-                await dbhandler.query(["INSERT INTO name_backups VALUES (?, ?)", [str(channel.id), str(channel.name)]])
+                db.query(["INSERT INTO name_backups VALUES (?, ?)", [str(channel.id), str(channel.name)]])
                 await channel.edit(name=upsidedown.transform(channel.name))
             except Exception as e:
                 print(e)
@@ -24,11 +24,11 @@ async def restore_channels(client, ctx):
     guild = ctx.guild
     for channel in guild.channels:
         await asyncio.sleep(1)
-        results = await dbhandler.query(["SELECT name FROM name_backups WHERE id = ?", [str(channel.id)]])
+        results = db.query(["SELECT name FROM name_backups WHERE id = ?", [str(channel.id)]])
         if results:
             try:
                 await channel.edit(name=str(results[0][0]))
-                await dbhandler.query(["DELETE FROM name_backups WHERE id = ?", [str(channel.id)]])
+                db.query(["DELETE FROM name_backups WHERE id = ?", [str(channel.id)]])
             except Exception as e:
                 print(e)
                 print("in restore_channels / %s" % (results[0][0]))
@@ -39,9 +39,9 @@ async def apply_roles(client, ctx):
     guild = ctx.guild
     for role in guild.roles:
         await asyncio.sleep(1)
-        results = await dbhandler.query(["SELECT name FROM name_backups WHERE id = ?", [str(role.id)]])
+        results = db.query(["SELECT name FROM name_backups WHERE id = ?", [str(role.id)]])
         if not results:
-            await dbhandler.query(["INSERT INTO name_backups VALUES (?, ?)", [str(role.id), str(role.name)]])
+            db.query(["INSERT INTO name_backups VALUES (?, ?)", [str(role.id), str(role.name)]])
             try:
                 await role.edit(name=upsidedown.transform(role.name))
             except Exception as e:
@@ -54,7 +54,7 @@ async def restore_roles(client, ctx):
     guild = ctx.guild
     for role in guild.roles:
         await asyncio.sleep(1)
-        results = await dbhandler.query(["SELECT name FROM name_backups WHERE id = ?", [str(role.id)]])
+        results = db.query(["SELECT name FROM name_backups WHERE id = ?", [str(role.id)]])
         if results:
             try:
                 await role.edit(name=str(results[0][0]))
@@ -62,14 +62,14 @@ async def restore_roles(client, ctx):
                 print(e)
                 print("in restore_roles / %s" % (results[0][0]))
                 await asyncio.sleep(10)
-            await dbhandler.query(["DELETE FROM name_backups WHERE id = ?", [str(role.id)]])
+            db.query(["DELETE FROM name_backups WHERE id = ?", [str(role.id)]])
 
 
 async def apply_guild(client, ctx):
     guild = ctx.guild
-    results = await dbhandler.query(["SELECT name FROM name_backups WHERE id = ?", [str(guild.id)]])
+    results = db.query(["SELECT name FROM name_backups WHERE id = ?", [str(guild.id)]])
     if not results:
-        await dbhandler.query(["INSERT INTO name_backups VALUES (?, ?)", [str(guild.id), str(guild.name)]])
+        db.query(["INSERT INTO name_backups VALUES (?, ?)", [str(guild.id), str(guild.name)]])
         try:
             await guild.edit(name=upsidedown.transform(guild.name))
         except Exception as e:
@@ -80,7 +80,7 @@ async def apply_guild(client, ctx):
 
 async def restore_guild(client, ctx):
     guild = ctx.guild
-    results = await dbhandler.query(["SELECT name FROM name_backups WHERE id = ?", [str(guild.id)]])
+    results = db.query(["SELECT name FROM name_backups WHERE id = ?", [str(guild.id)]])
     if results:
         try:
             await guild.edit(name=str(results[0][0]))
@@ -88,7 +88,7 @@ async def restore_guild(client, ctx):
             print(e)
             print("in restore_guild")
             await asyncio.sleep(10)
-        await dbhandler.query(["DELETE FROM name_backups WHERE id = ?", [str(guild.id)]])
+        db.query(["DELETE FROM name_backups WHERE id = ?", [str(guild.id)]])
 
 
 # async def rotate_logo(client, ctx):

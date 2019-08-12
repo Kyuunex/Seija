@@ -1,6 +1,6 @@
 from modules import osuapi
 from modules import osuembed
-from modules import dbhandler
+from modules import db
 from modules import usereventfeed
 import discord
 import time
@@ -13,9 +13,9 @@ import operator
 
 
 async def send_notice(notice, channel, now):
-    if not await dbhandler.query(["SELECT notice FROM notices WHERE notice = ?", [notice]]):
+    if not db.query(["SELECT notice FROM notices WHERE notice = ?", [notice]]):
         await channel.send(notice)
-        await dbhandler.query(["INSERT INTO notices VALUES (?, ?)", [str(now.isoformat()), notice]])
+        db.query(["INSERT INTO notices VALUES (?, ?)", [str(now.isoformat()), notice]])
 
 
 async def statscalc(data):
@@ -28,7 +28,7 @@ async def demographics(client, ctx): #TODO" do this
         masterlist = []
         for member in ctx.guild.members:
             if not member.bot:
-                query = await dbhandler.query(["SELECT country FROM users WHERE user_id = ?", [str(member.id)]])
+                query = db.query(["SELECT country FROM users WHERE user_id = ?", [str(member.id)]])
                 if query: # [5]
                     masterlist.append(query[0][0])
         stats = await statscalc(masterlist)
@@ -81,7 +81,7 @@ async def users_from(client, ctx, country_code): #TODO" do this
         if countryobject:
             for member in ctx.guild.members:
                 if not member.bot:
-                    query = await dbhandler.query(["SELECT osu_username, osu_id FROM users WHERE country = ? AND user_id = ?", [str(countryobject.alpha_2.upper()), str(member.id)]])
+                    query = db.query(["SELECT osu_username, osu_id FROM users WHERE country = ? AND user_id = ?", [str(countryobject.alpha_2.upper()), str(member.id)]])
                     if query:
                         masterlist.append(query[0])
         memberamount = len(masterlist)
@@ -134,11 +134,11 @@ async def verify(channel, member, guild, lookup_type, lookup_string, response):
             ranked_amount = len(await get_ranked_maps(await osuapi.get_beatmaps_by_user(str(osuaccountid))))
 
             if ranked_amount >= 10:
-                role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_experienced_mapper_role", str(guild.id)]]))[0][0]))
+                role = discord.utils.get(guild.roles, id=int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_experienced_mapper_role", str(guild.id)]]))[0][0]))
             elif ranked_amount >= 1:
-                role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_ranked_mapper_role", str(guild.id)]]))[0][0]))
+                role = discord.utils.get(guild.roles, id=int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_ranked_mapper_role", str(guild.id)]]))[0][0]))
             else:
-                role = discord.utils.get(guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapper_role", str(guild.id)]]))[0][0]))
+                role = discord.utils.get(guild.roles, id=int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapper_role", str(guild.id)]]))[0][0]))
 
             if type(member) is str:
                 user_id = member
@@ -152,12 +152,12 @@ async def verify(channel, member, guild, lookup_type, lookup_string, response):
                     print("in users.verify")
                     print(e)
 
-            if await dbhandler.query(["SELECT user_id FROM users WHERE user_id = ?", [user_id, ]]):
+            if db.query(["SELECT user_id FROM users WHERE user_id = ?", [user_id, ]]):
                 print("user %s already in database" % (user_id,))
                 # possibly force update the entry in future
             else:
                 print("adding user %s in database" % (user_id,))
-                await dbhandler.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osuaccountid, osuusername, osu_join_date, pp, country, ranked_amount, no_sync]])
+                db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osuaccountid, osuusername, osu_join_date, pp, country, ranked_amount, no_sync]])
 
             if not response:
                 response = "verified <@%s>" % (user_id)
@@ -172,7 +172,7 @@ async def verify(channel, member, guild, lookup_type, lookup_string, response):
         await channel.send(content="It looks like osu's website is down so I can't verify at this moment. Ping managers or something or try again later.")
 
 async def unverify(ctx, user_id):
-    await dbhandler.query(["DELETE FROM users WHERE user_id = ?", [user_id, ]])
+    db.query(["DELETE FROM users WHERE user_id = ?", [user_id, ]])
     member = ctx.guild.get_member(int(user_id))
     if member:
         try:
@@ -185,7 +185,7 @@ async def guildnamesync(ctx):
     now = datetime.datetime.now()
     for member in ctx.guild.members:
         if not member.bot:
-            query = await dbhandler.query(["SELECT * FROM users WHERE user_id = ?", [str(member.id)]])
+            query = db.query(["SELECT * FROM users WHERE user_id = ?", [str(member.id)]])
             if query:
                 try:
                     osuprofile = await osuapi.get_user(query[0][1])
@@ -205,7 +205,7 @@ async def roleless(ctx, mention):
             await ctx.send(member.mention)
             if mention:
                 try:
-                    query = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
+                    query = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
                     if query:
                         await ctx.send("person above is in my database and linked to <https://osu.ppy.sh/users/%s>" % (query[0][0]))
                 except Exception as e:
@@ -217,7 +217,7 @@ async def mapping_username_loop(client):
     try:
         await asyncio.sleep(3600)
         print(time.strftime('%X %x %Z')+' | user event tracker')
-        memberfeedchannellist = await dbhandler.query(["SELECT * FROM config WHERE setting = ?", ["guild_user_event_tracker"]])
+        memberfeedchannellist = db.query(["SELECT * FROM config WHERE setting = ?", ["guild_user_event_tracker"]])
         if memberfeedchannellist:
             now = datetime.datetime.now()
             for onechannel in memberfeedchannellist:
@@ -226,22 +226,22 @@ async def mapping_username_loop(client):
                 guild = client.get_guild(int(onechannel[1]))
                 for member in guild.members:
                     if not member.bot:
-                        query = await dbhandler.query(["SELECT * FROM users WHERE user_id = ?", [str(member.id)]])
+                        query = db.query(["SELECT * FROM users WHERE user_id = ?", [str(member.id)]])
                         if query:
                             try:
-                                check_if_restricted_user_in_db = await dbhandler.query(["SELECT osu_id FROM restricted_users WHERE guild_id = ? AND osu_id = ?", [str(guild.id), str(query[0][1])]])
+                                check_if_restricted_user_in_db = db.query(["SELECT osu_id FROM restricted_users WHERE guild_id = ? AND osu_id = ?", [str(guild.id), str(query[0][1])]])
                                 osuprofile = await osuapi.get_user(query[0][1])
                                 if osuprofile:
                                     await one_guild_member_sync(auditchannel, query, now, member, osuprofile)
                                     await usereventfeed.usereventtrack(client, feedchannel, osuprofile, "user_events")
                                     if check_if_restricted_user_in_db:
                                         await auditchannel.send("%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | unrestricted lol" % (member.mention, str(query[0][2]), str(query[0][1]), str(query[0][1])))
-                                        await dbhandler.query(["DELETE FROM restricted_users WHERE guild_id = ? AND osu_id = ?", [str(guild.id), str(query[0][1])]])
+                                        db.query(["DELETE FROM restricted_users WHERE guild_id = ? AND osu_id = ?", [str(guild.id), str(query[0][1])]])
                                 else:
                                     # at this point we are sure that the user is restricted.
                                     if not check_if_restricted_user_in_db:
                                         await auditchannel.send("%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | restricted" % (member.mention, str(query[0][2]), str(query[0][1]), str(query[0][1])))
-                                        await dbhandler.query(["INSERT INTO restricted_users VALUES (?,?)", [str(guild.id), str(query[0][1])]])
+                                        db.query(["INSERT INTO restricted_users VALUES (?,?)", [str(guild.id), str(query[0][1])]])
                             except Exception as e:
                                 print(e)
                                 print("Connection issues?")
@@ -278,7 +278,7 @@ async def one_guild_member_sync(auditchannel, query, now, member, osuprofile):
                 await auditchannel.send(e)
                 await auditchannel.send("%s | `%s` | `%s` | no perms to update" % (member.mention, osuusername, str(query[0][1])))
             await auditchannel.send("%s | `%s` | `%s` | nickname updated, old nickname `%s`" % (member.mention, osuusername, str(query[0][1]), old_nickname))
-    await dbhandler.query(
+    db.query(
         [
             "UPDATE users SET country = ?, pp = ?, osu_join_date = ?, osu_username = ? WHERE user_id = ?;",
             [
@@ -294,11 +294,11 @@ async def one_guild_member_sync(auditchannel, query, now, member, osuprofile):
 
 async def on_member_join(client, member):
     try:
-        guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_channel", str(member.guild.id)]])
+        guildverifychannel = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_channel", str(member.guild.id)]])
         if guildverifychannel:
             join_channel_object = client.get_channel(int((guildverifychannel)[0][0]))
             if not member.bot:
-                lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
+                lookupuser = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
                 if lookupuser:
                     print("user %s joined with osu_id %s" % (str(member.id), str(lookupuser[0][0])))
                     verifyattempt = await verify(join_channel_object, member, member.guild, "u", lookupuser[0][0], "Welcome aboard %s! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.mention))
@@ -327,11 +327,11 @@ async def on_member_join(client, member):
 
 async def on_member_remove(client, member):
     try:
-        guildverifychannel = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_channel", str(member.guild.id)]])
+        guildverifychannel = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_channel", str(member.guild.id)]])
         if guildverifychannel:
             join_channel_object = client.get_channel(int((guildverifychannel)[0][0]))
             if not member.bot:
-                osu_id = await dbhandler.query(["SELECT osu_username FROM users WHERE user_id = ?", [str(member.id)]])
+                osu_id = db.query(["SELECT osu_username FROM users WHERE user_id = ?", [str(member.id)]])
                 if osu_id:
                     try:
                         memberprofile = await osuapi.get_user(osu_id[0][0])
@@ -354,7 +354,7 @@ async def on_member_remove(client, member):
 async def on_message(client, message):
     if message.author.id != client.user.id:
         try:
-            verifychannel_id = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_channel", str(message.guild.id)]])
+            verifychannel_id = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_channel", str(message.guild.id)]])
             if verifychannel_id:
                 if message.channel.id == int(verifychannel_id[0][0]):
                     split_message = []
@@ -398,12 +398,12 @@ async def get_ranked_maps(beatmaps):
 
 
 async def check_ranked(ctx, mention):
-    role = discord.utils.get(ctx.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapper_role", str(ctx.guild.id)]]))[0][0]))
+    role = discord.utils.get(ctx.guild.roles, id=int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapper_role", str(ctx.guild.id)]]))[0][0]))
     if role:
         output = "These fella's have at least 1 ranked map:\n"
         async with ctx.channel.typing():
             for member in role.members:
-                lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
+                lookupuser = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
                 if lookupuser:
                     mapsbythisguy = await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))
                     if mapsbythisguy:
@@ -424,12 +424,12 @@ async def check_ranked(ctx, mention):
 
 
 async def check_experienced(ctx, mention):
-    role = discord.utils.get(ctx.guild.roles, id=int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_ranked_mapper_role", str(ctx.guild.id)]]))[0][0]))
+    role = discord.utils.get(ctx.guild.roles, id=int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_ranked_mapper_role", str(ctx.guild.id)]]))[0][0]))
     if role:
         output = "These fella's have at least 10 ranked maps:\n"
         async with ctx.channel.typing():
             for member in role.members:
-                lookupuser = await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
+                lookupuser = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
                 if lookupuser:
                     mapsbythisguy = await osuapi.get_beatmaps_by_user(str(lookupuser[0][0]))
                     if mapsbythisguy:
@@ -455,7 +455,7 @@ async def print_all(ctx, mention):
             tag = "<@%s> / %s"
         else:
             tag = "%s / %s"
-        for oneuser in await dbhandler.query("SELECT * FROM users"):
+        for oneuser in db.query("SELECT * FROM users"):
             try:
                 userprofile = await osuapi.get_user(oneuser[1])
                 embed = await osuembed.osuprofile(userprofile)
@@ -495,7 +495,7 @@ async def server_check(ctx, mention):
         count = 0
         for member in ctx.guild.members:
             if not member.bot:
-                if not await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]]):
+                if not db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]]):
                     count += 1
                     if mention == "m":
                         responce += ("<@%s>\n" % (str(member.id)))
@@ -519,7 +519,7 @@ async def mverify(ctx, lookup_type, osu_id, user_id, preverify):
         if preverify == "preverify":
             await verify(ctx.message.channel, str(user_id), None, lookup_type, osu_id, "Preverified: %s" % (str(user_id)))
         elif preverify == "restricted":
-            await dbhandler.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osu_id, "", "", "", "", "", ""]])
+            db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osu_id, "", "", "", "", "", ""]])
             await ctx.send("lol ok")
         else:
             await verify(ctx.message.channel, ctx.guild.get_member(user_id), ctx.message.guild, lookup_type, osu_id, "Manually Verified: %s" % (ctx.guild.get_member(user_id).name))

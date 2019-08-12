@@ -8,8 +8,8 @@ import upsidedown
 
 from modules import permissions
 from modules import osuapi
-from modules import osuembed
-from modules import dbhandler
+from osuembed import osuembed
+from modules import db
 from modules import modchecker
 from modules import users
 from modules import mapchannel
@@ -28,53 +28,57 @@ client.remove_command('help')
 appversion = "b20190812"
 
 
+if not os.path.exists(database_file):
+    db.query("CREATE TABLE users (user_id, osu_id, osu_username, osu_join_date, pp, country, ranked_maps_amount, no_sync)")
+    db.query("CREATE TABLE user_events (osu_id, contents)")
+    db.query("CREATE TABLE config (setting, parent, value, flag)")
+    db.query("CREATE TABLE admins (user_id, permissions)")
+    db.query("CREATE TABLE mod_posts (post_id, mapset_id, channel_id)")
+    db.query("CREATE TABLE mod_tracking (mapset_id, channel_id, mode)")
+    db.query("CREATE TABLE mod_tracking_pauselist (mapset_id, channel_id, mode)")
+    db.query("CREATE TABLE mapset_status (mapset_id, map_id, channel_id, unresolved)")
+    db.query("CREATE TABLE notices (timestamp, notice)")
+    db.query("CREATE TABLE restricted_users (guild_id, osu_id)")
+    db.query("CREATE TABLE queues (channel_id, user_id, guild_id)")
+    db.query("CREATE TABLE mapset_channels (channel_id, role_id, user_id, mapset_id, guild_id)")
+    db.query("CREATE TABLE name_backups (id, name)")
+
+
 @client.event
 async def on_ready():
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
     print('------')
-    if not os.path.exists(database_file):
+    if not db.query("SELECT * FROM admins"):
         appinfo = await client.application_info()
-        await dbhandler.query("CREATE TABLE users (user_id, osu_id, osu_username, osu_join_date, pp, country, ranked_maps_amount, no_sync)")
-        await dbhandler.query("CREATE TABLE user_events (osu_id, contents)")
-        await dbhandler.query("CREATE TABLE config (setting, parent, value, flag)")
-        await dbhandler.query("CREATE TABLE admins (user_id, permissions)")
-        await dbhandler.query("CREATE TABLE mod_posts (post_id, mapset_id, channel_id)")
-        await dbhandler.query("CREATE TABLE mod_tracking (mapset_id, channel_id, mode)")
-        await dbhandler.query("CREATE TABLE mod_tracking_pauselist (mapset_id, channel_id, mode)")
-        await dbhandler.query("CREATE TABLE mapset_status (mapset_id, map_id, channel_id, unresolved)")
-        await dbhandler.query("CREATE TABLE notices (timestamp, notice)")
-        await dbhandler.query("CREATE TABLE restricted_users (guild_id, osu_id)")
-        await dbhandler.query("CREATE TABLE queues (channel_id, user_id, guild_id)")
-        await dbhandler.query("CREATE TABLE mapset_channels (channel_id, role_id, user_id, mapset_id, guild_id)")
-        await dbhandler.query("CREATE TABLE name_backups (id, name)")
-        await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), "1"]])
+        db.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), "1"]])
+        print("Added %s to admin list" % (appinfo.owner.name))
 
 
 @client.command(name="adminlist", brief="Show bot admin list", description="", pass_context=True)
 async def adminlist(ctx):
-    await ctx.send(embed=await permissions.adminlist())
+    await ctx.send(embed=await permissions.get_admin_list())
 
 
 @client.command(name="makeadmin", brief="Add a user to bot admin list", description="", pass_context=True)
 async def makeadmin(ctx, user_id: str, perms = str("0")):
-    if await permissions.checkowner(ctx.message.author.id):
-        await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(user_id), str(perms)]])
+    if await permissions.check_owner(ctx.message.author.id):
+        db.query(["INSERT INTO admins VALUES (?, ?)", [str(user_id), str(perms)]])
         await ctx.send(":ok_hand:")
     else:
-        await ctx.send(embed=await permissions.ownererror())
+        await ctx.send(embed=await permissions.error_owner())
 
 
 @client.command(name="resetadminlist", brief="Scrap the current admin list and make the bot owner the bot admin", description="", pass_context=True)
 async def resetadminlist(ctx,):
     appinfo = await client.application_info()
     if str(ctx.message.author.id) == str(appinfo.owner.id):
-        await dbhandler.query("DELETE FROM admins")
-        await dbhandler.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), str(1)]])
+        db.query("DELETE FROM admins")
+        db.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), str(1)]])
         await ctx.send(":ok_hand:")
     else:
-        await ctx.send(embed=await permissions.ownererror())
+        await ctx.send(embed=await permissions.error_owner())
 
 
 @client.command(name="restart", brief="Restart the bot", description="", pass_context=True)
@@ -120,7 +124,7 @@ async def ts(ctx, *, string):
 @client.command(name="dbdump", brief="Perform a database dump", description="", pass_context=True)
 async def dbdump(ctx):
     if await permissions.check(ctx.message.author.id):
-        if ctx.message.channel.id == int((await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_db_dump_channel", str(ctx.guild.id)]]))[0][0]):
+        if ctx.message.channel.id == int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_db_dump_channel", str(ctx.guild.id)]]))[0][0]):
             await ctx.send(file=discord.File('data/maindb.sqlite3'))
     else:
         await ctx.send(embed=await permissions.error())
@@ -128,12 +132,12 @@ async def dbdump(ctx):
 
 @client.command(name="sql", brief="Executre an SQL query", description="", pass_context=True)
 async def sql(ctx, *, query):
-    if await permissions.checkowner(ctx.message.author.id):
+    if await permissions.check_owner(ctx.message.author.id):
         if len(query) > 0:
-            response = await dbhandler.query(query)
+            response = db.query(query)
             await ctx.send(response)
     else:
-        await ctx.send(embed=await permissions.ownererror())
+        await ctx.send(embed=await permissions.error_owner())
 
 
 @client.command(name="verify", brief="Manually verify a user", description="", pass_context=True)
@@ -146,7 +150,7 @@ async def verify(ctx, lookup_type: str, osu_id: str, user_id: int, preverify: st
 
 @client.command(name="userdb", brief="Guild member and Database related commands", description="", pass_context=True)
 async def userdb(ctx, command: str = None, mention: str = None):
-    if await permissions.checkowner(ctx.message.author.id):
+    if await permissions.check_owner(ctx.message.author.id):
         if command == "mass_verify":
             await users.mass_verify(ctx, mention)
         elif command == "print_all":
@@ -156,7 +160,7 @@ async def userdb(ctx, command: str = None, mention: str = None):
         else:
             pass
     else:
-        await ctx.send(embed=await permissions.ownererror())
+        await ctx.send(embed=await permissions.error_owner())
 
 
 @client.command(name="u", brief="", description="", pass_context=True)
@@ -177,30 +181,23 @@ async def uuu(ctx, command: str = None, mention: str = None):
 
 
 @client.command(name="mapset", brief="Show mapset info", description="", pass_context=True)
-async def mapset(ctx, mapset_id: str, text: str = None):
-    try:
-        embed = await osuembed.mapset(await osuapi.get_beatmaps(mapset_id))
-        if embed:
-            await ctx.send(content=text, embed=embed)
-        else:
-            await ctx.send(content='`No mapset found with that ID`')
-    except:
-        print("Connection issues?")
-        await ctx.send("Connection issues?")
+async def mapset(ctx, mapset_id: str):
+    result = await osu.get_beatmapset(s=mapset_id)
+    embed = await osuembed.beatmapset(result)
+    if embed:
+        await ctx.send(embed=embed)
+    else:
+        await ctx.send(content='`No mapset found with that ID`')
 
 
 @client.command(name="user", brief="Show osu user info", description="", pass_context=True)
 async def user(ctx, *, username):
-    try:
-        embed = await osuembed.osuprofile(await osuapi.get_user(username))
-        if embed:
-            await ctx.send(embed=embed)
-            # await ctx.message.delete()
-        else:
-            await ctx.send(content='`No user found with that username`')
-    except:
-        print("Connection issues?")
-        await ctx.send("Connection issues?")
+    result = await osu.get_user(u=username)
+    embed = await osuembed.user(result)
+    if embed:
+        await ctx.send(embed=embed)
+    else:
+        await ctx.send(content='`No user found with that username`')
 
 
 @client.command(name="help", brief="The pretty help command", description="", pass_context=True)
@@ -238,7 +235,7 @@ async def forceuntrack(ctx, mapset_id: str):
 
 @client.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="", pass_context=True)
 async def veto(ctx, mapset_id: int):
-    if await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ? AND value = ?", ["guild_veto_channel", str(ctx.guild.id), str(ctx.message.channel.id)]]):
+    if db.query(["SELECT value FROM config WHERE setting = ? AND parent = ? AND value = ?", ["guild_veto_channel", str(ctx.guild.id), str(ctx.message.channel.id)]]):
         if await modchecker.track(mapset_id, ctx.message.channel.id, "veto"):
             try:
                 mapsetobject = await osuapi.get_beatmaps(mapset_id)
@@ -255,7 +252,7 @@ async def veto(ctx, mapset_id: int):
 
 @client.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode", description="", pass_context=True)
 async def unveto(ctx, mapset_id: int):
-    if await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ? AND value = ?", ["guild_veto_channel", str(ctx.guild.id), str(ctx.message.channel.id)]]):   
+    if db.query(["SELECT value FROM config WHERE setting = ? AND parent = ? AND value = ?", ["guild_veto_channel", str(ctx.guild.id), str(ctx.message.channel.id)]]):   
         if await modchecker.untrack(mapset_id, ctx.message.channel.id):
             try:
                 mapsetobject = await osuapi.get_beatmaps(mapset_id)
@@ -273,7 +270,7 @@ async def unveto(ctx, mapset_id: int):
 @client.command(name="sublist", brief="List all tracked mapsets everywhere", description="", pass_context=True)
 async def sublist(ctx):
     if await permissions.check(ctx.message.author.id):
-        for oneentry in await dbhandler.query("SELECT * FROM mod_tracking"):
+        for oneentry in db.query("SELECT * FROM mod_tracking"):
             try:
                 mapsetobject = await osuapi.get_beatmaps(str(oneentry[0]))
                 embed = await osuembed.mapset(mapsetobject)
@@ -287,20 +284,21 @@ async def sublist(ctx):
         
 @client.command(name="chanlist", brief="List all mapset channel", description="", pass_context=True)
 async def chanlist(ctx): # DELETE FROM mapset_channels WHERE role_id = ""
-    if await permissions.checkowner(ctx.message.author.id):
-        for oneentry in await dbhandler.query("SELECT * FROM mapset_channels"):
+    if await permissions.check_owner(ctx.message.author.id):
+        for oneentry in db.query("SELECT * FROM mapset_channels"):
             await ctx.send(content="channel_id <#%s> | role_id %s | user_id <@%s> | mapset_id %s | guild_id %s " % (oneentry))
     else:
-        await ctx.send(embed=await permissions.ownererror())
+        await ctx.send(embed=await permissions.error_owner())
         
         
 @client.command(name="cv", brief="", description="", pass_context=True)
 async def cv(ctx, *, user_id):
     if await permissions.check(ctx.message.author.id):
-        osu_profile = (await dbhandler.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]]))
+        osu_profile = (db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]]))
         if osu_profile:
             osu_id = osu_profile[0][0]
-            embed = await osuembed.osuprofile(await osuapi.get_user(osu_id))
+            result = await osu.get_user(u=osu_id)
+            embed = await osuembed.user(result)
             await ctx.send("https://osu.ppy.sh/users/%s" % (osu_id), embed=embed)
     else:
         await ctx.send(embed=await permissions.error())
@@ -308,7 +306,7 @@ async def cv(ctx, *, user_id):
 
 @client.command(name="af", brief="", description="", pass_context=True)
 async def af(ctx, action):
-    if await permissions.checkowner(ctx.message.author.id):
+    if await permissions.check_owner(ctx.message.author.id):
         await ctx.message.delete()
         if action == "apply":
             await aprilfools.apply_guild(client, ctx)
@@ -328,7 +326,7 @@ async def af(ctx, action):
             #await aprilfools.rotate_logo(client, ctx)
             await ctx.send(":ok_hand:")
     else:
-        await ctx.send(embed=await permissions.ownererror())
+        await ctx.send(embed=await permissions.error_owner())
 
 
 @client.command(name="demographics", brief="demographics", description="", pass_context=True)
@@ -362,26 +360,26 @@ async def nuke(ctx):
 
 @client.command(name="test", brief="test", description="", pass_context=True)
 async def test(ctx, u):
-    if await permissions.checkowner(ctx.message.author.id):
+    if await permissions.check_owner(ctx.message.author.id):
         print("test")
     else:
-        await ctx.send(embed=await permissions.ownererror())
+        await ctx.send(embed=await permissions.error_owner())
 
 
 @client.command(name="config", brief="", description="", pass_context=True)
 async def config(ctx, setting, role_name):
-    if await permissions.checkowner(ctx.message.author.id):
+    if await permissions.check_owner(ctx.message.author.id):
         await configmaker.role_setup(client, ctx, setting, role_name)
     else:
-        await ctx.send(embed=await permissions.ownererror())
+        await ctx.send(embed=await permissions.error_owner())
 
 
 @client.command(name="cfg", brief="", description="", pass_context=True)
 async def cfg(ctx, setting, an_id):
-    if await permissions.checkowner(ctx.message.author.id):
+    if await permissions.check_owner(ctx.message.author.id):
         await configmaker.cfg_setup(client, ctx, setting, an_id)
     else:
-        await ctx.send(embed=await permissions.ownererror())
+        await ctx.send(embed=await permissions.error_owner())
 
 
 @client.command(name="open", brief="Open the queue", description="", pass_context=True)

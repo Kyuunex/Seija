@@ -1,4 +1,4 @@
-from modules import dbhandler
+from modules import db
 from modules import docs
 from modules import permissions
 from modules import reputation
@@ -6,9 +6,9 @@ import discord
 import asyncio
 
 async def make_queue_channel(client, ctx, queuetype):
-    guildqueuecategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapper_queue_category", str(ctx.guild.id)]])
+    guildqueuecategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapper_queue_category", str(ctx.guild.id)]])
     if guildqueuecategory:
-        if not await dbhandler.query(["SELECT user_id FROM queues WHERE user_id = ? AND guild_id = ?", [str(ctx.message.author.id), str(ctx.guild.id)]]):
+        if not db.query(["SELECT user_id FROM queues WHERE user_id = ? AND guild_id = ?", [str(ctx.message.author.id), str(ctx.guild.id)]]):
             try:
                 await ctx.send("sure, gimme a moment")
                 if not queuetype:
@@ -39,7 +39,7 @@ async def make_queue_channel(client, ctx, queuetype):
                     ctx.message.author.display_name.replace(" ", "_").lower(), queuetype)
                 category = await reputation.validate_reputation_queues(client, ctx.message.author)
                 channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category)
-                await dbhandler.query(["INSERT INTO queues VALUES (?, ?, ?)", [str(channel.id), str(ctx.message.author.id), str(ctx.guild.id)]])
+                db.query(["INSERT INTO queues VALUES (?, ?, ?)", [str(channel.id), str(ctx.message.author.id), str(ctx.guild.id)]])
                 await channel.send("%s done!" % (ctx.message.author.mention), embed=await docs.queuemanagement())
             except Exception as e:
                 await ctx.send(e)
@@ -50,7 +50,7 @@ async def make_queue_channel(client, ctx, queuetype):
 
 
 async def queuesettings(client, ctx, action, params):
-    if (await dbhandler.query(["SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
+    if (db.query(["SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (await permissions.check(ctx.message.author.id)):
         try:
             print(params)
             if params:
@@ -79,7 +79,7 @@ async def queuesettings(client, ctx, action, params):
                 await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=False, send_messages=False)
                 await ctx.send("queue hidden!", embed=embed)
             elif action == "archive":
-                guildarchivecategory = await dbhandler.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_archive_category", str(ctx.guild.id)]])
+                guildarchivecategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_archive_category", str(ctx.guild.id)]])
                 if guildarchivecategory:
                     archivecategory = client.get_channel(int(guildarchivecategory[0][0]))
                     await ctx.message.channel.edit(reason=None, category=archivecategory)
@@ -94,7 +94,7 @@ async def queuesettings(client, ctx, action, params):
 
 async def on_guild_channel_delete(client, deleted_channel):
     try:
-        await dbhandler.query(["DELETE FROM queues WHERE channel_id = ?",[str(deleted_channel.id)]])
+        db.query(["DELETE FROM queues WHERE channel_id = ?",[str(deleted_channel.id)]])
         print("channel %s is deleted" % (deleted_channel.name))
     except Exception as e:
         print(e)

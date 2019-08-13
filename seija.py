@@ -451,11 +451,13 @@ async def on_message(message):
 @client.event
 async def on_member_join(member):
     await user_verification.on_member_join(client, member)
+    await queuechannel.on_member_join(client, member)
 
 
 @client.event
 async def on_member_remove(member):
     await user_verification.on_member_remove(client, member)
+    await queuechannel.on_member_remove(client, member)
 
 
 @client.event

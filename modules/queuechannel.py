@@ -52,7 +52,6 @@ async def make_queue_channel(client, ctx, queuetype):
 async def queuesettings(client, ctx, action, params):
     if (db.query(["SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check(ctx.message.author.id)):
         try:
-            print(params)
             if params:
                 if len(params) == 2:
                     embed_title = params[0] 
@@ -98,3 +97,19 @@ async def on_guild_channel_delete(client, deleted_channel):
         print("channel %s is deleted" % (deleted_channel.name))
     except Exception as e:
         print(e)
+
+
+async def on_member_join(client, member):
+    queue_id = db.query(["SELECT channel_id FROM queues WHERE user_id = ?", [str(member.id)]])
+    if queue_id:
+        queue_channel = client.get_channel(int(queue_id[0][0]))
+        if queue_channel:
+            await queue_channel.send("the queue owner has returned")
+
+
+async def on_member_remove(client, member):
+    queue_id = db.query(["SELECT channel_id FROM queues WHERE user_id = ?", [str(member.id)]])
+    if queue_id:
+        queue_channel = client.get_channel(int(queue_id[0][0]))
+        if queue_channel:
+            await queue_channel.send("the queue owner has left")

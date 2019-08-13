@@ -11,6 +11,7 @@ from osuembed import osuembed
 from modules import db
 from modules import modchecker
 from modules import users
+from modules import user_verification
 from modules import mapchannel
 from modules import queuechannel
 from modules import docs
@@ -24,7 +25,7 @@ from modules.connections import bot_token as bot_token
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190812"
+appversion = "b20190813"
 
 
 if not os.path.exists(database_file):
@@ -142,7 +143,7 @@ async def sql(ctx, *, query):
 @client.command(name="verify", brief="Manually verify a user", description="", pass_context=True)
 async def verify(ctx, lookup_type: str, osu_id: str, user_id: int, preverify: str = None):
     if permissions.check(ctx.message.author.id):
-        await users.mverify(ctx, lookup_type, osu_id, user_id, preverify)
+        await user_verification.manually_verify(ctx, lookup_type, osu_id, user_id, preverify)
     else:
         await ctx.send(embed=permissions.error())
 
@@ -151,7 +152,7 @@ async def verify(ctx, lookup_type: str, osu_id: str, user_id: int, preverify: st
 async def userdb(ctx, command: str = None, mention: str = None):
     if permissions.check_owner(ctx.message.author.id):
         if command == "mass_verify":
-            await users.mass_verify(ctx, mention)
+            await user_verification.mass_verify(ctx, mention)
         elif command == "print_all":
             await users.print_all(ctx, mention)
         elif command == "server_check":
@@ -166,11 +167,11 @@ async def userdb(ctx, command: str = None, mention: str = None):
 async def uuu(ctx, command: str = None, mention: str = None):
     if permissions.check(ctx.message.author.id):
         if command == "check_ranked":
-            await users.check_ranked(ctx, mention)
+            await users.check_ranked_amount_by_role(ctx, mention, 1, "guild_mapper_role")
         elif command == "check_experienced":
-            await users.check_experienced(ctx, mention)
+            await users.check_ranked_amount_by_role(ctx, mention, 10, "guild_ranked_mapper_role")
         elif command == "unverify":
-            await users.unverify(ctx, mention)
+            await user_verification.unverify(ctx, mention)
         elif command == "roleless":
             await users.roleless(ctx, mention)
         else:
@@ -443,18 +444,18 @@ async def untrack(ctx):
 
 @client.event
 async def on_message(message):
-    await users.on_message(client, message)
+    await user_verification.on_message(client, message)
     await client.process_commands(message)
 
 
 @client.event
 async def on_member_join(member):
-    await users.on_member_join(client, member)
+    await user_verification.on_member_join(client, member)
 
 
 @client.event
 async def on_member_remove(member):
-    await users.on_member_remove(client, member)
+    await user_verification.on_member_remove(client, member)
 
 
 @client.event

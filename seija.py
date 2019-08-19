@@ -465,18 +465,25 @@ async def on_message(message):
 async def on_member_join(member):
     await user_verification.on_member_join(client, member)
     await queuechannel.on_member_join(client, member)
+    await mapchannel.on_member_join(client, member)
 
 
 @client.event
 async def on_member_remove(member):
     await user_verification.on_member_remove(client, member)
     await queuechannel.on_member_remove(client, member)
+    await mapchannel.on_member_remove(client, member)
 
 
 @client.event
 async def on_guild_channel_delete(deleted_channel):
     await mapchannel.on_guild_channel_delete(client, deleted_channel)
     await queuechannel.on_guild_channel_delete(client, deleted_channel)
+
+
+@client.event
+async def on_user_update(before, after):
+    await users.on_user_update(client, before, after)
 
 
 async def modchecker_background_loop():

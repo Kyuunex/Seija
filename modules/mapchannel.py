@@ -230,3 +230,32 @@ async def on_guild_channel_delete(client, deleted_channel):
         print("channel %s is deleted" % (deleted_channel.name))
     except Exception as e:
         print(e)
+
+
+async def on_member_join(client, member):
+    mapsets_user_is_in = db.query(["SELECT channel_id, role_id FROM mapset_channels WHERE user_id = ?", [str(member.id)]])
+    if mapsets_user_is_in:
+        for mapset in mapsets_user_is_in:
+            channel = client.get_channel(int(mapset[0]))
+            if channel:
+                role = discord.utils.get(channel.guild.roles, id=int(mapset[1]))
+                await member.add_roles(role, reason="set owner returned")
+                await channel.set_permissions(target=member, overwrite=mapset_owner_default_permissions)
+                await channel.send("the mapset owner has returned. next time you track the mapset, it will be unarchived, unless this is already ranked. ether way, permissions restored.")
+
+
+async def on_member_remove(client, member):
+    mapsets_user_is_in = db.query(["SELECT channel_id FROM mapset_channels WHERE user_id = ?", [str(member.id)]])
+    if mapsets_user_is_in:
+        for mapset in mapsets_user_is_in:
+            channel = client.get_channel(int(mapset[0]))
+            if channel:
+                await channel.send("the mapset owner has left the server")
+                db.query(["DELETE FROM mod_tracking WHERE channel_id = ?",[str(channel.id)]])
+                db.query(["DELETE FROM mod_posts WHERE channel_id = ?",[str(channel.id)]])
+                await channel.send("untracked everything in this channel")
+                guildarchivecategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_archive_category", str(channel.guild.id)]])
+                if guildarchivecategory:
+                    archivecategory = client.get_channel(int(guildarchivecategory[0][0]))
+                    await channel.edit(reason=None, category=archivecategory)
+                    await channel.send("channel archived!")

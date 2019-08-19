@@ -5,6 +5,19 @@ from modules import reputation
 import discord
 import asyncio
 
+queue_owner_default_permissions = discord.PermissionOverwrite(
+    create_instant_invite=True,
+    manage_channels=True,
+    manage_roles=True,
+    read_messages=True,
+    send_messages=True,
+    manage_messages=True,
+    embed_links=True,
+    attach_files=True,
+    read_message_history=True,
+)
+
+
 async def make_queue_channel(client, ctx, queuetype):
     guildqueuecategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapper_queue_category", str(ctx.guild.id)]])
     if guildqueuecategory:
@@ -16,17 +29,7 @@ async def make_queue_channel(client, ctx, queuetype):
                 guild = ctx.message.guild
                 channeloverwrites = {
                     guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                    ctx.message.author: discord.PermissionOverwrite(
-                        create_instant_invite=True,
-                        manage_channels=True,
-                        manage_roles=True,
-                        read_messages=True,
-                        send_messages=True,
-                        manage_messages=True,
-                        embed_links=True,
-                        attach_files=True,
-                        read_message_history=True,
-                    ),
+                    ctx.message.author: queue_owner_default_permissions,
                     guild.me: discord.PermissionOverwrite(
                         manage_channels=True,
                         manage_roles=True,
@@ -107,6 +110,7 @@ async def on_member_join(client, member):
     if queue_id:
         queue_channel = client.get_channel(int(queue_id[0][0]))
         if queue_channel:
+            await queue_channel.set_permissions(target=member, overwrite=queue_owner_default_permissions)
             await queue_channel.send("the queue owner has returned. next time you open the queue, it will be unarchived.")
 
 
@@ -120,5 +124,5 @@ async def on_member_remove(client, member):
             if guildarchivecategory:
                 archivecategory = client.get_channel(int(guildarchivecategory[0][0]))
                 await queue_channel.edit(reason=None, category=archivecategory)
-                await queue_channel.channel.set_permissions(queue_channel.guild.default_role, read_messages=False, send_messages=False)
+                await queue_channel.set_permissions(queue_channel.guild.default_role, read_messages=False, send_messages=False)
                 await queue_channel.send("queue archived!")

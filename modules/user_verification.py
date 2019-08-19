@@ -34,7 +34,6 @@ async def verify(channel, member, guild, lookup_type, lookup_string, response):
                 embed = await osuembed.beatmapset(authorsmapset)
 
         if osuusername:
-
             ranked_amount = await users.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(osuaccountid)))
 
             if ranked_amount >= 10:
@@ -48,25 +47,47 @@ async def verify(channel, member, guild, lookup_type, lookup_string, response):
                 user_id = member
             else:
                 user_id = str(member.id)
-                try:
-                    await member.add_roles(role)
-                    await member.edit(nick=osuusername)
-                except Exception as e:
-                    print(time.strftime('%X %x %Z'))
-                    print("in users.verify")
-                    print(e)
-
-            if db.query(["SELECT user_id FROM users WHERE user_id = ?", [user_id, ]]):
-                print("user %s already in database" % (user_id,))
-                # possibly force update the entry in future
-            else:
-                print("adding user %s in database" % (user_id,))
-                db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osuaccountid, osuusername, osu_join_date, pp, country, ranked_amount, no_sync]])
 
             if not response:
                 response = "verified <@%s>" % (user_id)
 
-            await channel.send(content=response, embed=embed)
+            already_in = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]])
+            if already_in:
+                if str(already_in[0][0]) != str(osuaccountid):
+                    print("user %s already in database" % (user_id,))
+                    await channel.send("it seems like your discord account is already in my database and is linked to <https://osu.ppy.sh/users/%s>, and the profile you linked won't overwrite anything in there. if there's a problem, ping kyuunex" % (already_in[0][0]))
+                    # possibly force update the entry in future
+                else:
+                    try:
+                        if type(member) is str:
+                            pass
+                        else:
+                            await member.add_roles(role)
+                            await member.edit(nick=osuusername)
+                    except Exception as e:
+                        print(time.strftime('%X %x %Z'))
+                        print("in users.verify")
+                        print(e)
+                    await channel.send("it seems like i already know about you lol, welcome aboard")
+            else:
+                print("adding user %s in database" % (user_id,))
+
+                check_back_user_id = db.query(["SELECT user_id FROM users WHERE osu_id = ?", [str(osuaccountid)]])
+                if check_back_user_id: # TODO: fix
+                    if str(check_back_user_id[0][0]) != str(member.id):
+                        await channel.send("side note: this osu account is already linked to <@%s> in my database. if there's a problem, for example, you got a new discord account, ping kyuunex." % (check_back_user_id[0][0]))
+                try:
+                    if type(member) is str:
+                        pass
+                    else:
+                        await member.add_roles(role)
+                        await member.edit(nick=osuusername)
+                except Exception as e:
+                    print(time.strftime('%X %x %Z'))
+                    print("in users.verify")
+                    print(e)
+                db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osuaccountid, osuusername, osu_join_date, pp, country, ranked_amount, no_sync]])
+                await channel.send(content=response, embed=embed)
             return True
         else:
             return None

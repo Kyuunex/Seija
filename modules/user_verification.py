@@ -77,11 +77,12 @@ async def verify(channel, member, guild, lookup_type, lookup_string, response):
 
         
 async def unverify(ctx, user_id):
-    db.query(["DELETE FROM users WHERE user_id = ?", [user_id, ]])
+    db.query(["DELETE FROM users WHERE user_id = ?", [str(user_id), ]])
     member = ctx.guild.get_member(int(user_id))
     if member:
         try:
             await member.edit(roles=[])
+            await member.edit(nick=None)
             await ctx.send("Done")
         except Exception as e:
             await ctx.send(e)
@@ -102,15 +103,16 @@ async def manually_verify(ctx, lookup_type, osu_id, user_id, preverify):
         print(e)
 
 
-async def mass_verify(ctx, mention):
+async def mass_verify(ctx, mention_users):
     try:
-        userarray = open("data/users.csv", encoding="utf8").read().splitlines()
-        if mention == "m":
+        # TODO: this might be broken check later
+        csv_file = open("data/users.csv", encoding="utf8").read().splitlines()
+        if mention_users == "m":
             tag = "Preverified: <@%s>"
         else:
             tag = "Preverified: %s"
-        for oneuser in userarray:
-            uzer = oneuser.split(',')
+        for one_user in csv_file:
+            uzer = one_user.split(',')
             await verify(ctx.message.channel, str(uzer[1]), None, "u", uzer[0], tag % (str(uzer[1])))
             await asyncio.sleep(1)
     except Exception as e:

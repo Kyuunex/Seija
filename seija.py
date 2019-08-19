@@ -25,7 +25,7 @@ from modules.connections import bot_token as bot_token
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190813"
+appversion = "b20190819"
 
 
 if not os.path.exists(database_file):
@@ -70,17 +70,6 @@ async def makeadmin(ctx, user_id: str, perms = str("0")):
         await ctx.send(embed=permissions.error_owner())
 
 
-@client.command(name="resetadminlist", brief="Scrap the current admin list and make the bot owner the bot admin", description="", pass_context=True)
-async def resetadminlist(ctx,):
-    appinfo = await client.application_info()
-    if str(ctx.message.author.id) == str(appinfo.owner.id):
-        db.query("DELETE FROM admins")
-        db.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), str(1)]])
-        await ctx.send(":ok_hand:")
-    else:
-        await ctx.send(embed=permissions.error_owner())
-
-
 @client.command(name="restart", brief="Restart the bot", description="", pass_context=True)
 async def restart(ctx):
     if permissions.check(ctx.message.author.id):
@@ -102,7 +91,7 @@ async def update(ctx):
         await ctx.send(embed=permissions.error())
 
 
-@client.command(name="echo", brief="Echo a string", description="", pass_context=True)
+@client.command(name="echo", brief="Echo a string upside down", description="", pass_context=True)
 async def echo(ctx, *, string):
     if permissions.check(ctx.message.author.id):
         await ctx.message.delete()
@@ -111,7 +100,7 @@ async def echo(ctx, *, string):
         await ctx.send(embed=permissions.error())
 
 
-@client.command(name="ts", brief="", description="", pass_context=True)
+@client.command(name="ts", brief="Send an osu editor clickable timestamp", description="Must start with a timestamp", pass_context=True)
 async def ts(ctx, *, string):
     embed = await modchecker.return_clickable(ctx.author, string)
     try:
@@ -125,7 +114,7 @@ async def ts(ctx, *, string):
 async def dbdump(ctx):
     if permissions.check(ctx.message.author.id):
         if ctx.message.channel.id == int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_db_dump_channel", str(ctx.guild.id)]]))[0][0]):
-            await ctx.send(file=discord.File('data/maindb.sqlite3'))
+            await ctx.send(file=discord.File(database_file))
     else:
         await ctx.send(embed=permissions.error())
 
@@ -148,34 +137,58 @@ async def verify(ctx, lookup_type: str, osu_id: str, user_id: int, preverify: st
         await ctx.send(embed=permissions.error())
 
 
-@client.command(name="userdb", brief="Guild member and Database related commands", description="", pass_context=True)
-async def userdb(ctx, command: str = None, mention: str = None):
+@client.command(name="mass_verify", brief="Insert multiple users into the database from a csv file", description="", pass_context=True)
+async def mass_verify(ctx, mention_users: str = None):
     if permissions.check_owner(ctx.message.author.id):
-        if command == "mass_verify":
-            await user_verification.mass_verify(ctx, mention)
-        elif command == "print_all":
-            await users.print_all(ctx, mention)
-        elif command == "server_check":
-            await users.server_check(ctx, mention)
-        else:
-            pass
+        await user_verification.mass_verify(ctx, mention_users)
     else:
         await ctx.send(embed=permissions.error_owner())
 
 
-@client.command(name="u", brief="", description="", pass_context=True)
-async def uuu(ctx, command: str = None, mention: str = None):
+@client.command(name="print_all", brief="Print all users and their profiles from db", description="", pass_context=True)
+async def print_all(ctx, mention_users: str = None):
+    if permissions.check_owner(ctx.message.author.id):
+        await users.print_all(ctx, mention_users)
+    else:
+        await ctx.send(embed=permissions.error_owner())
+
+    
+@client.command(name="get_users_not_in_db", brief="Get a list of users who are not in db", description="", pass_context=True)
+async def get_users_not_in_db(ctx, mention_users: str = None):
+    if permissions.check_owner(ctx.message.author.id):
+        await users.get_users_not_in_db(ctx, mention_users)
+    else:
+        await ctx.send(embed=permissions.error_owner())
+
+
+@client.command(name="check_ranked", brief="Return ranked mappers who don't have the role", description="", pass_context=True)
+async def check_ranked(ctx):
     if permissions.check(ctx.message.author.id):
-        if command == "check_ranked":
-            await users.check_ranked_amount_by_role(ctx, mention, 1, "guild_mapper_role")
-        elif command == "check_experienced":
-            await users.check_ranked_amount_by_role(ctx, mention, 10, "guild_ranked_mapper_role")
-        elif command == "unverify":
-            await user_verification.unverify(ctx, mention)
-        elif command == "roleless":
-            await users.roleless(ctx, mention)
-        else:
-            pass
+        await users.check_ranked_amount_by_role(ctx, 1, "guild_mapper_role")
+    else:
+        await ctx.send(embed=permissions.error())
+
+
+@client.command(name="check_experienced", brief="Return experienced mappers who don't have the role", description="", pass_context=True)
+async def check_experienced(ctx):
+    if permissions.check(ctx.message.author.id):
+        await users.check_ranked_amount_by_role(ctx, 10, "guild_ranked_mapper_role")
+    else:
+        await ctx.send(embed=permissions.error())
+
+
+@client.command(name="unverify", brief="Unverify a member and delete it from db", description="", pass_context=True)
+async def unverify(ctx, user_id):
+    if permissions.check(ctx.message.author.id):
+        await user_verification.unverify(ctx, user_id)
+    else:
+        await ctx.send(embed=permissions.error())
+
+
+@client.command(name="roleless", brief="Get a list of members without a role", description="", pass_context=True)
+async def roleless(ctx, lookup_in_db: str = None):
+    if permissions.check(ctx.message.author.id):
+        await users.roleless(ctx, lookup_in_db)
     else:
         await ctx.send(embed=permissions.error())
 
@@ -200,9 +213,17 @@ async def user(ctx, *, username):
         await ctx.send(content='`No user found with that username`')
 
 
-@client.command(name="help", brief="The pretty help command", description="", pass_context=True)
-async def help(ctx, subhelp: str = None):  # TODO: rewrite help
+@client.command(name="help", brief="Help command", description="", pass_context=True)
+async def help(ctx, subhelp = None):
     await docs.main(ctx, subhelp)
+
+
+@client.command(name="dashboard", brief="The pretty help command", description="", pass_context=True)
+async def dashboard(ctx):
+    if permissions.check(ctx.message.author.id):
+        await ctx.send_help()
+    else:
+        await ctx.send(embed=permissions.error())
 
 
 @client.command(name="forcetrack", brief="Force Track a mapset in the current channel", description="", pass_context=True)
@@ -283,15 +304,15 @@ async def sublist(ctx):
         
         
 @client.command(name="chanlist", brief="List all mapset channel", description="", pass_context=True)
-async def chanlist(ctx): # DELETE FROM mapset_channels WHERE role_id = ""
-    if permissions.check_owner(ctx.message.author.id):
+async def chanlist(ctx):
+    if permissions.check(ctx.message.author.id):
         for oneentry in db.query("SELECT * FROM mapset_channels"):
             await ctx.send(content="channel_id <#%s> | role_id %s | user_id <@%s> | mapset_id %s | guild_id %s " % (oneentry))
     else:
-        await ctx.send(embed=permissions.error_owner())
+        await ctx.send(embed=permissions.error())
         
         
-@client.command(name="cv", brief="", description="", pass_context=True)
+@client.command(name="cv", brief="Check which osu account is a discord account linked to", description="", pass_context=True)
 async def cv(ctx, *, user_id):
     if permissions.check(ctx.message.author.id):
         osu_profile = (db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]]))
@@ -304,7 +325,7 @@ async def cv(ctx, *, user_id):
         await ctx.send(embed=permissions.error())
 
 
-@client.command(name="af", brief="", description="", pass_context=True)
+@client.command(name="af", brief="April fools commands", description="", pass_context=True)
 async def af(ctx, action):
     if permissions.check_owner(ctx.message.author.id):
         await ctx.message.delete()
@@ -329,7 +350,7 @@ async def af(ctx, action):
         await ctx.send(embed=permissions.error_owner())
 
 
-@client.command(name="demographics", brief="demographics", description="", pass_context=True)
+@client.command(name="demographics", brief="Send server demographics stats", description="", pass_context=True)
 async def demographics(ctx):
     if permissions.check(ctx.message.author.id):
         await users.demographics(client, ctx)
@@ -337,7 +358,7 @@ async def demographics(ctx):
         await ctx.send(embed=permissions.error())
 
 
-@client.command(name="from", brief="from", description="", pass_context=True)
+@client.command(name="from", brief="Get a list of members from specified country", description="Takes Alpha-2, Alpha-3 codes and full country names.", pass_context=True)
 async def users_from(ctx, *, country_code = "US"):
     await users.users_from(client, ctx, country_code)
 
@@ -350,7 +371,7 @@ async def requestchannel(ctx, requesttype: str = "help", arg1: str = None, arg2:
         await mapchannel.make_mapset_channel(client, ctx, arg1, arg2)
 
 
-@client.command(name="nuke", brief="Nuke a requested channel", description="", pass_context=True)
+@client.command(name="nuke", brief="Nuke a requested mapset channel", description="", pass_context=True)
 async def nuke(ctx):
     if permissions.check(ctx.message.author.id):
         await mapchannel.nuke_mapset_channel(client, ctx)
@@ -358,15 +379,7 @@ async def nuke(ctx):
         await ctx.send(embed=permissions.error())
 
 
-@client.command(name="test", brief="test", description="", pass_context=True)
-async def test(ctx, u):
-    if permissions.check_owner(ctx.message.author.id):
-        print("test")
-    else:
-        await ctx.send(embed=permissions.error_owner())
-
-
-@client.command(name="config", brief="", description="", pass_context=True)
+@client.command(name="config", brief="Insert a role related config in db for the current guild", description="", pass_context=True)
 async def config(ctx, setting, role_name):
     if permissions.check_owner(ctx.message.author.id):
         await configmaker.role_setup(client, ctx, setting, role_name)
@@ -374,7 +387,7 @@ async def config(ctx, setting, role_name):
         await ctx.send(embed=permissions.error_owner())
 
 
-@client.command(name="cfg", brief="", description="", pass_context=True)
+@client.command(name="cfg", brief="Insert a config in db for the current guild", description="", pass_context=True)
 async def cfg(ctx, setting, an_id):
     if permissions.check_owner(ctx.message.author.id):
         await configmaker.cfg_setup(client, ctx, setting, an_id)
@@ -402,7 +415,7 @@ async def hideq(ctx, *params):
     await queuechannel.queuesettings(client, ctx, "hide", params)
 
 
-@client.command(name="archive", brief="archive the queue", description="", pass_context=True)
+@client.command(name="archive", brief="Archive the queue", description="", pass_context=True)
 async def archiveq(ctx, *params):
     await queuechannel.queuesettings(client, ctx, "archive", params)
 
@@ -422,22 +435,22 @@ async def abandon(ctx):
     await mapchannel.abandon(client, ctx)
 
 
-@client.command(name="setid", brief="", description="", pass_context=True)
+@client.command(name="setid", brief="Set a mapset id for this channel", description="Useful if you created this channel without setting an id", pass_context=True)
 async def set_mapset_id(ctx, mapset_id: int):
     await mapchannel.set_mapset_id(client, ctx, mapset_id)
 
 
-@client.command(name="setowner", brief="", description="", pass_context=True)
+@client.command(name="setowner", brief="Transfer set ownership to another discord account", description="user_id can only be that discord account's id", pass_context=True)
 async def set_owner_id(ctx, user_id: int):
     await mapchannel.set_owner_id(client, ctx, user_id)
 
 
-@client.command(name="track", brief="", description="", pass_context=True)
+@client.command(name="track", brief="Track the mapset in this channel", description="", pass_context=True)
 async def track(ctx, tracking_mode = "classic"):
     await mapchannel.track_mapset(client, ctx, tracking_mode)
 
 
-@client.command(name="untrack", brief="", description="", pass_context=True)
+@client.command(name="untrack", brief="Untrack everything in this channel", description="", pass_context=True)
 async def untrack(ctx):
     await mapchannel.untrack_mapset(client, ctx)
 

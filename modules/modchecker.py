@@ -35,9 +35,10 @@ async def populatedb(discussions, channel_id):
     for onemod in mod_posts:
         try:
             if onemod:
-                for subpost in onemod["posts"]:
-                    if subpost:
-                        allposts.append(["INSERT INTO mod_posts VALUES (?,?,?)", [str(subpost["id"]), str(onemod["beatmapset_id"]), str(channel_id)]])
+                if 'posts' in onemod:
+                    for subpost in onemod["posts"]:
+                        if subpost:
+                            allposts.append(["INSERT INTO mod_posts VALUES (?,?,?)", [str(subpost["id"]), str(onemod["beatmapset_id"]), str(channel_id)]])
         except Exception as e:
             print(time.strftime('%X %x %Z'))
             print("in modchecker.populatedb")
@@ -108,17 +109,18 @@ async def timeline_mode_tracking(beatmapset_discussions, channel, mapset_id, tra
         for discussion in beatmapset_discussions["beatmapset"]["discussions"]:
             try:
                 if discussion:
-                    for subpostobject in discussion['posts']:
-                        if subpostobject:
-                            if not db.query(["SELECT post_id FROM mod_posts WHERE post_id = ? AND channel_id = ?", [str(subpostobject['id']), str(channel.id)]]):
-                                db.query(["INSERT INTO mod_posts VALUES (?,?,?)", [str(subpostobject["id"]), str(mapset_id), str(channel.id)]])
-                                if (not subpostobject['system']) and (not subpostobject["message"] == "r") and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
-                                    modtopost = await modpost(subpostobject, beatmapset_discussions, discussion, tracking_mode)
-                                    if modtopost:
-                                        try:
-                                            await channel.send(embed=modtopost)
-                                        except Exception as e:
-                                            print(e)
+                    if 'posts' in discussion:
+                        for subpostobject in discussion['posts']:
+                            if subpostobject:
+                                if not db.query(["SELECT post_id FROM mod_posts WHERE post_id = ? AND channel_id = ?", [str(subpostobject['id']), str(channel.id)]]):
+                                    db.query(["INSERT INTO mod_posts VALUES (?,?,?)", [str(subpostobject["id"]), str(mapset_id), str(channel.id)]])
+                                    if (not subpostobject['system']) and (not subpostobject["message"] == "r") and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
+                                        modtopost = await modpost(subpostobject, beatmapset_discussions, discussion, tracking_mode)
+                                        if modtopost:
+                                            try:
+                                                await channel.send(embed=modtopost)
+                                            except Exception as e:
+                                                print(e)
             except Exception as e:
                 print(time.strftime('%X %x %Z'))
                 print("while looping through discussions")

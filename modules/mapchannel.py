@@ -135,20 +135,25 @@ async def nuke_mapset_channel(client, ctx):
 async def abandon(client, ctx):
     guildarchivecategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_archive_category", str(ctx.guild.id)]])
     if guildarchivecategory:
-        if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (db.query(["SELECT * FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check(ctx.message.author.id)):
-            try:
-                mapset_id = db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]])
-                if mapset_id:
-                    db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",[str(mapset_id[0][0]), str(ctx.message.channel.id)]])
-                    db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",[str(mapset_id[0][0]), str(ctx.message.channel.id)]])
-                    await ctx.send("untracked")
-                    await asyncio.sleep(1)
+        if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check(ctx.message.author.id)):
+            if db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]]):
+                try:
+                    mapset_id = db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]])
+                    if mapset_id:
+                        db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",[str(mapset_id[0][0]), str(ctx.message.channel.id)]])
+                        db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",[str(mapset_id[0][0]), str(ctx.message.channel.id)]])
+                        await ctx.send("untracked")
+                        await asyncio.sleep(1)
 
-                archivecategory = client.get_channel(int(guildarchivecategory[0][0]))
-                await ctx.message.channel.edit(reason=None, category=archivecategory)
-                await ctx.send("Abandoned and moved to archive")
-            except Exception as e:
-                await ctx.send(e)
+                    archivecategory = client.get_channel(int(guildarchivecategory[0][0]))
+                    await ctx.message.channel.edit(reason=None, category=archivecategory)
+                    await ctx.send("Abandoned and moved to archive")
+                except Exception as e:
+                    await ctx.send(e)
+            else:
+                await ctx.send("%s this is not a mapset channel" % (ctx.message.author.mention))
+        else:
+            await ctx.send("%s this is not your mapset channel" % (ctx.message.author.mention))
     else:
         await ctx.send("no archive category set for this server")
 

@@ -51,41 +51,44 @@ async def make_queue_channel(client, ctx, queuetype):
 
 async def queuesettings(client, ctx, action, params):
     if (db.query(["SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check(ctx.message.author.id)):
-        try:
-            if params:
-                if len(params) == 2:
-                    embed_title = params[0] 
-                    embed_desc = params[1]
+        if db.query(["SELECT user_id FROM queues WHERE channel_id = ?", [str(ctx.message.channel.id)]]):
+            try:
+                if params:
+                    if len(params) == 2:
+                        embed_title = params[0] 
+                        embed_desc = params[1]
+                    else:
+                        embed_title = "Message" 
+                        embed_desc = " ".join(params)
+                    embed = discord.Embed(title=embed_title, color=0xbd3661, description=embed_desc)
+                    embed.set_author(name=ctx.message.author.display_name, icon_url=ctx.message.author.avatar_url)
+                    await ctx.message.delete()
                 else:
-                    embed_title = "Message" 
-                    embed_desc = " ".join(params)
-                embed = discord.Embed(title=embed_title, color=0xbd3661, description=embed_desc)
-                embed.set_author(name=ctx.message.author.display_name, icon_url=ctx.message.author.avatar_url)
-                await ctx.message.delete()
-            else:
-                embed = None
-            if action == "open":
-                await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=True)
-                await reputation.unarchive_queue(client, ctx, ctx.message.author)
-                await ctx.send("queue open!", embed=embed)
-            elif action == "close":
-                await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=False)
-                await ctx.send("queue closed!", embed=embed)
-            elif action == "show":
-                await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=False)
-                await ctx.send("queue is visible to everyone, but it's still closed. use 'open command if you want people to post in it.", embed=embed)
-            elif action == "hide":
-                await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=False, send_messages=False)
-                await ctx.send("queue hidden!", embed=embed)
-            elif action == "archive":
-                guildarchivecategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_archive_category", str(ctx.guild.id)]])
-                if guildarchivecategory:
-                    archivecategory = client.get_channel(int(guildarchivecategory[0][0]))
-                    await ctx.message.channel.edit(reason=None, category=archivecategory)
+                    embed = None
+                if action == "open":
+                    await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=True)
+                    await reputation.unarchive_queue(client, ctx, ctx.message.author)
+                    await ctx.send("queue open!", embed=embed)
+                elif action == "close":
+                    await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=False)
+                    await ctx.send("queue closed!", embed=embed)
+                elif action == "show":
+                    await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=False)
+                    await ctx.send("queue is visible to everyone, but it's still closed. use 'open command if you want people to post in it.", embed=embed)
+                elif action == "hide":
                     await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=False, send_messages=False)
-                    await ctx.send("queue archived!", embed=embed)
-        except Exception as e:
-            await ctx.send(e)
+                    await ctx.send("queue hidden!", embed=embed)
+                elif action == "archive":
+                    guildarchivecategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_archive_category", str(ctx.guild.id)]])
+                    if guildarchivecategory:
+                        archivecategory = client.get_channel(int(guildarchivecategory[0][0]))
+                        await ctx.message.channel.edit(reason=None, category=archivecategory)
+                        await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=False, send_messages=False)
+                        await ctx.send("queue archived!", embed=embed)
+            except Exception as e:
+                await ctx.send(e)
+        else:
+            await ctx.send("%s this is not a queue" % (ctx.message.author.mention))
     else:
         await ctx.message.delete()
         await ctx.send("%s not your queue" % (ctx.message.author.mention), delete_after=3)
@@ -104,7 +107,7 @@ async def on_member_join(client, member):
     if queue_id:
         queue_channel = client.get_channel(int(queue_id[0][0]))
         if queue_channel:
-            await queue_channel.send("the queue owner has returned")
+            await queue_channel.send("the queue owner has returned. next time you open the queue, it will be unarchived.")
 
 
 async def on_member_remove(client, member):
@@ -113,3 +116,9 @@ async def on_member_remove(client, member):
         queue_channel = client.get_channel(int(queue_id[0][0]))
         if queue_channel:
             await queue_channel.send("the queue owner has left")
+            guildarchivecategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_archive_category", str(queue_channel.guild.id)]])
+            if guildarchivecategory:
+                archivecategory = client.get_channel(int(guildarchivecategory[0][0]))
+                await queue_channel.edit(reason=None, category=archivecategory)
+                await queue_channel.channel.set_permissions(queue_channel.guild.default_role, read_messages=False, send_messages=False)
+                await queue_channel.send("queue archived!")

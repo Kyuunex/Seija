@@ -11,12 +11,7 @@ footer_icon = 'https://avatars0.githubusercontent.com/u/5400432'
 footer_text = "Made by Kyuunex"
 
 async def main(ctx, subhelp):
-    if subhelp == "admin":
-        if permissions.check(ctx.message.author.id):
-            await ctx.send(embed=await admin())
-        else:
-            await ctx.send(embed=permissions.error())
-    elif subhelp == "veto":
+    if subhelp == "veto":
         if db.query(["SELECT value FROM config WHERE setting = ? AND value = ?", ["guild_veto_channel", str(ctx.message.channel.id)]]):
             await ctx.send(embed=await veto())
     elif subhelp == "mapchannel":
@@ -38,7 +33,6 @@ async def help():
     embed.add_field(name="'help queue", value="To bring up a help menu for requesting a queue channel.", inline=True)
     embed.add_field(name="'help mapchannelmanagement", value="To bring mapset channel management commands.", inline=True)
     embed.add_field(name="'help queuemanagement", value="To bring up queue channel management commands.", inline=True)
-    embed.add_field(name="'help admin", value="Commands for admins.", inline=True)
     embed.add_field(name="'from (country_name)", value="Retrive a list of server members that are in the specified country. Takes Alpha-2, Alpha-3 codes and full country names.", inline=True)
     embed.add_field(name="'ts (mod)", value="Send an osu editor clickable timestamp. Must start with a timestamp.", inline=True)
     #embed.add_field(name="'help veto", value="Commands for tracking in veto mode.", inline=True)
@@ -48,32 +42,7 @@ async def help():
     embed.set_footer(text=footer_text, icon_url=footer_icon)
     return embed
 
-
-async def admin():
-    embed = discord.Embed(title="Seija teaches you how to be a bot master.", description="These commands are intended only for bot admins.", color=0xbd3661)
-
-    embed.add_field(name="'adminlist", value="Shows a list of bot admins.", inline=True)
-    embed.add_field(name="'forcetrack <mapset_id>", value="Subscribe to a beatmapset discussions in this channel.", inline=True)
-    embed.add_field(name="'forceuntrack <mapset_id>", value="Unsubscribe from a beatmapset discussions in this channel.", inline=True)
-    embed.add_field(name="'sublist", value="List all mapset tracking entries.", inline=True)
-    embed.add_field(name="'chanlist", value="List all mapset channel.", inline=True)
-    embed.add_field(name="'restart", value="Restart the bot. This is broken don't use it you will kill the bot.", inline=True)
-    embed.add_field(name="'update", value="Update the bot. This is broken don't use it you will kill the bot.", inline=True)
-    embed.add_field(name="'nuke", value="Type this in a mapset channel to nuke it and it's role.", inline=True)
-    embed.add_field(name="'demographics", value="Show server demographics.", inline=True)
-    embed.add_field(name="'af", value="Disabled april fools command to make channel names upside down.", inline=True)
-    embed.add_field(name="'userdb [check_ranked/mass_verify/print_all/server_check]", value="Various things, don't touch.", inline=True)
-    embed.add_field(name="'verify <osu_id> <discord_user_id> (preverify)]", value="Manually verify a user. Add 'preverify' at the end if the user is not in the server.", inline=True)
-    embed.add_field(name="'sql <sql_query>", value="Execute an SQL query, bot owner only.", inline=True)
-    embed.add_field(name="'dbdump", value="Make a database backup, only in database_backups channel.", inline=True)
-    embed.add_field(name="'echo", value="Echo a string upside down.", inline=True)
-
-    embed.set_thumbnail(url=help_thumbnail)
-    embed.set_author(name=author_text, icon_url=author_icon)
-    embed.set_footer(text=footer_text, icon_url=footer_icon)
-    return embed
-
-
+    
 async def veto():
     embed = discord.Embed(title="Seija teaches you how to be a bot master.", description="~~BNS PLEZ MUTUAL~~ Here are veto tracking commands.", color=0xbd3661)
 

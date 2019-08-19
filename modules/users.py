@@ -104,11 +104,11 @@ async def users_from(client, ctx, country_code):
     await ctx.send(embed=statsembed)
 
 
-async def roleless(ctx, mention):
+async def roleless(ctx, lookup_in_db):
     for member in ctx.guild.members:
         if len(member.roles) < 2:
             await ctx.send(member.mention)
-            if mention:
+            if lookup_in_db:
                 try:
                     query = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
                     if query:
@@ -240,7 +240,7 @@ async def count_ranked_beatmapsets(beatmapsets):
         return 0
 
 
-async def check_ranked_amount_by_role(ctx, mention, amount = 1, role_name = "guild_mapper_role"):
+async def check_ranked_amount_by_role(ctx, amount = 1, role_name = "guild_mapper_role"):
     role = discord.utils.get(ctx.guild.roles, id=int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", [role_name, str(ctx.guild.id)]]))[0][0]))
     if role:
         output = "These fella's are the result of this check:\n"
@@ -270,15 +270,15 @@ async def check_ranked_amount_by_role(ctx, mention, amount = 1, role_name = "gui
         await ctx.send("Nope")
 
 
-async def print_all(ctx, mention):
+async def print_all(ctx, mention_users):
     try:
-        if mention == "m":
+        if mention_users == "m":
             tag = "<@%s> / %s"
         else:
             tag = "%s / %s"
-        for oneuser in db.query("SELECT * FROM users"):
+        for one_user in db.query("SELECT * FROM users"):
             try:
-                userprofile = await osu.get_user(u=oneuser[1])
+                userprofile = await osu.get_user(u=one_user[1])
                 embed = await osuembed.user(userprofile)
             except:
                 print("Connection issues?")
@@ -286,14 +286,15 @@ async def print_all(ctx, mention):
                 await asyncio.sleep(10)
                 embed = None
             if embed:
-                await ctx.send(content=tag % (oneuser[0], oneuser[2]), embed=embed)
+                await ctx.send(content=tag % (one_user[0], one_user[2]), embed=embed)
+            await asyncio.sleep(1)
     except Exception as e:
         print(time.strftime('%X %x %Z'))
         print("in userdb")
         print(e)
 
 
-async def server_check(ctx, mention):
+async def get_users_not_in_db(ctx, mention_users):
     try:
         responce = "These users are not in my database:\n"
         count = 0
@@ -301,7 +302,7 @@ async def server_check(ctx, mention):
             if not member.bot:
                 if not db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]]):
                     count += 1
-                    if mention == "m":
+                    if mention_users == "m":
                         responce += ("<@%s>\n" % (str(member.id)))
                     else:
                         responce += ("\"%s\" %s\n" % (str(member.display_name), str(member.id)))

@@ -68,7 +68,7 @@ async def verify(channel, member, guild, lookup_type, lookup_string, response):
                         print(time.strftime('%X %x %Z'))
                         print("in users.verify")
                         print(e)
-                    await channel.send("it seems like i already know about you lol, welcome aboard")
+                    await channel.send(content=response, embed=embed)
             else:
                 print("adding user %s in database" % (user_id,))
 

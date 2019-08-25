@@ -325,6 +325,7 @@ async def get_users_not_in_db(ctx, mention_users):
 async def on_user_update(client, before, after):
     query = db.query(["SELECT * FROM users WHERE user_id = ?", [str(after.id)]])
     if query:
+        print(query)
         osuprofile = await osu.get_user(u=query[1])
         if osuprofile:
             now = datetime.datetime.now()

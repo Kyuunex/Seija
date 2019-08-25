@@ -25,7 +25,7 @@ from modules.connections import bot_token as bot_token
 
 client = commands.Bot(command_prefix='\'')
 client.remove_command('help')
-appversion = "b20190819"
+appversion = "b20190826"
 
 
 if not os.path.exists(database_file):

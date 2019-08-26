@@ -323,12 +323,16 @@ async def get_users_not_in_db(ctx, mention_users):
 
 
 async def on_user_update(client, before, after):
-    query = db.query(["SELECT * FROM users WHERE user_id = ?", [str(after.id)]])
-    if query:
-        osuprofile = await osu.get_user(u=query[0][1])
-        if osuprofile:
-            now = datetime.datetime.now()
-            memberfeedchannellist = db.query(["SELECT * FROM config WHERE setting = ?", ["guild_user_event_tracker"]])
-            auditchannel = client.get_channel(int(memberfeedchannellist[0][3]))
-            if auditchannel:
-                await one_guild_member_sync(auditchannel, query, now, after, osuprofile)
+    which_guild = db.query(["SELECT * FROM config WHERE setting = ?", ["guild_user_event_tracker"]])
+    if which_guild:
+        query = db.query(["SELECT * FROM users WHERE user_id = ?", [str(after.id)]])
+        if query:
+            osuprofile = await osu.get_user(u=query[0][1])
+            if osuprofile:
+                for this_guild in which_guild:
+                    guild = client.get_guild(int(this_guild[1]))
+                    now = datetime.datetime.now()
+                    auditchannel = client.get_channel(int(this_guild[3]))
+                    if auditchannel:
+                        member = guild.get_member(int(after.id))
+                        await one_guild_member_sync(auditchannel, query, now, member, osuprofile)

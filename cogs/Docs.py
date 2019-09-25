@@ -65,12 +65,12 @@ async def queue(author):
     qname = author.replace(" ", "_").lower()
     embed = discord.Embed(title="With this command, you can create a queue channel.",
                               description="""**__Queue creation command:__**
-`'request queue (queue type)` - Create a queue. By default, the queue will be closed.
+`'request_queue (queue type)` - Create a queue. By default, the queue will be closed.
 `(queue type)` is an optional argument that specifies what goes between your username and the word `queue` in the title of the channel. If no argument is supplied, `std` will be automatically filled. Please follow our naming standards.
 
 **__Examples:__**
-`'request queue mania` - This example will create `#%s-mania-queue`
-`'request queue taiko-bn` - This example will create `#%s-taiko-bn-queue`
+`'request_queue mania` - This example will create `#%s-mania-queue`
+`'request_queue taiko-bn` - This example will create `#%s-taiko-bn-queue`
 
 For queue management commands, type `'docs queuemanagement`""" % (qname, qname), color=0xbd3661)
     embed.set_author(name=author_text, icon_url=author_icon)
@@ -81,13 +81,13 @@ For queue management commands, type `'docs queuemanagement`""" % (qname, qname),
 async def mapchannel():
     embed = discord.Embed(title="With this command, you can create a mapset channel for collaborators.",
                               description="""**__Mapset channel creation command:__**: 
-`'request mapset (mapset id) (song name)` - This is the general command to create a channel.
+`'request_mapset_channel (mapset id) (song name)` - This is the general command to create a channel.
 `(song name)` is an optional argument that is not required. But it must be written in quotes if supplied.
 If the mapset is not yet uploaded, `(mapset id)` can be set to `0` but in that case, `(song name)` argument is required.
 
 **__Examples:__**
-`'request mapset 817793` - Example usage with mapset id.
-`'request mapset 0 "Futanari Nari ni"` - Example usage with just song name.
+`'request_mapset_channel 817793` - Example usage with mapset id.
+`'request_mapset_channel 0 "Futanari Nari ni"` - Example usage with just song name.
 
 For mapset channel management commands, type `'docs mapchannelmanagement`
 **And __DO NOT__ create a mapset channel for single person sets. Only do it if you have guest difficulties or if this is a collab.**""", color=0xbd3661)

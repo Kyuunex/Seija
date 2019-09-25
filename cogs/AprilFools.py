@@ -1,9 +1,47 @@
 from modules import db
+from modules import permissions
 import upsidedown
 import aiohttp
 import io
 import asyncio
+import discord
+from discord.ext import commands
 #from PIL import Image
+
+
+class AprilFools(commands.Cog, name="April Fools Management Commands"):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command(name="af_apply", brief="Apply April fools commands", description="", pass_context=True)
+    async def af_apply(self, ctx, action):
+        if permissions.check_owner(ctx.message.author.id):
+            await ctx.message.delete()
+            await apply_guild(self.bot, ctx)
+            await apply_channels(self.bot, ctx)
+            await asyncio.sleep(10)
+            await apply_roles(self.bot, ctx)
+            #await rotate_logo(self.bot, ctx)
+            try:
+                await ctx.send(file=discord.File("data/imsorry.png"))
+            except:
+                await ctx.send(":ok_hand:")
+        else:
+            await ctx.send(embed=permissions.error_owner())
+
+    @commands.command(name="af_restore", brief="Restore from April fools", description="", pass_context=True)
+    async def af_restore(self, ctx, action):
+        if permissions.check_owner(ctx.message.author.id):
+            await ctx.message.delete()
+            await restore_guild(self.bot, ctx)
+            await restore_channels(self.bot, ctx)
+            await asyncio.sleep(10)
+            await restore_roles(self.bot, ctx)
+            #await rotate_logo(self.bot, ctx)
+            await ctx.send(":ok_hand:")
+        else:
+            await ctx.send(embed=permissions.error_owner())
+
 
 async def apply_channels(client, ctx):
     guild = ctx.guild
@@ -115,3 +153,6 @@ async def restore_guild(client, ctx):
 
 #TODO: reverse channel
 #TODO: rotate all emotes
+
+def setup(bot):
+    bot.add_cog(AprilFools(bot))

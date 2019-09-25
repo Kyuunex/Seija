@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands
 
 from modules import db
 from modules import permissions
@@ -10,32 +11,37 @@ author_text = "Seija"
 footer_icon = 'https://avatars0.githubusercontent.com/u/5400432'
 footer_text = "Made by Kyuunex"
 
-async def main(ctx, subhelp):
-    if subhelp == "veto":
-        if db.query(["SELECT value FROM config WHERE setting = ? AND value = ?", ["guild_veto_channel", str(ctx.message.channel.id)]]):
-            await ctx.send(embed=await veto())
-    elif subhelp == "mapchannel":
-        await ctx.send(embed=await mapchannel())
-    elif subhelp == "queue":
-        await ctx.send(embed=await queue(ctx.message.author.display_name))
-    elif subhelp == "mapchannelmanagement":
-        await ctx.send(embed=await mapchannelmanagement())
-    elif subhelp == "queuemanagement":
-        await ctx.send(embed=await queuemanagement())
-    else:
-        await ctx.send(embed=await help())
+class Docs(commands.Cog, name="Pretty Bot Documentation"):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command(name="docs", brief="Pretty help command", description="", pass_context=True)
+    async def docs(self, ctx, sub_help = None):
+        if sub_help == "veto":
+            if db.query(["SELECT value FROM config WHERE setting = ? AND value = ?", ["guild_veto_channel", str(ctx.message.channel.id)]]):
+                await ctx.send(embed=await veto())
+        elif sub_help == "mapchannel":
+            await ctx.send(embed=await mapchannel())
+        elif sub_help == "queue":
+            await ctx.send(embed=await queue(ctx.message.author.display_name))
+        elif sub_help == "mapchannelmanagement":
+            await ctx.send(embed=await mapchannelmanagement())
+        elif sub_help == "queuemanagement":
+            await ctx.send(embed=await queuemanagement())
+        else:
+            await ctx.send(embed=await help())
 
 
 async def help():
     embed = discord.Embed(title="Seija teaches you how to be a bot master.", description="Any abuse will be dealt with punishment.", color=0xbd3661)
 
-    embed.add_field(name="'help mapchannel", value="To bring up a help menu for requesting a mapset channel.", inline=True)
-    embed.add_field(name="'help queue", value="To bring up a help menu for requesting a queue channel.", inline=True)
-    embed.add_field(name="'help mapchannelmanagement", value="To bring mapset channel management commands.", inline=True)
-    embed.add_field(name="'help queuemanagement", value="To bring up queue channel management commands.", inline=True)
+    embed.add_field(name="'docs mapchannel", value="To bring up a help menu for requesting a mapset channel.", inline=True)
+    embed.add_field(name="'docs queue", value="To bring up a help menu for requesting a queue channel.", inline=True)
+    embed.add_field(name="'docs mapchannelmanagement", value="To bring mapset channel management commands.", inline=True)
+    embed.add_field(name="'docs queuemanagement", value="To bring up queue channel management commands.", inline=True)
     embed.add_field(name="'from (country_name)", value="Retrive a list of server members that are in the specified country. Takes Alpha-2, Alpha-3 codes and full country names.", inline=True)
     embed.add_field(name="'ts (mod)", value="Send an osu editor clickable timestamp. Must start with a timestamp.", inline=True)
-    #embed.add_field(name="'help veto", value="Commands for tracking in veto mode.", inline=True)
+    #embed.add_field(name="'docs veto", value="Commands for tracking in veto mode.", inline=True)
 
     embed.set_thumbnail(url=help_thumbnail)
     embed.set_author(name=author_text, icon_url=author_icon)
@@ -66,7 +72,7 @@ async def queue(author):
 `'request queue mania` - This example will create `#%s-mania-queue`
 `'request queue taiko-bn` - This example will create `#%s-taiko-bn-queue`
 
-For queue management commands, type `'help queuemanagement`""" % (qname, qname), color=0xbd3661)
+For queue management commands, type `'docs queuemanagement`""" % (qname, qname), color=0xbd3661)
     embed.set_author(name=author_text, icon_url=author_icon)
     embed.set_footer(text=footer_text, icon_url=footer_icon)
     return embed
@@ -83,7 +89,7 @@ If the mapset is not yet uploaded, `(mapset id)` can be set to `0` but in that c
 `'request mapset 817793` - Example usage with mapset id.
 `'request mapset 0 "Futanari Nari ni"` - Example usage with just song name.
 
-For mapset channel management commands, type `'help mapchannelmanagement`
+For mapset channel management commands, type `'docs mapchannelmanagement`
 **And __DO NOT__ create a mapset channel for single person sets. Only do it if you have guest difficulties or if this is a collab.**""", color=0xbd3661)
     embed.set_author(name=author_text, icon_url=author_icon)
     embed.set_footer(text=footer_text, icon_url=footer_icon)
@@ -113,3 +119,7 @@ async def mapchannelmanagement():
     embed.set_author(name=author_text, icon_url=author_icon)
     embed.set_footer(text=footer_text, icon_url=footer_icon)
     return embed
+
+
+def setup(bot):
+    bot.add_cog(Docs(bot))

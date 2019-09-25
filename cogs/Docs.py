@@ -72,7 +72,10 @@ async def queue(author):
 `'request_queue mania` - This example will create `#%s-mania-queue`
 `'request_queue taiko-bn` - This example will create `#%s-taiko-bn-queue`
 
-For queue management commands, type `'docs queuemanagement`""" % (qname, qname), color=0xbd3661)
+For queue management commands, type `'docs queuemanagement`
+**Extra Rules:**
+**__DO NOT__ create a queue __only__ for GD requests.**
+**__IT SHOULD__ be a queue, not diary, not image dump. You can be creative and do other things but it's primary purpose must be a queue.**""" % (qname, qname), color=0xbd3661)
     embed.set_author(name=author_text, icon_url=author_icon)
     embed.set_footer(text=footer_text, icon_url=footer_icon)
     return embed
@@ -90,7 +93,9 @@ If the mapset is not yet uploaded, `(mapset id)` can be set to `0` but in that c
 `'request_mapset_channel 0 "Futanari Nari ni"` - Example usage with just song name.
 
 For mapset channel management commands, type `'docs mapchannelmanagement`
-**And __DO NOT__ create a mapset channel for single person sets. Only do it if you have guest difficulties or if this is a collab.**""", color=0xbd3661)
+**Extra Rules:**
+**__DO NOT__ create a mapset channel for single person sets. Only do it if you have guest difficulties or if this is a collab.**
+**__DO NOT__ create a channel if you __already__ don't have a collaborator.**""", color=0xbd3661)
     embed.set_author(name=author_text, icon_url=author_icon)
     embed.set_footer(text=footer_text, icon_url=footer_icon)
     return embed

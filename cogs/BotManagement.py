@@ -76,7 +76,7 @@ class BotManagement(commands.Cog, name="Bot Management Commands"):
     @commands.command(name="dbdump", brief="Perform a database dump", description="", pass_context=True)
     async def dbdump(self, ctx):
         if permissions.check(ctx.message.author.id):
-            if ctx.message.channel.id == int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_db_dump_channel", str(ctx.guild.id)]]))[0][0]):
+            if ctx.message.channel.id == int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["db_dump_channel", str(ctx.guild.id)]]))[0][0]):
                 await ctx.send(file=discord.File(database_file))
         else:
             await ctx.send(embed=permissions.error())

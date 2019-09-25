@@ -6,7 +6,7 @@ from modules import db
 from modules.connections import database_file as database_file
 
 
-class BotManagement(commands.Cog, name="Bot Management Commands"):
+class BotManagement(commands.Cog, name="Bot Management commands"):
     def __init__(self, bot):
         self.bot = bot
 
@@ -70,6 +70,7 @@ class BotManagement(commands.Cog, name="Bot Management Commands"):
     async def config(self, ctx, setting, parent, value, flag = "0"):
         if permissions.check_owner(ctx.message.author.id):
             db.query(["INSERT INTO config VALUES (?, ?, ?, ?)", [str(setting), str(parent), str(value), str(flag)]])
+            await ctx.send(":ok_hand:")
         else:
             await ctx.send(embed=permissions.error_owner())
 

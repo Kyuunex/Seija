@@ -246,7 +246,7 @@ async def notification_mode_tracking(beatmapset_discussions, channel, mapset_id,
 
 
 async def mod_checking_main_task(client):
-    #await asyncio.sleep(120)
+    await asyncio.sleep(120)
     for oneentry in db.query("SELECT * FROM mod_tracking"):
         channel = client.get_channel(int(oneentry[1]))
         if channel:

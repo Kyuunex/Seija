@@ -4,6 +4,7 @@ from modules import permissions
 from modules import db
 from collections import Counter
 import operator
+import pycountry
 
 class MemberStatistics(commands.Cog, name="Member Statistics Commands"):
     def __init__(self, bot):

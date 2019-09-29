@@ -15,6 +15,7 @@ from modules import temp_functions
 class MemberVerification(commands.Cog, name="Member Verification"):
     def __init__(self, bot):
         self.bot = bot
+        self.verify_channel_list = db.query(["SELECT value FROM config WHERE setting = ?", ["guild_verify_channel"]])
 
 
     @commands.command(name="verify", brief="Manually verify a user", description="", pass_context=True)
@@ -109,9 +110,8 @@ class MemberVerification(commands.Cog, name="Member Verification"):
     async def on_message(self, message):
         if message.author.id != self.bot.user.id:
             try:
-                verifychannel_id = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_channel", str(message.guild.id)]])
-                if verifychannel_id:
-                    if message.channel.id == int(verifychannel_id[0][0]):
+                for verify_channel_id in self.verify_channel_list:
+                    if message.channel.id == int(verify_channel_id[0]):
                         split_message = []
                         if '/' in message.content:
                             split_message = message.content.split('/')

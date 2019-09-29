@@ -13,12 +13,11 @@ from modules.connections import bot_token as bot_token
 
 
 command_prefix = '\''
-appversion = "a20190925-very-very-experimental"
+appversion = "a20190929-very-very-experimental"
 client = commands.Bot(command_prefix=command_prefix, description='Seija %s' % (appversion))
 
 
 initial_extensions = [
-    'cogs.AprilFools', 
     'cogs.BotManagement', 
     'cogs.Docs', 
     'cogs.MapsetChannel',

@@ -38,7 +38,7 @@ async def mapping_username_loop(client):
                     if not member.bot:
                         query = db.query(["SELECT * FROM users WHERE user_id = ?", [str(member.id)]])
                         if query:
-                            print(time.strftime('%X %x %Z')+" | mapping_username_loop currently checking %s" % (str(query[0][1])))
+                            #print(time.strftime('%X %x %Z')+" | mapping_username_loop currently checking %s" % (str(query[0][1])))
                             try:
                                 check_if_restricted_user_in_db = db.query(["SELECT osu_id FROM restricted_users WHERE guild_id = ? AND osu_id = ?", [str(guild.id), str(query[0][1])]])
                                 osuprofile = await osu.get_user(u=query[0][1], event_days="1")

@@ -34,7 +34,7 @@ class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
             try:
-                await asyncio.sleep(10)
+                await asyncio.sleep(3600)
                 print(time.strftime('%X %x %Z')+' | user event tracker')
                 memberfeedchannellist = db.query(["SELECT * FROM config WHERE setting = ?", ["guild_user_event_tracker"]])
                 if memberfeedchannellist:

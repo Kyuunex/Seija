@@ -114,21 +114,14 @@ class MemberVerification(commands.Cog, name="Member Verification"):
                             split_message = message.content.split('/')
 
                         if 'https://osu.ppy.sh/u' in message.content:
-                            verifyattempt = await self.verifyer(message.channel, message.author, message.guild, (split_message[4].split(' ')[0]), "`Verified: %s`" % (message.author.name))
+                            osu_id_to_lookup = split_message[4].split(' ')[0]
+                            verifyattempt = await self.verifyer(message.channel, message.author, message.guild, osu_id_to_lookup, "`Verified: %s`" % (message.author.name))
                             if not verifyattempt:
-                                await message.channel.send('verification failure, I can\'t find any profile from that link. If you are restricted, link any of your recently uploaded maps (new website only). if you are not restricted, then maybe osu website is down at this moment and in that case, ping Kyuunex or try again later.')
-                        elif 'https://osu.ppy.sh/beatmapsets/' in message.content:
-                            verifyattempt = await self.verifyer(message.channel, message.author, message.guild, (split_message[4].split('#')[0]), "`Verified through mapset: %s`" % (message.author.name))
-                            if not verifyattempt:
-                                await message.channel.send('verification failure, I can\'t find any map with that link')
+                                await message.channel.send('verification failure, I can\'t find any profile from that link or any beatmaps associated with your account. If you are restricted, ping a manager. If you are not restricted, then maybe osu website is down at this moment and in that case, ping a manager or try again later.')
                         elif message.content.lower() == 'yes':
                             verifyattempt = await self.verifyer(message.channel, message.author, message.guild, message.author.name, "`Verified: %s`" % (message.author.name))
                             if not verifyattempt:
                                 await message.channel.send('verification failure, your discord username does not match a username of any osu account. possible reason can be that you changed your discord username before typing `yes`. In this case, link your profile.')
-                        elif 'https://ripple.moe/u' in message.content:
-                            await message.channel.send('ugh, this bot does not do automatic verification from ripple, please ping Kyuunex')
-                        elif 'https://osu.gatari.pw/u' in message.content:
-                            await message.channel.send('ugh, this bot does not do automatic verification from gatari, please ping Kyuunex')
             except Exception as e:
                 print(time.strftime('%X %x %Z'))
                 print("in on_message")

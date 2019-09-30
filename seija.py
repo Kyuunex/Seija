@@ -11,7 +11,7 @@ from modules.connections import bot_token as bot_token
 
 
 command_prefix = '\''
-appversion = "a20190930-very-very-experimental"
+appversion = "a20191001-very-very-experimental"
 client = commands.Bot(command_prefix=command_prefix, description='Seija %s' % (appversion))
 
 if not os.path.exists(database_file):

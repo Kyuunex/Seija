@@ -6,21 +6,21 @@ import discord
 from discord.ext import commands
 import asyncio
 
-queue_owner_default_permissions = discord.PermissionOverwrite(
-    create_instant_invite=True,
-    manage_channels=True,
-    manage_roles=True,
-    read_messages=True,
-    send_messages=True,
-    manage_messages=True,
-    embed_links=True,
-    attach_files=True,
-    read_message_history=True,
-)
 
 class Queue(commands.Cog, name="Queue Management Commands"):
     def __init__(self, bot):
         self.bot = bot
+        self.queue_owner_default_permissions = discord.PermissionOverwrite(
+            create_instant_invite=True,
+            manage_channels=True,
+            manage_roles=True,
+            read_messages=True,
+            send_messages=True,
+            manage_messages=True,
+            embed_links=True,
+            attach_files=True,
+            read_message_history=True,
+        )
 
     @commands.command(name="request_queue", brief="Request a queue", description="", pass_context=True)
     async def make_queue_channel(self, ctx, queuetype = None):
@@ -34,7 +34,7 @@ class Queue(commands.Cog, name="Queue Management Commands"):
                     guild = ctx.message.guild
                     channeloverwrites = {
                         guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                        ctx.message.author: queue_owner_default_permissions,
+                        ctx.message.author: self.queue_owner_default_permissions,
                         guild.me: discord.PermissionOverwrite(
                             manage_channels=True,
                             manage_roles=True,
@@ -110,7 +110,7 @@ class Queue(commands.Cog, name="Queue Management Commands"):
         if queue_id:
             queue_channel = self.bot.get_channel(int(queue_id[0][0]))
             if queue_channel:
-                await queue_channel.set_permissions(target=member, overwrite=queue_owner_default_permissions)
+                await queue_channel.set_permissions(target=member, overwrite=self.queue_owner_default_permissions)
                 await queue_channel.send("the queue owner has returned. next time you open the queue, it will be unarchived.")
 
     @commands.Cog.listener()

@@ -9,9 +9,6 @@ from osuembed import osuembed
 import pycountry
 import upsidedown
 
-from modules import temp_functions
-
-
 from modules.connections import osu as osu
 
 
@@ -129,7 +126,7 @@ class MemberManagement(commands.Cog, name="Member Management"):
                             mapsbythisguy = await osu.get_beatmapsets(u=str(lookupuser[0][0]))
                             if mapsbythisguy:
                                 try:
-                                    ranked_amount = await temp_functions.count_ranked_beatmapsets(mapsbythisguy)
+                                    ranked_amount = await self.count_ranked_beatmapsets(mapsbythisguy)
                                 except Exception as e:
                                     print(e)
                                     print("Connection issues?")
@@ -145,6 +142,18 @@ class MemberManagement(commands.Cog, name="Member Management"):
             await ctx.send(output)
         else:
             await ctx.send("Nope")
+
+    async def count_ranked_beatmapsets(self, beatmapsets):
+        try:
+            count = 0
+            if beatmapsets:
+                for beatmapset in beatmapsets:
+                    if beatmapset.approved == "1" or beatmapset.approved == "2":
+                        count += 1
+            return count
+        except Exception as e:
+            print(e)
+            return 0
 
 def setup(bot):
     bot.add_cog(MemberManagement(bot))

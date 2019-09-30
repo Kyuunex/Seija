@@ -12,6 +12,7 @@ from modules.connections import osu as osu
 class ModChecker(commands.Cog, name="Mod Checker"):
     def __init__(self, bot):
         self.bot = bot
+        self.bot.loop.create_task(self.modchecker_background_loop())
 
     @commands.command(name="track", brief="Track the mapset in this channel", description="", pass_context=True)
     async def track(self, ctx, tracking_mode = "classic"):
@@ -59,7 +60,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             except Exception as e:
                 await ctx.send(e)
 
-    @commands.command(name="forcetrack", brief="Force Track a mapset in the current channel", description="", pass_context=True)
+    @commands.command(name="forcetrack", brief="Force Track a mapset in the current channel", description="", pass_context=True, hidden=True)
     async def forcetrack(self, ctx, mapset_id: str):
         if permissions.check(ctx.message.author.id):
             if await track(mapset_id, ctx.message.channel.id):
@@ -76,7 +77,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             await ctx.send(embed=permissions.error())
 
 
-    @commands.command(name="forceuntrack", brief="Force untrack a mapset in the current channel", description="", pass_context=True)
+    @commands.command(name="forceuntrack", brief="Force untrack a mapset in the current channel", description="", pass_context=True, hidden=True)
     async def forceuntrack(self, ctx, mapset_id: str):
         if permissions.check(ctx.message.author.id):
             if await untrack(mapset_id, ctx.message.channel.id):
@@ -135,6 +136,36 @@ class ModChecker(commands.Cog, name="Mod Checker"):
         else:
             await ctx.send(embed=permissions.error())
 
+    async def modchecker_background_loop(self):
+        print("Mod checking Background Loop launched!")
+        await self.bot.wait_until_ready()
+        while not self.bot.is_closed():
+            await asyncio.sleep(120)
+            for oneentry in db.query("SELECT * FROM mod_tracking"):
+                channel = self.bot.get_channel(int(oneentry[1]))
+                if channel:
+                    mapset_id = str(oneentry[0])
+                    tracking_mode = str(oneentry[2])
+                    print(time.strftime('%X %x %Z')+' | '+oneentry[0])
+
+                    beatmapset_discussions = await osuweb.discussion(mapset_id)
+
+                    if beatmapset_discussions:
+                        status = await check_status(channel, mapset_id, beatmapset_discussions)
+                        if status:
+                            if tracking_mode == "veto" or tracking_mode == "classic":
+                                await timeline_mode_tracking(beatmapset_discussions, channel, mapset_id, tracking_mode)
+                            elif tracking_mode == "notification":
+                                await notification_mode_tracking(beatmapset_discussions, channel, mapset_id, tracking_mode)
+                        else:
+                            print("No actual discussions found at %s or mapset untracked automatically" % (mapset_id))
+                    else:
+                        print("%s | modchecker connection issues" % (time.strftime('%X %x %Z')))
+                        await asyncio.sleep(300)
+                else:
+                    print("someone manually removed the channel with id %s and mapset id %s" % (oneentry[1], oneentry[0]))
+                await asyncio.sleep(120)
+            await asyncio.sleep(1800)
 
 async def populatedb(discussions, channel_id):
     mod_posts = discussions["beatmapset"]["discussions"]
@@ -245,33 +276,7 @@ async def notification_mode_tracking(beatmapset_discussions, channel, mapset_id,
     #         print(discussion)
 
 
-async def mod_checking_main_task(client):
-    await asyncio.sleep(120)
-    for oneentry in db.query("SELECT * FROM mod_tracking"):
-        channel = client.get_channel(int(oneentry[1]))
-        if channel:
-            mapset_id = str(oneentry[0])
-            tracking_mode = str(oneentry[2])
-            print(time.strftime('%X %x %Z')+' | '+oneentry[0])
 
-            beatmapset_discussions = await osuweb.discussion(mapset_id)
-
-            if beatmapset_discussions:
-                status = await check_status(channel, mapset_id, beatmapset_discussions)
-                if status:
-                    if tracking_mode == "veto" or tracking_mode == "classic":
-                        await timeline_mode_tracking(beatmapset_discussions, channel, mapset_id, tracking_mode)
-                    elif tracking_mode == "notification":
-                        await notification_mode_tracking(beatmapset_discussions, channel, mapset_id, tracking_mode)
-                else:
-                    print("No actual discussions found at %s or mapset untracked automatically" % (mapset_id))
-            else:
-                print("%s | modchecker connection issues" % (time.strftime('%X %x %Z')))
-                await asyncio.sleep(300)
-        else:
-            print("someone manually removed the channel with id %s and mapset id %s" % (oneentry[1], oneentry[0]))
-        await asyncio.sleep(120)
-    await asyncio.sleep(1800)
 
 async def get_username(related_users, user_id):
     for user in related_users:

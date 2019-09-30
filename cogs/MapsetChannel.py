@@ -2,7 +2,6 @@ from modules import db
 from cogs.Docs import mapchannelmanagement
 from modules import permissions
 from osuembed import osuembed
-from modules import reputation
 import discord
 from discord.ext import commands
 import random
@@ -10,24 +9,23 @@ import asyncio
 
 from modules.connections import osu as osu
 
-mapset_owner_default_permissions = discord.PermissionOverwrite(
-    create_instant_invite=True,
-    manage_channels=True,
-    manage_roles=True,
-    manage_webhooks=True,
-    read_messages=True,
-    send_messages=True,
-    manage_messages=True,
-    embed_links=True,
-    attach_files=True,
-    read_message_history=True,
-    mention_everyone=False
-)
-
 
 class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
     def __init__(self, bot):
         self.bot = bot
+        self.mapset_owner_default_permissions = discord.PermissionOverwrite(
+            create_instant_invite=True,
+            manage_channels=True,
+            manage_roles=True,
+            manage_webhooks=True,
+            read_messages=True,
+            send_messages=True,
+            manage_messages=True,
+            embed_links=True,
+            attach_files=True,
+            read_message_history=True,
+            mention_everyone=False
+        )
 
     @commands.command(name="add", brief="Add a user in the current mapset channel", description="", pass_context=True)
     async def addm(self, ctx, user_id: str):
@@ -79,7 +77,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
                 member = ctx.guild.get_member(int(user_id))
                 if member:
                     db.query(["UPDATE mapset_channels SET user_id = ? WHERE channel_id = ?;", [str(user_id), str(ctx.message.channel.id)]])
-                    await ctx.message.channel.set_permissions(target=member, overwrite=mapset_owner_default_permissions)
+                    await ctx.message.channel.set_permissions(target=member, overwrite=self.mapset_owner_default_permissions)
                     await ctx.send("Owner updated for this channel")
             except Exception as e:
                 await ctx.send(e)
@@ -155,7 +153,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
                     category = self.bot.get_channel(int(guildmapsetcategory[0][0]))
                     channeloverwrites = {
                         guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                        ctx.message.author: mapset_owner_default_permissions,
+                        ctx.message.author: self.mapset_owner_default_permissions,
                         mapsetrole: discord.PermissionOverwrite(read_messages=True),
                         guild.me: discord.PermissionOverwrite(
                             manage_channels=True,
@@ -195,7 +193,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
                 if channel:
                     role = discord.utils.get(channel.guild.roles, id=int(mapset[1]))
                     await member.add_roles(role, reason="set owner returned")
-                    await channel.set_permissions(target=member, overwrite=mapset_owner_default_permissions)
+                    await channel.set_permissions(target=member, overwrite=self.mapset_owner_default_permissions)
                     await channel.send("the mapset owner has returned. next time you track the mapset, it will be unarchived, unless this is already ranked. ether way, permissions restored.")
 
     @commands.Cog.listener()

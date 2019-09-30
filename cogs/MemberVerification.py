@@ -9,26 +9,23 @@ from osuembed import osuembed
 import datetime
 import upsidedown
 
-from modules import temp_functions
-
 
 class MemberVerification(commands.Cog, name="Member Verification"):
     def __init__(self, bot):
         self.bot = bot
         self.verify_channel_list = db.query(["SELECT value FROM config WHERE setting = ?", ["guild_verify_channel"]])
 
-
     @commands.command(name="verify", brief="Manually verify a user", description="", pass_context=True)
-    async def verify(self, ctx, lookup_type: str, osu_id: str, user_id: int, preverify: str = None):
+    async def verify(self, ctx, osu_id: str, user_id: int, preverify: str = None):
         if permissions.check(ctx.message.author.id):
             try:
                 if preverify == "preverify":
-                    await self.verifyer(ctx.message.channel, str(user_id), None, lookup_type, osu_id, "Preverified: %s" % (str(user_id)))
+                    await self.verifyer(ctx.message.channel, str(user_id), None, osu_id, "Preverified: %s" % (str(user_id)))
                 elif preverify == "restricted":
-                    db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osu_id, "", "", "", "", "", ""]])
+                    db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [str(user_id), str(osu_id), "", "", "", "", "", ""]])
                     await ctx.send("lol ok")
                 else:
-                    await self.verifyer(ctx.message.channel, ctx.guild.get_member(user_id), ctx.message.guild, lookup_type, osu_id, "Manually Verified: %s" % (ctx.guild.get_member(user_id).name))
+                    await self.verifyer(ctx.message.channel, ctx.guild.get_member(user_id), ctx.message.guild, osu_id, "Manually Verified: %s" % (ctx.guild.get_member(user_id).name))
             except Exception as e:
                 print(time.strftime('%X %x %Z'))
                 print("in verify")
@@ -63,7 +60,7 @@ class MemberVerification(commands.Cog, name="Member Verification"):
                     tag = "Preverified: %s"
                 for one_user in csv_file:
                     uzer = one_user.split(',')
-                    await self.verifyer(ctx.message.channel, str(uzer[1]), None, "u", uzer[0], tag % (str(uzer[1])))
+                    await self.verifyer(ctx.message.channel, str(uzer[1]), None, uzer[0], tag % (str(uzer[1])))
                     await asyncio.sleep(1)
             except Exception as e:
                 print(time.strftime('%X %x %Z'))
@@ -83,7 +80,7 @@ class MemberVerification(commands.Cog, name="Member Verification"):
                     lookupuser = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
                     if lookupuser:
                         print("user %s joined with osu_id %s" % (str(member.id), str(lookupuser[0][0])))
-                        verifyattempt = await self.verifyer(join_channel_object, member, member.guild, "u", lookupuser[0][0], "Welcome aboard %s! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.mention))
+                        verifyattempt = await self.verifyer(join_channel_object, member, member.guild, lookupuser[0][0], "Welcome aboard %s! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.mention))
 
                         if not verifyattempt:
                             await join_channel_object.send("Hello %s. We have a verification system in this server, to keep raids and spam out. It seems like you are in my database but the profile I know of you is restricted. If this is correct, please link any of your uploaded maps (new website only) and I'll verify you instantly. If this is not correct, tag Kyuunex." % (member.mention))
@@ -117,15 +114,15 @@ class MemberVerification(commands.Cog, name="Member Verification"):
                             split_message = message.content.split('/')
 
                         if 'https://osu.ppy.sh/u' in message.content:
-                            verifyattempt = await self.verifyer(message.channel, message.author, message.guild, "u", (split_message[4].split(' ')[0]), "`Verified: %s`" % (message.author.name))
+                            verifyattempt = await self.verifyer(message.channel, message.author, message.guild, (split_message[4].split(' ')[0]), "`Verified: %s`" % (message.author.name))
                             if not verifyattempt:
                                 await message.channel.send('verification failure, I can\'t find any profile from that link. If you are restricted, link any of your recently uploaded maps (new website only). if you are not restricted, then maybe osu website is down at this moment and in that case, ping Kyuunex or try again later.')
                         elif 'https://osu.ppy.sh/beatmapsets/' in message.content:
-                            verifyattempt = await self.verifyer(message.channel, message.author, message.guild, "s", (split_message[4].split('#')[0]), "`Verified through mapset: %s`" % (message.author.name))
+                            verifyattempt = await self.verifyer(message.channel, message.author, message.guild, (split_message[4].split('#')[0]), "`Verified through mapset: %s`" % (message.author.name))
                             if not verifyattempt:
                                 await message.channel.send('verification failure, I can\'t find any map with that link')
                         elif message.content.lower() == 'yes':
-                            verifyattempt = await self.verifyer(message.channel, message.author, message.guild, "u", message.author.name, "`Verified: %s`" % (message.author.name))
+                            verifyattempt = await self.verifyer(message.channel, message.author, message.guild, message.author.name, "`Verified: %s`" % (message.author.name))
                             if not verifyattempt:
                                 await message.channel.send('verification failure, your discord username does not match a username of any osu account. possible reason can be that you changed your discord username before typing `yes`. In this case, link your profile.')
                         elif 'https://ripple.moe/u' in message.content:
@@ -162,25 +159,28 @@ class MemberVerification(commands.Cog, name="Member Verification"):
             print(time.strftime('%X %x %Z'))
             print("in on_member_join")
             print(e)
-
-    @commands.Cog.listener()
-    async def on_user_update(self, before, after):
-        which_guild = db.query(["SELECT * FROM config WHERE setting = ?", ["guild_user_event_tracker"]])
-        if which_guild:
-            query = db.query(["SELECT * FROM users WHERE user_id = ?", [str(after.id)]])
-            if query:
-                osuprofile = await osu.get_user(u=query[0][1])
-                if osuprofile:
-                    for this_guild in which_guild:
-                        guild = self.bot.get_guild(int(this_guild[1]))
-                        now = datetime.datetime.now()
-                        auditchannel = self.bot.get_channel(int(this_guild[3]))
-                        if auditchannel:
-                            member = guild.get_member(int(after.id))
-                            await temp_functions.one_guild_member_sync(auditchannel, query, now, member, osuprofile)
+    
+    async def get_role_based_on_reputation(self, guild, osuaccountid):
+        ranked_amount = await self.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(osuaccountid)))
+        if ranked_amount >= 10:
+            return discord.utils.get(guild.roles, id=int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_experienced_mapper_role", str(guild.id)]]))[0][0]))
+        elif ranked_amount >= 1:
+            return discord.utils.get(guild.roles, id=int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_ranked_mapper_role", str(guild.id)]]))[0][0]))
+        else:
+            return discord.utils.get(guild.roles, id=int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapper_role", str(guild.id)]]))[0][0]))
 
 
-    async def verifyer(self, channel, member, guild, lookup_type, lookup_string, response):
+    async def update_member_first_time(self, member, role, nickname):
+        try:
+            await member.add_roles(role)
+        except Exception as e:
+            print(e)
+        try:
+            await member.edit(nick=nickname)
+        except Exception as e:
+            print(e)
+
+    async def verifyer(self, channel, member, guild, lookup_string, response):
         # Defaults
         osuusername = None
         osu_join_date = ""
@@ -190,31 +190,24 @@ class MemberVerification(commands.Cog, name="Member Verification"):
         no_sync = "0"
 
         try:
-            if lookup_type == "u":
-                osuprofile = await osu.get_user(u=lookup_string)
-                if osuprofile:
-                    osuusername = str(osuprofile.name)
-                    osuaccountid = str(osuprofile.id)
-                    osu_join_date = str(osuprofile.join_date)
-                    pp = str(osuprofile.pp_raw)
-                    country = str(osuprofile.country)
-                    embed = await osuembed.user(osuprofile)
-            elif lookup_type == "s":
-                authorsmapset = await osu.get_beatmapset(s=lookup_string)
-                if authorsmapset:
-                    osuusername = str(authorsmapset.creator)
-                    osuaccountid = str(authorsmapset.creator_id)
-                    embed = await osuembed.beatmapset(authorsmapset)
+            osuprofile = await osu.get_user(u=lookup_string)
+            if osuprofile:
+                osuusername = str(osuprofile.name)
+                osuaccountid = str(osuprofile.id)
+                osu_join_date = str(osuprofile.join_date)
+                pp = str(osuprofile.pp_raw)
+                country = str(osuprofile.country)
+                embed = await osuembed.user(osuprofile)
+            else:
+                authorsmap = await osu.get_beatmap(u=lookup_string)
+                if authorsmap:
+                    osuusername = str(authorsmap.creator)
+                    osuaccountid = str(authorsmap.creator_id)
+                    embed = await osuembed.beatmapset(authorsmap)
 
             if osuusername:
-                ranked_amount = await temp_functions.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(osuaccountid)))
 
-                if ranked_amount >= 10:
-                    role = discord.utils.get(guild.roles, id=int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_experienced_mapper_role", str(guild.id)]]))[0][0]))
-                elif ranked_amount >= 1:
-                    role = discord.utils.get(guild.roles, id=int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_ranked_mapper_role", str(guild.id)]]))[0][0]))
-                else:
-                    role = discord.utils.get(guild.roles, id=int((db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapper_role", str(guild.id)]]))[0][0]))
+                role = await self.get_role_based_on_reputation(guild, osuaccountid)
 
                 if type(member) is str:
                     user_id = member
@@ -231,16 +224,11 @@ class MemberVerification(commands.Cog, name="Member Verification"):
                         await channel.send("it seems like your discord account is already in my database and is linked to <https://osu.ppy.sh/users/%s>, and the profile you linked won't overwrite anything in there. if there's a problem, ping kyuunex" % (already_in[0][0]))
                         # possibly force update the entry in future
                     else:
-                        try:
-                            if type(member) is str:
-                                pass
-                            else:
-                                await member.add_roles(role)
-                                await member.edit(nick=osuusername)
-                        except Exception as e:
-                            print(time.strftime('%X %x %Z'))
-                            print("in users.verify")
-                            print(e)
+                        if type(member) is str:
+                            pass
+                        else:
+                            await self.update_member_first_time(member, role, osuusername)
+                        
                         await channel.send(content=response, embed=embed)
                 else:
                     print("adding user %s in database" % (user_id,))
@@ -249,16 +237,11 @@ class MemberVerification(commands.Cog, name="Member Verification"):
                     if check_back_user_id: # TODO: fix
                         if str(check_back_user_id[0][0]) != str(member.id):
                             await channel.send("side note: this osu account is already linked to <@%s> in my database. if there's a problem, for example, you got a new discord account, ping kyuunex." % (check_back_user_id[0][0]))
-                    try:
-                        if type(member) is str:
-                            pass
-                        else:
-                            await member.add_roles(role)
-                            await member.edit(nick=osuusername)
-                    except Exception as e:
-                        print(time.strftime('%X %x %Z'))
-                        print("in users.verify")
-                        print(e)
+
+                    if type(member) is str:
+                        pass
+                    else:
+                        await self.update_member_first_time(member, role, osuusername)
                     db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [user_id, osuaccountid, osuusername, osu_join_date, pp, country, ranked_amount, no_sync]])
                     await channel.send(content=response, embed=embed)
                 return True
@@ -268,6 +251,18 @@ class MemberVerification(commands.Cog, name="Member Verification"):
             print(e)
             print("Connection issues?")
             await channel.send(content="It looks like osu's website is down so I can't verify at this moment. Ping managers or something or try again later.")
+
+    async def count_ranked_beatmapsets(self, beatmapsets):
+        try:
+            count = 0
+            if beatmapsets:
+                for beatmapset in beatmapsets:
+                    if beatmapset.approved == "1" or beatmapset.approved == "2":
+                        count += 1
+            return count
+        except Exception as e:
+            print(e)
+            return 0
 
 
 def setup(bot):

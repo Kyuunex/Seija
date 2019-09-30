@@ -52,7 +52,7 @@ class MemberStatistics(commands.Cog, name="Member Statistics Commands"):
         else:
             await ctx.send(embed=permissions.error())
 
-    @commands.command(name="from", brief="Get a list of members from specified country", description="Takes Alpha-2, Alpha-3 codes and full country names.", pass_context=True)
+    @commands.command(name="from", brief="Get a list of members from specified country", description="Takes Alpha-2, Alpha-3 codes and full country names", pass_context=True)
     async def users_from(self, ctx, *, country_code = "US"):
         async with ctx.channel.typing():
             try:

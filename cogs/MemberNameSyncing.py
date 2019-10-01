@@ -116,7 +116,7 @@ class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
             db.query(["INSERT INTO notices VALUES (?, ?)", [str(now.isoformat()), notice]])
 
     async def check_events(self, channel, user, history_table_name, channel_id = 0):
-        print(time.strftime('%X %x %Z')+" | currently checking %s" % (user.name))
+        #print(time.strftime('%X %x %Z')+" | currently checking %s" % (user.name))
         for event in user.events:
             if not db.query(["SELECT event_id FROM %s WHERE event_id = ?" % (history_table_name), [str(event.id)]]):
                 db.query(["INSERT INTO %s VALUES (?, ?, ?)" % (history_table_name), [str(user.id), str(event.id), str(channel_id)]])

@@ -1,5 +1,5 @@
 from modules import db
-from cogs.Docs import mapchannelmanagement
+from cogs.Docs import Docs
 from modules import permissions
 from osuembed import osuembed
 import discord
@@ -13,6 +13,7 @@ from modules.connections import osu as osu
 class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
     def __init__(self, bot):
         self.bot = bot
+        self.docs = Docs(bot)
         self.mapset_owner_default_permissions = discord.PermissionOverwrite(
             create_instant_invite=True,
             manage_channels=True,
@@ -130,6 +131,11 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
                 else:
                     try:
                         mapset = await osu.get_beatmapset(s=mapset_id)
+                        if not mapset:
+                            mapset = None
+                            mapset_id = "0"
+                            await ctx.send("You specified incorrect mapset id. You can correct this with 'setid command if the channel was created succesfully")
+
                     except:
                         mapset = None
                         print("Connection issues?")
@@ -164,7 +170,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
                     }
                     channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category, topic=desc)
                     await ctx.message.author.add_roles(mapsetrole)
-                    await channel.send("%s done!" % (ctx.message.author.mention), embed=await mapchannelmanagement())
+                    await channel.send("%s done!" % (ctx.message.author.mention), embed=await self.docs.mapset_channel_management())
                     db.query(["INSERT INTO mapset_channels VALUES (?, ?, ?, ?, ?)", [str(channel.id), str(mapsetrole.id), str(ctx.message.author.id), str(mapset_id), str(ctx.guild.id)]])
                 else:
                     await ctx.send("You are not using this command correctly")
@@ -194,7 +200,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
                     role = discord.utils.get(channel.guild.roles, id=int(mapset[1]))
                     await member.add_roles(role, reason="set owner returned")
                     await channel.set_permissions(target=member, overwrite=self.mapset_owner_default_permissions)
-                    await channel.send("the mapset owner has returned. next time you track the mapset, it will be unarchived, unless this is already ranked. ether way, permissions restored.")
+                    await channel.send("the mapset owner has returned. next time you track the mapset, it will be unarchived, unless this is already ranked. either way, permissions restored.")
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):

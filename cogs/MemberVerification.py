@@ -83,7 +83,7 @@ class MemberVerification(commands.Cog, name="Member Verification"):
                         verifyattempt = await self.verifyer(join_channel_object, member, member.guild, lookupuser[0][0], "Welcome aboard %s! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.mention))
 
                         if not verifyattempt:
-                            await join_channel_object.send("Hello %s. We have a verification system in this server, to keep raids and spam out. It seems like you are in my database but the profile I know of you is restricted. If this is correct, please link any of your uploaded maps (new website only) and I'll verify you instantly. If this is not correct, tag Kyuunex." % (member.mention))
+                            await join_channel_object.send("Hello %s. We have a verification system in this server, to keep raids and spam out. It seems like you are in my database but the profile I know of you is restricted. If this is not correct, tag Kyuunex. Actually this message should never come up idk why it did." % (member.mention))
                     else:
                         await join_channel_object.send("Welcome %s! We have a verification system in this server so that we know who you are, give you appropriate roles and keep raids/spam out." % (member.mention))
                         try:

@@ -1,5 +1,5 @@
 from modules import db
-from cogs.Docs import queuemanagement
+from cogs.Docs import Docs
 from modules import permissions
 from modules import reputation
 import discord
@@ -10,6 +10,7 @@ import asyncio
 class Queue(commands.Cog, name="Queue Management Commands"):
     def __init__(self, bot):
         self.bot = bot
+        self.docs = Docs(bot)
         self.queue_owner_default_permissions = discord.PermissionOverwrite(
             create_instant_invite=True,
             manage_channels=True,
@@ -48,7 +49,7 @@ class Queue(commands.Cog, name="Queue Management Commands"):
                     category = await reputation.validate_reputation_queues(self.bot, ctx.message.author)
                     channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category)
                     db.query(["INSERT INTO queues VALUES (?, ?, ?)", [str(channel.id), str(ctx.message.author.id), str(ctx.guild.id)]])
-                    await channel.send("%s done!" % (ctx.message.author.mention), embed=await queuemanagement())
+                    await channel.send("%s done!" % (ctx.message.author.mention), embed=await self.docs.queue_management())
                 except Exception as e:
                     await ctx.send(e)
             else:

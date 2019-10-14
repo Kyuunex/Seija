@@ -140,7 +140,6 @@ class ModChecker(commands.Cog, name="Mod Checker"):
         print("Mod checking Background Loop launched!")
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
-            await asyncio.sleep(120)
             for oneentry in db.query("SELECT * FROM mod_tracking"):
                 channel = self.bot.get_channel(int(oneentry[1]))
                 if channel:
@@ -148,7 +147,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                     tracking_mode = str(oneentry[2])
                     print(time.strftime('%X %x %Z')+' | '+oneentry[0])
 
-                    beatmapset_discussions = await osuweb.discussion(mapset_id)
+                    beatmapset_discussions = await osuweb.get_beatmapset_discussions(mapset_id)
 
                     if beatmapset_discussions:
                         status = await self.check_status(channel, mapset_id, beatmapset_discussions)
@@ -186,7 +185,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
 
     async def track(self, mapset_id, channel_id, tracking_mode = "classic"):
         if not db.query(["SELECT mapset_id FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]]):
-            beatmapset_discussions = await osuweb.discussion(str(mapset_id))
+            beatmapset_discussions = await osuweb.get_beatmapset_discussions(str(mapset_id))
             if beatmapset_discussions:
                 await self.populatedb(beatmapset_discussions, str(channel_id))
                 db.query(["INSERT INTO mod_tracking VALUES (?,?,?)", [str(mapset_id), str(channel_id), tracking_mode]])

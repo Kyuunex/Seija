@@ -20,7 +20,7 @@ class MemberStatistics(commands.Cog, name="Member Statistics Commands"):
                         query = db.query(["SELECT country FROM users WHERE user_id = ?", [str(member.id)]])
                         if query: # [5]
                             masterlist.append(query[0][0])
-                stats = await statscalc(masterlist)
+                stats = await self.statscalc(masterlist)
 
                 rank = 0
                 contents = ""
@@ -93,10 +93,9 @@ class MemberStatistics(commands.Cog, name="Member Statistics Commands"):
             statsembed.set_author(name="Country Demographics")
         await ctx.send(embed=statsembed)
 
-
-async def statscalc(data):
-    results = dict(Counter(data))
-    return reversed(sorted(results.items(), key=operator.itemgetter(1)))
+    async def statscalc(self, data):
+        results = dict(Counter(data))
+        return reversed(sorted(results.items(), key=operator.itemgetter(1)))
 
 def setup(bot):
     bot.add_cog(MemberStatistics(bot))

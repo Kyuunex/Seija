@@ -126,7 +126,7 @@ class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
                     embed = await osuembed.beatmapset(result, event_color)
                     if embed:
                         display_text = (event.display_text).replace("@", "")
-                        print(display_text)
+                        #print(display_text)
                         await channel.send(display_text, embed=embed)
 
     async def get_event_color(self, string):

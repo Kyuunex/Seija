@@ -147,7 +147,11 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                     tracking_mode = str(oneentry[2])
                     print(time.strftime('%X %x %Z')+' | '+oneentry[0])
 
-                    beatmapset_discussions = await osuweb.get_beatmapset_discussions(mapset_id)
+                    try:
+                        beatmapset_discussions = await osuweb.get_beatmapset_discussions(mapset_id)
+                    except Exception as e:
+                        print(e)
+                        beatmapset_discussions = []
 
                     if beatmapset_discussions:
                         status = await self.check_status(channel, mapset_id, beatmapset_discussions)

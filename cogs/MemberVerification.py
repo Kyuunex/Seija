@@ -16,59 +16,52 @@ class MemberVerification(commands.Cog, name="Member Verification"):
         self.verify_channel_list = db.query(["SELECT value FROM config WHERE setting = ?", ["guild_verify_channel"]])
 
     @commands.command(name="verify", brief="Manually verify a user", description="", pass_context=True)
+    @commands.check(permissions.is_admin)
     async def verify(self, ctx, osu_id: str, user_id: int, preverify: str = None):
-        if permissions.check(ctx.message.author.id):
-            try:
-                if preverify == "preverify":
-                    await self.verifyer(ctx.message.channel, str(user_id), None, osu_id, "Preverified: %s" % (str(user_id)))
-                elif preverify == "restricted":
-                    db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [str(user_id), str(osu_id), "", "", "", "", "", ""]])
-                    await ctx.send("lol ok")
-                else:
-                    await self.verifyer(ctx.message.channel, ctx.guild.get_member(user_id), ctx.message.guild, osu_id, "Manually Verified: %s" % (ctx.guild.get_member(user_id).name))
-            except Exception as e:
-                print(time.strftime('%X %x %Z'))
-                print("in verify")
-                print(e)
-        else:
-            await ctx.send(embed=permissions.error())
+        try:
+            if preverify == "preverify":
+                await self.verifyer(ctx.message.channel, str(user_id), None, osu_id, "Preverified: %s" % (str(user_id)))
+            elif preverify == "restricted":
+                db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [str(user_id), str(osu_id), "", "", "", "", "", ""]])
+                await ctx.send("lol ok")
+            else:
+                await self.verifyer(ctx.message.channel, ctx.guild.get_member(user_id), ctx.message.guild, osu_id, "Manually Verified: %s" % (ctx.guild.get_member(user_id).name))
+        except Exception as e:
+            print(time.strftime('%X %x %Z'))
+            print("in verify")
+            print(e)
 
     @commands.command(name="unverify", brief="Unverify a member and delete it from db", description="", pass_context=True)
+    @commands.check(permissions.is_admin)
     async def unverify(self, ctx, user_id):
-        if permissions.check(ctx.message.author.id):
-            db.query(["DELETE FROM users WHERE user_id = ?", [str(user_id), ]])
-            member = ctx.guild.get_member(int(user_id))
-            if member:
-                try:
-                    await member.edit(roles=[])
-                    await member.edit(nick=None)
-                    await ctx.send("Done")
-                except Exception as e:
-                    await ctx.send(e)
-        else:
-            await ctx.send(embed=permissions.error())
+        db.query(["DELETE FROM users WHERE user_id = ?", [str(user_id), ]])
+        member = ctx.guild.get_member(int(user_id))
+        if member:
+            try:
+                await member.edit(roles=[])
+                await member.edit(nick=None)
+                await ctx.send("Done")
+            except Exception as e:
+                await ctx.send(e)
 
     @commands.command(name="mass_verify", brief="Insert multiple users into the database from a csv file", description="", pass_context=True)
+    @commands.check(permissions.is_owner)
     async def mass_verify(self, ctx, mention_users: str = None):
-        if permissions.check_owner(ctx.message.author.id):
-            try:
-                # TODO: this might be broken check later
-                csv_file = open("data/users.csv", encoding="utf8").read().splitlines()
-                if mention_users == "m":
-                    tag = "Preverified: <@%s>"
-                else:
-                    tag = "Preverified: %s"
-                for one_user in csv_file:
-                    uzer = one_user.split(',')
-                    await self.verifyer(ctx.message.channel, str(uzer[1]), None, uzer[0], tag % (str(uzer[1])))
-                    await asyncio.sleep(1)
-            except Exception as e:
-                print(time.strftime('%X %x %Z'))
-                print("in userdb")
-                print(e)
-        else:
-            await ctx.send(embed=permissions.error_owner())
-
+        try:
+            # TODO: this might be broken check later
+            csv_file = open("data/users.csv", encoding="utf8").read().splitlines()
+            if mention_users == "m":
+                tag = "Preverified: <@%s>"
+            else:
+                tag = "Preverified: %s"
+            for one_user in csv_file:
+                uzer = one_user.split(',')
+                await self.verifyer(ctx.message.channel, str(uzer[1]), None, uzer[0], tag % (str(uzer[1])))
+                await asyncio.sleep(1)
+        except Exception as e:
+            print(time.strftime('%X %x %Z'))
+            print("in userdb")
+            print(e)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):

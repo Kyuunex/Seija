@@ -17,101 +17,89 @@ class MemberManagement(commands.Cog, name="Member Management"):
         self.bot = bot
 
     @commands.command(name="print_all", brief="Print all users and their profiles from db", description="", pass_context=True)
+    @commands.check(permissions.is_owner)
     async def print_all(self, ctx, mention_users: str = None):
-        if permissions.check_owner(ctx.message.author.id):
-            try:
-                if mention_users == "m":
-                    tag = "<@%s> / %s"
-                else:
-                    tag = "%s / %s"
-                for one_user in db.query("SELECT * FROM users"):
-                    try:
-                        userprofile = await osu.get_user(u=one_user[1])
-                        embed = await osuembed.user(userprofile)
-                    except:
-                        print("Connection issues?")
-                        await ctx.send("Connection issues?")
-                        await asyncio.sleep(10)
-                        embed = None
-                    if embed:
-                        await ctx.send(content=tag % (one_user[0], one_user[2]), embed=embed)
-                    await asyncio.sleep(1)
-            except Exception as e:
-                print(time.strftime('%X %x %Z'))
-                print("in userdb")
-                print(e)
-        else:
-            await ctx.send(embed=permissions.error_owner())
+        try:
+            if mention_users == "m":
+                tag = "<@%s> / %s"
+            else:
+                tag = "%s / %s"
+            for one_user in db.query("SELECT * FROM users"):
+                try:
+                    userprofile = await osu.get_user(u=one_user[1])
+                    embed = await osuembed.user(userprofile)
+                except:
+                    print("Connection issues?")
+                    await ctx.send("Connection issues?")
+                    await asyncio.sleep(10)
+                    embed = None
+                if embed:
+                    await ctx.send(content=tag % (one_user[0], one_user[2]), embed=embed)
+                await asyncio.sleep(1)
+        except Exception as e:
+            print(time.strftime('%X %x %Z'))
+            print("in userdb")
+            print(e)
 
     @commands.command(name="get_users_not_in_db", brief="Get a list of users who are not in db", description="", pass_context=True)
+    @commands.check(permissions.is_owner)
     async def get_users_not_in_db(self, ctx, mention_users: str = None):
-        if permissions.check_owner(ctx.message.author.id):
-            try:
-                responce = "These users are not in my database:\n"
-                count = 0
-                for member in ctx.guild.members:
-                    if not member.bot:
-                        if not db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]]):
-                            count += 1
-                            if mention_users == "m":
-                                responce += ("<@%s>\n" % (str(member.id)))
-                            else:
-                                responce += ("\"%s\" %s\n" % (str(member.display_name), str(member.id)))
-                            if count > 40:
-                                count = 0
-                                responce += ""
-                                await ctx.send(responce)
-                                responce = "\n"
-                responce += ""
-                await ctx.send(responce)
-            except Exception as e:
-                print(time.strftime('%X %x %Z'))
-                print("in userdb")
-                print(e)
-        else:
-            await ctx.send(embed=permissions.error_owner())
+        try:
+            responce = "These users are not in my database:\n"
+            count = 0
+            for member in ctx.guild.members:
+                if not member.bot:
+                    if not db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]]):
+                        count += 1
+                        if mention_users == "m":
+                            responce += ("<@%s>\n" % (str(member.id)))
+                        else:
+                            responce += ("\"%s\" %s\n" % (str(member.display_name), str(member.id)))
+                        if count > 40:
+                            count = 0
+                            responce += ""
+                            await ctx.send(responce)
+                            responce = "\n"
+            responce += ""
+            await ctx.send(responce)
+        except Exception as e:
+            print(time.strftime('%X %x %Z'))
+            print("in userdb")
+            print(e)
 
     @commands.command(name="check_ranked", brief="Return ranked mappers who don't have the role", description="", pass_context=True)
+    @commands.check(permissions.is_admin)
     async def check_ranked(self, ctx):
-        if permissions.check(ctx.message.author.id):
-            await self.check_ranked_amount_by_role(ctx, 1, "guild_mapper_role")
-        else:
-            await ctx.send(embed=permissions.error())
+        await self.check_ranked_amount_by_role(ctx, 1, "guild_mapper_role")
 
     @commands.command(name="check_experienced", brief="Return experienced mappers who don't have the role", description="", pass_context=True)
+    @commands.check(permissions.is_admin)
     async def check_experienced(self, ctx):
-        if permissions.check(ctx.message.author.id):
-            await self.check_ranked_amount_by_role(ctx, 10, "guild_ranked_mapper_role")
-        else:
-            await ctx.send(embed=permissions.error())
+        await self.check_ranked_amount_by_role(ctx, 10, "guild_ranked_mapper_role")
 
     @commands.command(name="roleless", brief="Get a list of members without a role", description="", pass_context=True)
+    @commands.check(permissions.is_admin)
     async def roleless(self, ctx, lookup_in_db: str = None):
-        if permissions.check(ctx.message.author.id):
-            for member in ctx.guild.members:
-                if len(member.roles) < 2:
-                    await ctx.send(member.mention)
-                    if lookup_in_db:
-                        try:
-                            query = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
-                            if query:
-                                await ctx.send("person above is in my database and linked to <https://osu.ppy.sh/users/%s>" % (query[0][0]))
-                        except Exception as e:
-                            await ctx.send(e)
-        else:
-            await ctx.send(embed=permissions.error())
+        for member in ctx.guild.members:
+            if len(member.roles) < 2:
+                await ctx.send(member.mention)
+                if lookup_in_db:
+                    try:
+                        query = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
+                        if query:
+                            await ctx.send("person above is in my database and linked to <https://osu.ppy.sh/users/%s>" % (query[0][0]))
+                    except Exception as e:
+                        await ctx.send(e)
 
     @commands.command(name="cv", brief="Check which osu account is a discord account linked to", description="", pass_context=True)
+    @commands.check(permissions.is_admin)
     async def cv(self, ctx, *, user_id):
-        if permissions.check(ctx.message.author.id):
-            osu_profile = (db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]]))
-            if osu_profile:
-                osu_id = osu_profile[0][0]
-                result = await osu.get_user(u=osu_id)
-                embed = await osuembed.user(result)
-                await ctx.send("https://osu.ppy.sh/users/%s" % (osu_id), embed=embed)
-        else:
-            await ctx.send(embed=permissions.error())
+        osu_profile = (db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]]))
+        if osu_profile:
+            osu_id = osu_profile[0][0]
+            result = await osu.get_user(u=osu_id)
+            embed = await osuembed.user(result)
+            await ctx.send("https://osu.ppy.sh/users/%s" % (osu_id), embed=embed)
 
 
     async def check_ranked_amount_by_role(self, ctx, amount = 1, role_name = "guild_mapper_role"):

@@ -12,11 +12,12 @@ from modules.connections import osu as osu
 class ModChecker(commands.Cog, name="Mod Checker"):
     def __init__(self, bot):
         self.bot = bot
+        self.veto_channel_list = db.query(["SELECT value FROM config WHERE setting = ?", ["guild_veto_channel"]])
         self.bot.loop.create_task(self.modchecker_background_loop())
 
     @commands.command(name="track", brief="Track the mapset in this channel", description="", pass_context=True)
     async def track_command(self, ctx, tracking_mode = "classic"):
-        if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check(ctx.message.author.id)):
+        if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check_admin(ctx.message.author.id)):
             try:
                 if db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]]):
                     db.query(["DELETE FROM mod_tracking WHERE channel_id = ?",[str(ctx.message.channel.id)]])
@@ -51,7 +52,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
 
     @commands.command(name="untrack", brief="Untrack everything in this channel", description="", pass_context=True)
     async def untrack_command(self, ctx):
-        if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check(ctx.message.author.id)):
+        if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check_admin(ctx.message.author.id)):
             try:
                 if db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]]):
                     db.query(["DELETE FROM mod_tracking WHERE channel_id = ?",[str(ctx.message.channel.id)]])
@@ -61,36 +62,30 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                 await ctx.send(e)
 
     @commands.command(name="forcetrack", brief="Force Track a mapset in the current channel", description="", pass_context=True, hidden=True)
+    @commands.check(permissions.is_admin)
     async def forcetrack(self, ctx, mapset_id: str):
-        if permissions.check(ctx.message.author.id):
-            if await self.track(mapset_id, ctx.message.channel.id):
-                try:
-                    result = await osu.get_beatmapset(s=mapset_id)
-                    embed = await osuembed.beatmapset(result)
-                    await ctx.send("Tracked", embed=embed)
-                except:
-                    print("Connection issues?")
-                    await ctx.send("Connection issues?")
-            else:
-                await ctx.send("Error")
+        if await self.track(mapset_id, ctx.message.channel.id):
+            try:
+                result = await osu.get_beatmapset(s=mapset_id)
+                embed = await osuembed.beatmapset(result)
+                await ctx.send("Tracked", embed=embed)
+            except:
+                print("Connection issues?")
+                await ctx.send("Connection issues?")
         else:
-            await ctx.send(embed=permissions.error())
-
+            await ctx.send("Error")
 
     @commands.command(name="forceuntrack", brief="Force untrack a mapset in the current channel", description="", pass_context=True, hidden=True)
+    @commands.check(permissions.is_admin)
     async def forceuntrack(self, ctx, mapset_id: str):
-        if permissions.check(ctx.message.author.id):
-            if await self.untrack(mapset_id, ctx.message.channel.id):
-                await ctx.send("Untracked")
-            else:
-                await ctx.send("No tracking record found")
+        if await self.untrack(mapset_id, ctx.message.channel.id):
+            await ctx.send("Untracked")
         else:
-            await ctx.send(embed=permissions.error())
-
+            await ctx.send("No tracking record found")
 
     @commands.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="", pass_context=True)
     async def veto(self, ctx, mapset_id: int):
-        if db.query(["SELECT value FROM config WHERE setting = ? AND parent = ? AND value = ?", ["guild_veto_channel", str(ctx.guild.id), str(ctx.message.channel.id)]]):
+        if (str(ctx.channel.id),) in self.veto_channel_list:
             if await self.track(mapset_id, ctx.message.channel.id, "veto"):
                 try:
                     result = await osu.get_beatmapset(s=mapset_id)
@@ -101,13 +96,10 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                     await ctx.send("Connection issues?")
             else:
                 await ctx.send("Error")
-        else:
-            await ctx.send(embed=permissions.error())
-
 
     @commands.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode", description="", pass_context=True)
     async def unveto(self, ctx, mapset_id: int):
-        if db.query(["SELECT value FROM config WHERE setting = ? AND parent = ? AND value = ?", ["guild_veto_channel", str(ctx.guild.id), str(ctx.message.channel.id)]]):   
+        if (str(ctx.channel.id),) in self.veto_channel_list:
             if await self.untrack(mapset_id, ctx.message.channel.id):
                 try:
                     result = await osu.get_beatmapset(s=mapset_id)
@@ -118,23 +110,18 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                     await ctx.send("Connection issues?")
             else:
                 await ctx.send("No tracking record found")
-        else:
-            await ctx.send(embed=permissions.error())
-
 
     @commands.command(name="sublist", brief="List all tracked mapsets everywhere", description="", pass_context=True)
+    @commands.check(permissions.is_admin)
     async def sublist(self, ctx):
-        if permissions.check(ctx.message.author.id):
-            for oneentry in db.query("SELECT * FROM mod_tracking"):
-                try:
-                    result = await osu.get_beatmapset(s=str(oneentry[0]))
-                    embed = await osuembed.beatmapset(result)
-                    await ctx.send(content="mapset_id %s | channel <#%s> | tracking_mode %s" % (oneentry), embed=embed)
-                except:
-                    print("Connection issues?")
-                    await ctx.send("Connection issues?")
-        else:
-            await ctx.send(embed=permissions.error())
+        for oneentry in db.query("SELECT * FROM mod_tracking"):
+            try:
+                result = await osu.get_beatmapset(s=str(oneentry[0]))
+                embed = await osuembed.beatmapset(result)
+                await ctx.send(content="mapset_id %s | channel <#%s> | tracking_mode %s" % (oneentry), embed=embed)
+            except:
+                print("Connection issues?")
+                await ctx.send("Connection issues?")
 
     async def modchecker_background_loop(self):
         print("Mod checking Background Loop launched!")

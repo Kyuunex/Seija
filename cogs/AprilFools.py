@@ -14,33 +14,29 @@ class AprilFools(commands.Cog, name="April Fools Management Commands"):
         self.bot = bot
 
     @commands.command(name="af_2018_apply", brief="Apply April fools commands", description="", pass_context=True, hidden=True)
+    @commands.check(permissions.is_owner)
     async def af_apply(self, ctx, action):
-        if permissions.check_owner(ctx.message.author.id):
-            await ctx.message.delete()
-            await self.apply_guild(ctx)
-            await self.apply_channels(ctx)
-            await asyncio.sleep(10)
-            await self.apply_roles(ctx)
-            await self.rotate_logo(ctx)
-            try:
-                await ctx.send(file=discord.File("data/imsorry.png"))
-            except:
-                await ctx.send(":ok_hand:")
-        else:
-            await ctx.send(embed=permissions.error_owner())
+        await ctx.message.delete()
+        await self.apply_guild(ctx)
+        await self.apply_channels(ctx)
+        await asyncio.sleep(10)
+        await self.apply_roles(ctx)
+        await self.rotate_logo(ctx)
+        try:
+            await ctx.send(file=discord.File("data/imsorry.png"))
+        except:
+            await ctx.send(":ok_hand:")
 
     @commands.command(name="af_2018_restore", brief="Restore from April fools", description="", pass_context=True, hidden=True)
+    @commands.check(permissions.is_owner)
     async def af_restore(self, ctx, action):
-        if permissions.check_owner(ctx.message.author.id):
-            await ctx.message.delete()
-            await self.restore_guild(ctx)
-            await self.restore_channels(ctx)
-            await asyncio.sleep(10)
-            await self.restore_roles(ctx)
-            await self.rotate_logo(ctx)
-            await ctx.send(":ok_hand:")
-        else:
-            await ctx.send(embed=permissions.error_owner())
+        await ctx.message.delete()
+        await self.restore_guild(ctx)
+        await self.restore_channels(ctx)
+        await asyncio.sleep(10)
+        await self.restore_roles(ctx)
+        await self.rotate_logo(ctx)
+        await ctx.send(":ok_hand:")
 
     async def apply_channels(self, ctx):
         guild = ctx.guild

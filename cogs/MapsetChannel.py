@@ -1,7 +1,7 @@
 from modules import db
 from cogs.Docs import Docs
 from modules import permissions
-from osuembed import osuembed
+import osuembed
 import discord
 from discord.ext import commands
 import random

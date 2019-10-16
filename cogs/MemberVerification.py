@@ -5,7 +5,7 @@ from modules import permissions
 from modules.connections import osu as osu
 import time
 import asyncio
-from osuembed import osuembed
+import osuembed
 import datetime
 import upsidedown
 

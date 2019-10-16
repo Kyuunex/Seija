@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from modules.connections import osu as osu
-from osuembed import osuembed
+import osuembed
 
 class Osu(commands.Cog, name="osu!"):
     def __init__(self, bot):

@@ -5,7 +5,7 @@ import datetime
 from discord.ext import commands
 from modules import permissions
 from modules import db
-from osuembed import osuembed
+import osuembed
 import pycountry
 import upsidedown
 

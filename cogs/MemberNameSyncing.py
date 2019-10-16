@@ -6,7 +6,7 @@ import asyncio
 import upsidedown
 import datetime
 from modules.connections import osu as osu
-from osuembed import osuembed
+import osuembed
 
 class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
     def __init__(self, bot):

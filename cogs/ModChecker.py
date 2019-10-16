@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 from modules import db
 from modules import permissions
-from osuembed import osuembed
+import osuembed
 
 from modules.connections import osuweb as osuweb
 from modules.connections import osu as osu

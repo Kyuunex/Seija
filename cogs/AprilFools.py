@@ -6,16 +6,17 @@ import io
 import asyncio
 import discord
 from discord.ext import commands
-#from PIL import Image
+from PIL import Image
 
 
 class AprilFools(commands.Cog, name="April Fools Management Commands"):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="af_2018_apply", brief="Apply April fools commands", description="", pass_context=True, hidden=True)
+    @commands.command(name="af_2018_apply", brief="Apply April fools commands", description="", pass_context=True,
+                      hidden=True)
     @commands.check(permissions.is_owner)
-    async def af_apply(self, ctx, action):
+    async def af_apply(self, ctx):
         await ctx.message.delete()
         await self.apply_guild(ctx)
         await self.apply_channels(ctx)
@@ -23,13 +24,15 @@ class AprilFools(commands.Cog, name="April Fools Management Commands"):
         await self.apply_roles(ctx)
         await self.rotate_logo(ctx)
         try:
-            await ctx.send(file=discord.File("data/imsorry.png"))
-        except:
+            await ctx.send(file=discord.File("data/sorry.png"))
+        except Exception as e:
+            print(e)
             await ctx.send(":ok_hand:")
 
-    @commands.command(name="af_2018_restore", brief="Restore from April fools", description="", pass_context=True, hidden=True)
+    @commands.command(name="af_2018_restore", brief="Restore from April fools", description="", pass_context=True,
+                      hidden=True)
     @commands.check(permissions.is_owner)
-    async def af_restore(self, ctx, action):
+    async def af_restore(self, ctx):
         await ctx.message.delete()
         await self.restore_guild(ctx)
         await self.restore_channels(ctx)
@@ -49,7 +52,7 @@ class AprilFools(commands.Cog, name="April Fools Management Commands"):
                     await channel.edit(name=upsidedown.transform(channel.name))
                 except Exception as e:
                     print(e)
-                    print("in apply_channels / %s" % (channel.name))
+                    print("in apply_channels / %s" % channel.name)
                     await asyncio.sleep(10)
 
     async def restore_channels(self, ctx):
@@ -77,7 +80,7 @@ class AprilFools(commands.Cog, name="April Fools Management Commands"):
                     await role.edit(name=upsidedown.transform(role.name))
                 except Exception as e:
                     print(e)
-                    print("in apply_roles / %s" % (role.name))
+                    print("in apply_roles / %s" % role.name)
                     await asyncio.sleep(10)
 
     async def restore_roles(self, ctx):
@@ -122,22 +125,22 @@ class AprilFools(commands.Cog, name="April Fools Management Commands"):
         guild = ctx.guild
         old_icon_url = guild.icon_url
         if old_icon_url:
-            pass
-            # async with aiohttp.ClientSession() as session:
-            #     async with session.get(old_icon_url) as imageresponse:
-            #         buffer = (await imageresponse.read())
-            #         im = Image.open(io.BytesIO(buffer))
-            #         im = im.rotate(180)
-            #         im = im.convert('RGBA')
-            #         newbytes = io.BytesIO()
-            #         im.save(newbytes, format='PNG')
-            #         newbytes = newbytes.getvalue()
-            # try:
-            #     await guild.edit(icon=newbytes)
-            # except Exception as e:
-            #     print(e)
-            #     print("in rotate_logo")
-            #     await asyncio.sleep(10)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(old_icon_url) as image_response:
+                    buffer = (await image_response.read())
+                    im = Image.open(io.BytesIO(buffer))
+                    im = im.rotate(180)
+                    im = im.convert('RGBA')
+                    new_bytes = io.BytesIO()
+                    im.save(new_bytes, format='PNG')
+                    new_bytes = new_bytes.getvalue()
+            try:
+                await guild.edit(icon=new_bytes)
+            except Exception as e:
+                print(e)
+                print("in rotate_logo")
+                await asyncio.sleep(10)
+
 
 def setup(bot):
     bot.add_cog(AprilFools(bot))

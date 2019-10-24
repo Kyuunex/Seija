@@ -107,3 +107,6 @@ venv.bak/
 data
 .vscode
 runtest.py
+
+# pycharm
+.idea

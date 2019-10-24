@@ -4,10 +4,12 @@ import discord
 from discord.ext import commands
 from modules import db
 from modules import permissions
+from modules import reputation
 import osuembed
 
 from modules.connections import osuweb as osuweb
 from modules.connections import osu as osu
+
 
 class ModChecker(commands.Cog, name="Mod Checker"):
     def __init__(self, bot):
@@ -16,16 +18,19 @@ class ModChecker(commands.Cog, name="Mod Checker"):
         self.bot.loop.create_task(self.modchecker_background_loop())
 
     @commands.command(name="track", brief="Track the mapset in this channel", description="", pass_context=True)
-    async def track_command(self, ctx, tracking_mode = "classic"):
-        if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check_admin(ctx.message.author.id)):
+    async def track_command(self, ctx, tracking_mode="classic"):
+        if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
+                      [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (
+        permissions.check_admin(ctx.message.author.id)):
             try:
                 if db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]]):
-                    db.query(["DELETE FROM mod_tracking WHERE channel_id = ?",[str(ctx.message.channel.id)]])
-                    db.query(["DELETE FROM mod_posts WHERE channel_id = ?",[str(ctx.message.channel.id)]])
+                    db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]])
+                    db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.message.channel.id)]])
                     await ctx.send("Deleted all previously existing tracking records in this channel")
                     await asyncio.sleep(1)
 
-                mapset_id = db.query(["SELECT mapset_id FROM mapset_channels WHERE channel_id = ?", [str(ctx.message.channel.id)]])
+                mapset_id = db.query(
+                    ["SELECT mapset_id FROM mapset_channels WHERE channel_id = ?", [str(ctx.message.channel.id)]])
                 if mapset_id:
                     if str(mapset_id[0][0]) != "0":
                         if await self.track(str(mapset_id[0][0]), ctx.message.channel.id):
@@ -35,7 +40,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
 
                                 await ctx.send("Tracked", embed=tracked_embed)
                                 try:
-                                    await reputation.unarchive_channel(client, ctx, "guild_mapset_category")
+                                    await reputation.unarchive_channel(self.bot, ctx, "guild_mapset_category")
                                 except:
                                     pass
                             except:
@@ -44,7 +49,8 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                         else:
                             await ctx.send("Error")
                     else:
-                        await ctx.send("Set a mapset id for this channel first, using the `'setid (mapset_id)` command.")
+                        await ctx.send(
+                            "Set a mapset id for this channel first, using the `'setid (mapset_id)` command.")
                 else:
                     await ctx.send("Set a mapset id for this channel first, using the `'setid (mapset_id)` command.")
             except Exception as e:
@@ -52,16 +58,19 @@ class ModChecker(commands.Cog, name="Mod Checker"):
 
     @commands.command(name="untrack", brief="Untrack everything in this channel", description="", pass_context=True)
     async def untrack_command(self, ctx):
-        if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check_admin(ctx.message.author.id)):
+        if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
+                      [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (
+        permissions.check_admin(ctx.message.author.id)):
             try:
                 if db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]]):
-                    db.query(["DELETE FROM mod_tracking WHERE channel_id = ?",[str(ctx.message.channel.id)]])
-                    db.query(["DELETE FROM mod_posts WHERE channel_id = ?",[str(ctx.message.channel.id)]])
+                    db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]])
+                    db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.message.channel.id)]])
                     await ctx.send("Untracked everything in this channel")
             except Exception as e:
                 await ctx.send(e)
 
-    @commands.command(name="forcetrack", brief="Force Track a mapset in the current channel", description="", pass_context=True, hidden=True)
+    @commands.command(name="forcetrack", brief="Force Track a mapset in the current channel", description="",
+                      pass_context=True, hidden=True)
     @commands.check(permissions.is_admin)
     async def forcetrack(self, ctx, mapset_id: str):
         if await self.track(mapset_id, ctx.message.channel.id):
@@ -75,7 +84,8 @@ class ModChecker(commands.Cog, name="Mod Checker"):
         else:
             await ctx.send("Error")
 
-    @commands.command(name="forceuntrack", brief="Force untrack a mapset in the current channel", description="", pass_context=True, hidden=True)
+    @commands.command(name="forceuntrack", brief="Force untrack a mapset in the current channel", description="",
+                      pass_context=True, hidden=True)
     @commands.check(permissions.is_admin)
     async def forceuntrack(self, ctx, mapset_id: str):
         if await self.untrack(mapset_id, ctx.message.channel.id):
@@ -83,7 +93,8 @@ class ModChecker(commands.Cog, name="Mod Checker"):
         else:
             await ctx.send("No tracking record found")
 
-    @commands.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="", pass_context=True)
+    @commands.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="",
+                      pass_context=True)
     async def veto(self, ctx, mapset_id: int):
         if (str(ctx.channel.id),) in self.veto_channel_list:
             if await self.track(mapset_id, ctx.message.channel.id, "veto"):
@@ -97,7 +108,8 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             else:
                 await ctx.send("Error")
 
-    @commands.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode", description="", pass_context=True)
+    @commands.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode", description="",
+                      pass_context=True)
     async def unveto(self, ctx, mapset_id: int):
         if (str(ctx.channel.id),) in self.veto_channel_list:
             if await self.untrack(mapset_id, ctx.message.channel.id):
@@ -132,7 +144,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                 if channel:
                     mapset_id = str(oneentry[0])
                     tracking_mode = str(oneentry[2])
-                    print(time.strftime('%X %x %Z')+' | '+oneentry[0])
+                    print(time.strftime('%X %x %Z') + ' | ' + oneentry[0])
 
                     try:
                         beatmapset_discussions = await osuweb.get_beatmapset_discussions(mapset_id)
@@ -144,16 +156,19 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                         status = await self.check_status(channel, mapset_id, beatmapset_discussions)
                         if status:
                             if tracking_mode == "veto" or tracking_mode == "classic":
-                                await self.timeline_mode_tracking(beatmapset_discussions, channel, mapset_id, tracking_mode)
+                                await self.timeline_mode_tracking(beatmapset_discussions, channel, mapset_id,
+                                                                  tracking_mode)
                             elif tracking_mode == "notification":
-                                await self.notification_mode_tracking(beatmapset_discussions, channel, mapset_id, tracking_mode)
+                                await self.notification_mode_tracking(beatmapset_discussions, channel, mapset_id,
+                                                                      tracking_mode)
                         else:
                             print("No actual discussions found at %s or mapset untracked automatically" % (mapset_id))
                     else:
                         print("%s | modchecker connection issues" % (time.strftime('%X %x %Z')))
                         await asyncio.sleep(300)
                 else:
-                    print("someone manually removed the channel with id %s and mapset id %s" % (oneentry[1], oneentry[0]))
+                    print(
+                        "someone manually removed the channel with id %s and mapset id %s" % (oneentry[1], oneentry[0]))
                 await asyncio.sleep(120)
             await asyncio.sleep(1800)
 
@@ -166,7 +181,8 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                     if 'posts' in onemod:
                         for subpost in onemod["posts"]:
                             if subpost:
-                                allposts.append(["INSERT INTO mod_posts VALUES (?,?,?)", [str(subpost["id"]), str(onemod["beatmapset_id"]), str(channel_id)]])
+                                allposts.append(["INSERT INTO mod_posts VALUES (?,?,?)",
+                                                 [str(subpost["id"]), str(onemod["beatmapset_id"]), str(channel_id)]])
             except Exception as e:
                 print(time.strftime('%X %x %Z'))
                 print("in modchecker.populatedb")
@@ -174,8 +190,9 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                 print(onemod)
         db.mass_query(allposts)
 
-    async def track(self, mapset_id, channel_id, tracking_mode = "classic"):
-        if not db.query(["SELECT mapset_id FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]]):
+    async def track(self, mapset_id, channel_id, tracking_mode="classic"):
+        if not db.query(["SELECT mapset_id FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
+                         [str(mapset_id), str(channel_id)]]):
             beatmapset_discussions = await osuweb.get_beatmapset_discussions(str(mapset_id))
             if beatmapset_discussions:
                 await self.populatedb(beatmapset_discussions, str(channel_id))
@@ -187,9 +204,12 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             return False
 
     async def untrack(self, mapset_id, channel_id):
-        if db.query(["SELECT mapset_id FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]]):
-            db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]])
-            db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]])
+        if db.query(["SELECT mapset_id FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
+                     [str(mapset_id), str(channel_id)]]):
+            db.query(
+                ["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]])
+            db.query(
+                ["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]])
             return True
         else:
             return False
@@ -207,7 +227,9 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                 except:
                     print("Connection issues?")
                     embedthis = None
-                await channel.send(content='I detected that this map is ranked now. Since the modding stage is finished, and the map is moved to the ranked section, I will no longer be checking for mods on this mapset.', embed=embedthis)
+                await channel.send(
+                    content='I detected that this map is ranked now. Since the modding stage is finished, and the map is moved to the ranked section, I will no longer be checking for mods on this mapset.',
+                    embed=embedthis)
         elif status == "graveyard":
             discussions = None
             if await self.untrack(mapset_id, channel.id):
@@ -217,11 +239,15 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                 except:
                     print("Connection issues?")
                     embedthis = None
-                await channel.send(content="I detected that this map is graveyarded now and so, I am untracking it. Type `'track` after you ungraveyard it, to continue tracking it. Please understand that we don't wanna track dead sets.", embed=embedthis)
+                await channel.send(
+                    content="I detected that this map is graveyarded now and so, I am untracking it. Type `'track` after you ungraveyard it, to continue tracking it. Please understand that we don't wanna track dead sets.",
+                    embed=embedthis)
         elif status == "deleted":
             discussions = None
             if await self.untrack(mapset_id, channel.id):
-                await channel.send(content='I detected that the mapset with the id %s has been deleted, so I am untracking.' % (str(mapset_id)))
+                await channel.send(
+                    content='I detected that the mapset with the id %s has been deleted, so I am untracking.' % (
+                        str(mapset_id)))
         else:
             discussions = None
             await channel.send(content='<@155976140073205761> something went wrong, please check the console output.')
@@ -229,31 +255,39 @@ class ModChecker(commands.Cog, name="Mod Checker"):
         return discussions
 
     async def timeline_mode_tracking(self, beatmapset_discussions, channel, mapset_id, tracking_mode):
-        if db.query(["SELECT * FROM mod_tracking WHERE mapset_id = ? AND channel_id = ? AND mode = ?", [str(mapset_id), str(channel.id), str(tracking_mode)]]):
+        if db.query(["SELECT * FROM mod_tracking WHERE mapset_id = ? AND channel_id = ? AND mode = ?",
+                     [str(mapset_id), str(channel.id), str(tracking_mode)]]):
             for discussion in beatmapset_discussions["beatmapset"]["discussions"]:
                 if discussion:
                     if 'posts' in discussion:
                         for subpostobject in discussion['posts']:
                             if subpostobject:
-                                if not db.query(["SELECT post_id FROM mod_posts WHERE post_id = ? AND channel_id = ?", [str(subpostobject['id']), str(channel.id)]]):
-                                    db.query(["INSERT INTO mod_posts VALUES (?,?,?)", [str(subpostobject["id"]), str(mapset_id), str(channel.id)]])
-                                    if (not subpostobject['system']) and (not subpostobject["message"] == "r") and (not subpostobject["message"] == "res") and (not subpostobject["message"] == "resolved"):
-                                        modtopost = await self.modpost(subpostobject, beatmapset_discussions, discussion, tracking_mode)
+                                if not db.query(["SELECT post_id FROM mod_posts WHERE post_id = ? AND channel_id = ?",
+                                                 [str(subpostobject['id']), str(channel.id)]]):
+                                    db.query(["INSERT INTO mod_posts VALUES (?,?,?)",
+                                              [str(subpostobject["id"]), str(mapset_id), str(channel.id)]])
+                                    if (not subpostobject['system']) and (not subpostobject["message"] == "r") and (
+                                    not subpostobject["message"] == "res") and (
+                                    not subpostobject["message"] == "resolved"):
+                                        modtopost = await self.modpost(subpostobject, beatmapset_discussions,
+                                                                       discussion, tracking_mode)
                                         if modtopost:
                                             try:
                                                 await channel.send(embed=modtopost)
                                             except Exception as e:
                                                 print(e)
 
-    async def notification_mode_tracking(self, beatmapset_discussions, channel, mapset_id, tracking_mode): # channel is important
-        if db.query(["SELECT * FROM mod_tracking WHERE mapset_id = ? AND channel_id = ? AND mode = ?", [str(mapset_id), str(channel.id), str(tracking_mode)]]):
+    async def notification_mode_tracking(self, beatmapset_discussions, channel, mapset_id,
+                                         tracking_mode):  # channel is important
+        if db.query(["SELECT * FROM mod_tracking WHERE mapset_id = ? AND channel_id = ? AND mode = ?",
+                     [str(mapset_id), str(channel.id), str(tracking_mode)]]):
             return None
         # cachedstatus = dbhandler.query(["SELECT unresolved FROM mapset_status WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel.id)]])
         # for discussion in beatmapset_discussions["beatmapset"]["discussions"]:
         #     try:
         #         if discussion:
         #             discussion['resolved'] == False
-                    
+
         #     except Exception as e:
         #         print(time.strftime('%X %x %Z'))
         #         print("while looping through discussions")
@@ -264,11 +298,11 @@ class ModChecker(commands.Cog, name="Mod Checker"):
         for user in related_users:
             if str(user_id) == str(user['id']):
                 if user['default_group'] == "bng":
-                    return user['username']+" [BN]"
+                    return user['username'] + " [BN]"
                 elif user['default_group'] == "bng_limited":
-                    return user['username']+" [BN]"
+                    return user['username'] + " [BN]"
                 elif user['default_group'] == "nat":
-                    return user['username']+" [NAT]"
+                    return user['username'] + " [NAT]"
                 else:
                     return user['username']
 
@@ -329,9 +363,11 @@ class ModChecker(commands.Cog, name="Mod Checker"):
     async def modpost(self, subpostobject, beatmapset_discussions, newevent, tracking_mode):
         if subpostobject:
             if tracking_mode == "classic":
-                title = str(await self.get_diffname(beatmapset_discussions["beatmapset"]["beatmaps"], newevent['beatmap_id']))
+                title = str(
+                    await self.get_diffname(beatmapset_discussions["beatmapset"]["beatmaps"], newevent['beatmap_id']))
             elif tracking_mode == "veto":
-                title = "%s / %s" % (str(beatmapset_discussions["beatmapset"]["title"]), str(await self.get_diffname(beatmapset_discussions["beatmapset"]["beatmaps"], newevent['beatmap_id'])))
+                title = "%s / %s" % (str(beatmapset_discussions["beatmapset"]["title"]), str(
+                    await self.get_diffname(beatmapset_discussions["beatmapset"]["beatmaps"], newevent['beatmap_id'])))
                 if newevent['message_type'] == "hype":
                     return None
                 elif newevent['message_type'] == "praise":
@@ -346,7 +382,8 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                 color=footer['color']
             )
             modpost.set_author(
-                name=str(await self.get_username(beatmapset_discussions["beatmapset"]["related_users"], str(subpostobject['user_id']))),
+                name=str(await self.get_username(beatmapset_discussions["beatmapset"]["related_users"],
+                                                 str(subpostobject['user_id']))),
                 url="https://osu.ppy.sh/users/%s" % (
                     str(subpostobject['user_id'])),
                 icon_url="https://a.ppy.sh/%s" % (str(subpostobject['user_id']))
@@ -362,6 +399,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             return modpost
         else:
             return None
+
 
 def setup(bot):
     bot.add_cog(ModChecker(bot))

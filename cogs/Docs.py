@@ -114,11 +114,15 @@ class Docs(commands.Cog, name="Pretty Bot Documentation"):
 
     async def queue_management(self):
         embed = discord.Embed(title="Queue management commands",
-                              description="""**Please avoid manually editing channel permissions unless you wanna ban a specific person or a role from your queue or unless the bot is down.**""",
+                              description="**Please avoid manually editing channel permissions "
+                                          "unless you wanna ban a specific person or a role from your queue "
+                                          "or unless the bot is down.**",
                               color=0xbd3661)
         embed.add_field(name="'open", value="Open the queue, everyone can see and post in it.", inline=False)
         embed.add_field(name="'close",
-                        value="Close the queue, everyone can see but can't post in it. You can also use this command to unhide the queue, but again, nobody will be able to post in it.",
+                        value="Close the queue, everyone can see but can't post in it. "
+                              "You can also use this command to un-hide the queue, "
+                              "but again, nobody will be able to post in it.",
                         inline=False)
         embed.add_field(name="'hide",
                         value="Hide the queue, only admins can see the queue. Nobody else can see and post in it.",
@@ -129,20 +133,30 @@ class Docs(commands.Cog, name="Pretty Bot Documentation"):
 
     async def mapset_channel_management(self):
         embed = discord.Embed(title="Mapset channel management commands",
-                              description="""`(user)` can be ether a name of the user or a discord account user id. To get user id, you need developer mode enabled in your discord client settings, right click on the user and click \"Copy ID\". Using IDs are recommended rather than names.""",
+                              description="`(user)` can be ether a name of the user or a discord account user id. "
+                                          "To get user id, you need developer mode enabled in your discord settings, "
+                                          "right click on the user and click \"Copy ID\". "
+                                          "Using IDs are recommended rather than names.",
                               color=0xbd3661)
         embed.add_field(name="'add (user)", value="Add a user in the mapset channel.", inline=False)
         embed.add_field(name="'remove (user)", value="Remove a user from the mapset channel.", inline=False)
         embed.add_field(name="'abandon",
-                        value="If you abandoning the set, whether temporarily or permanently, this will stop all tracking and move the channel to archive category.",
+                        value="If you're abandoning the set, whether temporarily or permanently, "
+                              "this will stop all tracking and move the channel to archive category.",
                         inline=False)
-        embed.add_field(name="'setid (mapset_id)",
-                        value="Set a mapset id for this channel. Useful if you created this channel without setting an id.",
+        embed.add_field(name="'set_id (mapset_id)",
+                        value="Set a mapset id for this channel. "
+                              "Useful if you created this channel without setting an id.",
                         inline=False)
-        embed.add_field(name="'setowner (user_id)",
-                        value="Transfer set ownership to another discord account. user_id can only be that discord account's id.",
+        embed.add_field(name="'set_owner (user_id)",
+                        value="Transfer set ownership to another discord account. "
+                              "user_id can only be that discord account's id.",
                         inline=False)
-        # embed.add_field(name="'track (tracking_mode)", value="Track the mapset in this channel. For tracking_mode, specify 'classic' for discussion/timeline type, specify 'notification' for notification type.", inline=False)
+        # embed.add_field(name="'track (tracking_mode)",
+        #                 value="Track the mapset in this channel. "
+        #                       "For tracking_mode, specify 'classic' for discussion/timeline type, "
+        #                       "specify 'notification' for notification type.",
+        #                 inline=False)
         embed.add_field(name="'track", value="Track the mapset in this channel", inline=False)
         embed.add_field(name="'untrack", value="Untrack everything in this channel.", inline=False)
         embed.set_author(name=self.author_text, icon_url=self.author_icon)

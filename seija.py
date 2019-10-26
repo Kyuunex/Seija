@@ -11,8 +11,10 @@ from modules.connections import bot_token as bot_token
 
 
 command_prefix = '\''
-appversion = "t20191016"
-client = commands.Bot(command_prefix=command_prefix, description='Seija %s' % (appversion))
+appversion = "t20191016.2"
+client = commands.Bot(command_prefix=command_prefix, 
+                      description='Seija %s' % (appversion),
+                      activity=discord.Game("Version %s" % appversion))
 
 if not os.path.exists(database_file):
     db.query("CREATE TABLE users (user_id, osu_id, osu_username, osu_join_date, pp, country, ranked_maps_amount, no_sync)")

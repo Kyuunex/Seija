@@ -11,7 +11,7 @@ from modules.connections import bot_token as bot_token
 
 
 command_prefix = '\''
-appversion = "t20191016.2"
+appversion = "t20191027"
 client = commands.Bot(command_prefix=command_prefix, 
                       description='Seija %s' % (appversion))
 

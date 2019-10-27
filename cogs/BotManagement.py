@@ -55,6 +55,12 @@ class BotManagement(commands.Cog, name="Bot Management commands"):
         await ctx.message.delete()
         await ctx.send(string)
 
+    @commands.command(name="set_activity", brief="Set an activity", description="", pass_context=True)
+    @commands.check(permissions.is_owner)
+    async def set_activity(self, ctx, *, string):
+        activity = discord.Game(string)
+        await self.bot.change_presence(activity=activity)
+
     @commands.command(name="config", brief="Insert a config in db", description="", pass_context=True)
     @commands.check(permissions.is_owner)
     async def config(self, ctx, setting, parent, value, flag="0"):

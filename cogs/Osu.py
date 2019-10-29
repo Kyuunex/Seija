@@ -3,6 +3,7 @@ from discord.ext import commands
 from modules.connections import osu as osu
 import osuembed
 
+
 class Osu(commands.Cog, name="osu!"):
     def __init__(self, bot):
         self.bot = bot
@@ -25,7 +26,8 @@ class Osu(commands.Cog, name="osu!"):
         else:
             await ctx.send(content='`No user found with that username`')
 
-    @commands.command(name="ts", brief="Send an osu editor clickable timestamp", description="Must start with a timestamp", pass_context=True)
+    @commands.command(name="ts", brief="Send an osu editor clickable timestamp",
+                      description="Must start with a timestamp", pass_context=True)
     async def ts(self, ctx, *, string):
         if "-" in string:
             timestamp_data = string.split("-")

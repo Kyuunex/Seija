@@ -9,14 +9,14 @@ from modules import db
 from modules.connections import database_file as database_file
 from modules.connections import bot_token as bot_token
 
-
 command_prefix = '\''
-appversion = "t20191027"
-client = commands.Bot(command_prefix=command_prefix, 
-                      description='Seija %s' % (appversion))
+app_version = "t20191029"
+client = commands.Bot(command_prefix=command_prefix,
+                      description='Seija %s' % app_version)
 
 if not os.path.exists(database_file):
-    db.query("CREATE TABLE users (user_id, osu_id, osu_username, osu_join_date, pp, country, ranked_maps_amount, no_sync)")
+    db.query(
+        "CREATE TABLE users (user_id, osu_id, osu_username, osu_join_date, pp, country, ranked_maps_amount, no_sync)")
     db.query("CREATE TABLE user_event_history (osu_id, event_id, channel_id)")
     db.query("CREATE TABLE config (setting, parent, value, flag)")
     db.query("CREATE TABLE admins (user_id, permissions)")
@@ -31,8 +31,8 @@ if not os.path.exists(database_file):
     db.query("CREATE TABLE name_backups (id, name)")
 
 initial_extensions = [
-    'cogs.BotManagement', 
-    'cogs.Docs', 
+    'cogs.BotManagement',
+    'cogs.Docs',
     'cogs.MapsetChannel',
     'cogs.MemberManagement',
     'cogs.MemberNameSyncing',
@@ -40,7 +40,7 @@ initial_extensions = [
     'cogs.MemberVerification',
     'cogs.ModChecker',
     'cogs.Osu',
-    'cogs.Queue', 
+    'cogs.Queue',
 ]
 
 if __name__ == '__main__':
@@ -50,6 +50,7 @@ if __name__ == '__main__':
         except Exception as e:
             print(e)
 
+
 @client.event
 async def on_ready():
     print('Logged in as')
@@ -57,9 +58,9 @@ async def on_ready():
     print(client.user.id)
     print('------')
     if not db.query("SELECT * FROM admins"):
-        appinfo = await client.application_info()
-        db.query(["INSERT INTO admins VALUES (?, ?)", [str(appinfo.owner.id), "1"]])
-        print("Added %s to admin list" % (appinfo.owner.name))
+        app_info = await client.application_info()
+        db.query(["INSERT INTO admins VALUES (?, ?)", [str(app_info.owner.id), "1"]])
+        print("Added %s to admin list" % app_info.owner.name)
 
 
 client.run(bot_token)

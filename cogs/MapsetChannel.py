@@ -1,7 +1,6 @@
 from modules import db
 from cogs.Docs import Docs
 from modules import permissions
-import osuembed
 import discord
 from discord.ext import commands
 import random
@@ -27,10 +26,19 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
             read_message_history=True,
             mention_everyone=False
         )
+        self.mapset_bot_default_permissions = discord.PermissionOverwrite(
+            manage_channels=True,
+            manage_roles=True,
+            read_messages=True,
+            send_messages=True,
+            embed_links=True
+        )
 
     @commands.command(name="add", brief="Add a user in the current mapset channel", pass_context=True)
     async def add(self, ctx, user_id: str):
-        role_id_list = db.query(["SELECT role_id FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.author.id), str(ctx.channel.id)]])
+        role_id_list = db.query(["SELECT role_id FROM mapset_channels "
+                                 "WHERE user_id = ? AND channel_id = ?",
+                                 [str(ctx.author.id), str(ctx.channel.id)]])
         if role_id_list:
             try:
                 member = await self.get_member_by_name_or_id(ctx, user_id)
@@ -48,7 +56,9 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
 
     @commands.command(name="remove", brief="Remove a user from the current mapset channel", pass_context=True)
     async def remove(self, ctx, user_id: str):
-        role_id_list = db.query(["SELECT role_id FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.author.id), str(ctx.channel.id)]])
+        role_id_list = db.query(["SELECT role_id FROM mapset_channels "
+                                 "WHERE user_id = ? AND channel_id = ?",
+                                 [str(ctx.author.id), str(ctx.channel.id)]])
         if role_id_list:
             try:
                 member = await self.get_member_by_name_or_id(ctx, user_id)
@@ -77,157 +87,199 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
 
     @commands.command(name="abandon", brief="Abandon the mapset and untrack", description="", pass_context=True)
     async def abandon(self, ctx):
-        guild_archive_category = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_archive_category", str(ctx.guild.id)]])
-        if guild_archive_category:
-            if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check_admin(ctx.message.author.id)):
-                if db.query(["SELECT * FROM mapset_channels WHERE channel_id = ?", [str(ctx.message.channel.id)]]):
-                    try:
-                        mapset_id = db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]])
-                        if mapset_id:
-                            db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",[str(mapset_id[0][0]), str(ctx.message.channel.id)]])
-                            db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",[str(mapset_id[0][0]), str(ctx.message.channel.id)]])
-                            await ctx.send("untracked")
-                            await asyncio.sleep(1)
+        guild_archive_category_id = db.query(["SELECT value FROM config "
+                                              "WHERE setting = ? AND parent = ?",
+                                              ["guild_archive_category", str(ctx.guild.id)]])
+        if guild_archive_category_id:
+            mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
+                                           "WHERE user_id = ? AND channel_id = ?",
+                                           [str(ctx.author.id), str(ctx.channel.id)]])
+            is_mapset_channel = db.query(["SELECT * FROM mapset_channels "
+                                          "WHERE channel_id = ?",
+                                          [str(ctx.channel.id)]])
+            if (mapset_owner_check or await permissions.is_admin(ctx)) and is_mapset_channel:
+                try:
+                    db.query(["DELETE FROM mod_tracking "
+                              "WHERE channel_id = ?",
+                              [str(ctx.channel.id)]])
+                    db.query(["DELETE FROM mod_posts "
+                              "WHERE channel_id = ?",
+                              [str(ctx.channel.id)]])
+                    await ctx.send("un-tracked everything in this channel")
 
-                        archivecategory = self.bot.get_channel(int(guild_archive_category[0][0]))
-                        await ctx.message.channel.edit(reason=None, category=archivecategory)
-                        await ctx.send("Abandoned and moved to archive")
-                    except Exception as e:
-                        await ctx.send(e)
-                else:
-                    await ctx.send("%s this is not a mapset channel" % (ctx.message.author.mention))
+                    archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
+                    await ctx.channel.edit(reason="mapset abandoned", category=archive_category)
+                    await ctx.send("moved to archive")
+                except Exception as e:
+                    await ctx.send(e)
             else:
-                await ctx.send("%s this is not your mapset channel" % (ctx.message.author.mention))
+                await ctx.send("%s this is not your mapset channel" % ctx.author.mention)
         else:
             await ctx.send("no archive category set for this server")
 
-    @commands.command(name="set_id", brief="Set a mapset id for this channel", description="Useful if you created this channel without setting an id", pass_context=True)
+    @commands.command(name="set_id", brief="Set a mapset id for this channel",
+                      description="Useful if you created this channel without setting an id", pass_context=True)
     async def set_mapset_id(self, ctx, mapset_id: int):
-        if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check_admin(ctx.message.author.id)):
+        mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
+                                       "WHERE user_id = ? AND channel_id = ?",
+                                       [str(ctx.author.id), str(ctx.channel.id)]])
+        if mapset_owner_check or await permissions.is_admin(ctx):
             try:
-                db.query(["UPDATE mapset_channels SET mapset_id = ? WHERE channel_id = ?;", [str(mapset_id), str(ctx.message.channel.id)]])
-                await ctx.send("Mapset id updated for this channel")
+                # TODO: do a lookup to make sure this mapset id is legit
+                db.query(["UPDATE mapset_channels "
+                          "SET mapset_id = ? WHERE channel_id = ?;",
+                          [str(mapset_id), str(ctx.channel.id)]])
+                await ctx.send("mapset id updated for this channel")
             except Exception as e:
                 await ctx.send(e)
 
-    @commands.command(name="set_owner", brief="Transfer set ownership to another discord account", description="user_id can only be that discord account's id", pass_context=True)
+    @commands.command(name="set_owner", brief="Transfer set ownership to another discord account",
+                      description="user_id can only be that discord account's id", pass_context=True)
     async def set_owner_id(self, ctx, user_id: int):
-        if (db.query(["SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check_admin(ctx.message.author.id)):
+        mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
+                                       "WHERE user_id = ? AND channel_id = ?",
+                                       [str(ctx.author.id), str(ctx.channel.id)]])
+        if mapset_owner_check or await permissions.is_admin(ctx):
             try:
                 member = ctx.guild.get_member(int(user_id))
                 if member:
-                    db.query(["UPDATE mapset_channels SET user_id = ? WHERE channel_id = ?;", [str(user_id), str(ctx.message.channel.id)]])
-                    await ctx.message.channel.set_permissions(target=member, overwrite=self.mapset_owner_default_permissions)
-                    await ctx.send("Owner updated for this channel")
+                    db.query(["UPDATE mapset_channels "
+                              "SET user_id = ? WHERE channel_id = ?;",
+                              [str(user_id), str(ctx.channel.id)]])
+                    await ctx.channel.set_permissions(target=member,
+                                                      overwrite=self.mapset_owner_default_permissions)
+                    await ctx.send("mapset owner updated for this channel")
             except Exception as e:
                 await ctx.send(e)
 
-    @commands.command(name="chanlist", brief="List all mapset channel", description="", pass_context=True)
+    @commands.command(name="list_mapset_channels", brief="List all mapset channel", description="", pass_context=True)
     @commands.check(permissions.is_admin)
-    async def chanlist(self, ctx):
-        for oneentry in db.query("SELECT * FROM mapset_channels"):
-            await ctx.send(content="channel_id <#%s> | role_id %s | user_id <@%s> | mapset_id %s | guild_id %s " % (oneentry))
+    async def list_mapset_channels(self, ctx):
+        for channel in db.query("SELECT * FROM mapset_channels"):
+            await ctx.send("channel_id <#%s> | role_id %s | user_id <@%s> | mapset_id %s | guild_id %s " % channel)
 
     @commands.command(name="nuke", brief="Nuke a requested mapset channel", description="", pass_context=True)
     @commands.check(permissions.is_admin)
     async def nuke(self, ctx):
-        role_idlist = db.query(["SELECT role_id FROM mapset_channels WHERE channel_id = ?", [str(ctx.message.channel.id)]])
-        if role_idlist:
+        role_id = db.query(["SELECT role_id FROM mapset_channels "
+                            "WHERE channel_id = ?",
+                            [str(ctx.channel.id)]])
+        if role_id:
             try:
-                await ctx.send("nuking channel and role in 2 seconds! untracking also")
+                await ctx.send("nuking channel and role in 2 seconds! un-tracking also")
                 await asyncio.sleep(2)
-                role = discord.utils.get(ctx.guild.roles, id=int(role_idlist[0][0]))
+                role = discord.utils.get(ctx.guild.roles, id=int(role_id[0][0]))
 
-                mapset_id = db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]])
-                if mapset_id:
-                    db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id[0][0]), str(ctx.message.channel.id)]])
-                    db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id[0][0]), str(ctx.message.channel.id)]])
-                    await ctx.send("untracked")
-                    await asyncio.sleep(2)
+                db.query(["DELETE FROM mod_tracking "
+                          "WHERE channel_id = ?",
+                          [str(ctx.channel.id)]])
+                db.query(["DELETE FROM mod_posts "
+                          "WHERE channel_id = ?",
+                          [str(ctx.channel.id)]])
+                await ctx.send("un-tracked")
+                await asyncio.sleep(2)
 
-                db.query(["DELETE FROM mapset_channels WHERE channel_id = ?", [str(ctx.message.channel.id)]])
-                await role.delete(reason="Manually nuked the role due to abuse")
-                await ctx.message.channel.delete(reason="Manually nuked the channel due to abuse")
+                db.query(["DELETE FROM mapset_channels "
+                          "WHERE channel_id = ?",
+                          [str(ctx.channel.id)]])
+                await role.delete(reason="manually nuked the role due to abuse")
+                await ctx.channel.delete(reason="manually nuked the channel due to abuse")
             except Exception as e:
                 await ctx.send(e)
         else:
             await ctx.send("this is not a mapset channel")
 
-    @commands.command(name="request_mapset_channel", brief="Request ether a queue or mod channel", description="", pass_context=True)
-    async def make_mapset_channel(self, ctx, mapset_id = None, mapset_title = None):
-        guildmapsetcategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapset_category", str(ctx.guild.id)]])
-        if guildmapsetcategory:
-            try:
-                await ctx.send("sure, gimme a moment")
-                if int(mapset_id) == 0 or mapset_id == None:
-                    mapset = None
-                    mapset_id = "0"
-                    desc = ""
-                else:
-                    try:
-                        mapset = await osu.get_beatmapset(s=mapset_id)
-                        if not mapset:
-                            mapset = None
-                            mapset_id = "0"
-                            await ctx.send("You specified incorrect mapset id. You can correct this with 'setid command if the channel was created succesfully")
+    @commands.command(name="request_mapset_channel",
+                      brief="Request a mapset channel",
+                      description="",
+                      pass_context=True)
+    async def make_mapset_channel(self, ctx, mapset_id="0", *, mapset_title=None):
+        guild_mapset_category_id = db.query(["SELECT value FROM config "
+                                             "WHERE setting = ? AND parent = ?",
+                                             ["guild_mapset_category", str(ctx.guild.id)]])
 
-                    except:
-                        mapset = None
-                        print("Connection issues?")
-                    mapset_id = str(mapset_id)
-                    desc = "https://osu.ppy.sh/beatmapsets/%s" % (mapset_id)
+        if not mapset_id.isdigit():
+            await ctx.send("first argument must be a number")
+            return
 
-                if mapset_title:
-                    discordfriendlychannelname = mapset_title.replace(" ", "_").lower()
-                    rolename = mapset_title
-                elif mapset:
-                    discordfriendlychannelname = mapset.title.replace(" ", "_").lower()
-                    rolename = mapset.title
-                else:
-                    discordfriendlychannelname = None
-                    rolename = None
-
-                if discordfriendlychannelname:
-                    guild = ctx.message.guild
-                    rolecolor = discord.Colour(random.randint(1, 16777215))
-                    mapsetrole = await guild.create_role(name=rolename, colour=rolecolor, mentionable=True)
-                    category = self.bot.get_channel(int(guildmapsetcategory[0][0]))
-                    channeloverwrites = {
-                        guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                        ctx.message.author: self.mapset_owner_default_permissions,
-                        mapsetrole: discord.PermissionOverwrite(read_messages=True),
-                        guild.me: discord.PermissionOverwrite(
-                            manage_channels=True,
-                            read_messages=True,
-                            send_messages=True,
-                            embed_links=True
-                        )
-                    }
-                    channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category, topic=desc)
-                    await ctx.message.author.add_roles(mapsetrole)
-                    await channel.send("%s done!" % (ctx.message.author.mention), embed=await self.docs.mapset_channel_management())
-                    db.query(["INSERT INTO mapset_channels VALUES (?, ?, ?, ?, ?)", [str(channel.id), str(mapsetrole.id), str(ctx.message.author.id), str(mapset_id), str(ctx.guild.id)]])
-                else:
-                    await ctx.send("You are not using this command correctly")
-            except Exception as e:
-                print(e)
-                await ctx.send("This did not work. You probably specified something incorrectly. Look at the instructions carefully.")
-        else:
+        if not guild_mapset_category_id:
             await ctx.send("Not enabled in this server yet.")
+            return
+
+        await ctx.send("sure, gimme a moment")
+
+        if mapset_id == "0":
+            mapset = None
+        else:
+            try:
+                mapset = await osu.get_beatmapset(s=mapset_id)
+                if not mapset:
+                    await ctx.send("you specified incorrect mapset id. "
+                                   "you can correct this with `'set_id` command in the mapset channel")
+            except Exception as e:
+                mapset = None
+                print(e)
+                await ctx.send("looks like there are connection issues to osu servers, "
+                               "so i'll put in a blank value for the mapset_id "
+                               "and later you can update it with `'set_id` command")
+
+        if mapset:
+            mapset_id = str(mapset.id)
+            channel_topic = str(mapset.url)
+        else:
+            mapset_id = "0"
+            channel_topic = ""
+
+        if mapset_title:
+            discord_friendly_channel_name = mapset_title.replace(" ", "_").lower()
+            role_name = mapset_title
+        elif mapset:
+            discord_friendly_channel_name = mapset.title.replace(" ", "_").lower()
+            role_name = mapset.title
+        else:
+            await ctx.send("i was unable to create a mapset channel for you because "
+                           "you neither specified a valid mapset_id of your mapset (or there are connection issues) "
+                           "nor a mapset name. "
+                           "i need at least one to make a mapset channel.")
+            return
+
+        guild = ctx.guild
+        role_color = discord.Colour(random.randint(1, 16777215))
+        mapset_role = await guild.create_role(name=role_name, colour=role_color, mentionable=True)
+        category = self.bot.get_channel(int(guild_mapset_category_id[0][0]))
+        channel_overwrites = {
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            ctx.author: self.mapset_owner_default_permissions,
+            mapset_role: discord.PermissionOverwrite(read_messages=True),
+            guild.me: self.mapset_bot_default_permissions
+        }
+        channel = await guild.create_text_channel(discord_friendly_channel_name,
+                                                  overwrites=channel_overwrites,
+                                                  category=category,
+                                                  topic=channel_topic)
+        await ctx.author.add_roles(mapset_role)
+        await channel.send(content="%s done!" % ctx.author.mention,
+                           embed=await self.docs.mapset_channel_management())
+        db.query(["INSERT INTO mapset_channels "
+                  "VALUES (?, ?, ?, ?, ?)",
+                  [str(channel.id), str(mapset_role.id), str(ctx.author.id), str(mapset_id), str(ctx.guild.id)]])
+        await ctx.send("ok, i'm done!")
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, deleted_channel):
         try:
-            db.query(["DELETE FROM mapset_channels WHERE channel_id = ?",[str(deleted_channel.id)]])
-            db.query(["DELETE FROM mod_tracking WHERE channel_id = ?",[str(deleted_channel.id)]])
-            db.query(["DELETE FROM mod_posts WHERE channel_id = ?",[str(deleted_channel.id)]])
-            print("channel %s is deleted" % (deleted_channel.name))
+            db.query(["DELETE FROM mapset_channels WHERE channel_id = ?", [str(deleted_channel.id)]])
+            db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(deleted_channel.id)]])
+            db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(deleted_channel.id)]])
+            print("channel %s is deleted" % deleted_channel.name)
         except Exception as e:
             print(e)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        mapsets_user_is_in = db.query(["SELECT channel_id, role_id FROM mapset_channels WHERE user_id = ?", [str(member.id)]])
+        mapsets_user_is_in = db.query(["SELECT channel_id, role_id FROM mapset_channels "
+                                       "WHERE user_id = ?",
+                                       [str(member.id)]])
         if mapsets_user_is_in:
             for mapset in mapsets_user_is_in:
                 channel = self.bot.get_channel(int(mapset[0]))
@@ -235,24 +287,30 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
                     role = discord.utils.get(channel.guild.roles, id=int(mapset[1]))
                     await member.add_roles(role, reason="set owner returned")
                     await channel.set_permissions(target=member, overwrite=self.mapset_owner_default_permissions)
-                    await channel.send("the mapset owner has returned. next time you track the mapset, it will be unarchived, unless this is already ranked. either way, permissions restored.")
+                    await channel.send("the mapset owner has returned. "
+                                       "next time you track the mapset, it will be unarchived, "
+                                       "unless this is already ranked. either way, permissions restored.")
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        mapsets_user_is_in = db.query(["SELECT channel_id FROM mapset_channels WHERE user_id = ?", [str(member.id)]])
+        mapsets_user_is_in = db.query(["SELECT channel_id FROM mapset_channels "
+                                       "WHERE user_id = ?",
+                                       [str(member.id)]])
         if mapsets_user_is_in:
             for mapset in mapsets_user_is_in:
                 channel = self.bot.get_channel(int(mapset[0]))
                 if channel:
                     await channel.send("the mapset owner has left the server")
-                    db.query(["DELETE FROM mod_tracking WHERE channel_id = ?",[str(channel.id)]])
-                    db.query(["DELETE FROM mod_posts WHERE channel_id = ?",[str(channel.id)]])
-                    await channel.send("untracked everything in this channel")
-                    guildarchivecategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_archive_category", str(channel.guild.id)]])
-                    if guildarchivecategory:
-                        archivecategory = self.bot.get_channel(int(guildarchivecategory[0][0]))
-                        await channel.edit(reason=None, category=archivecategory)
-                        await channel.send("channel archived!")
+                    db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(channel.id)]])
+                    db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(channel.id)]])
+                    await channel.send("un-tracked everything in this channel")
+                    guild_archive_category_id = db.query(["SELECT value FROM config "
+                                                          "WHERE setting = ? AND parent = ?",
+                                                          ["guild_archive_category", str(channel.guild.id)]])
+                    if guild_archive_category_id:
+                        archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
+                        await channel.edit(reason=None, category=archive_category)
+                        await channel.send("channel archived")
 
 
 def setup(bot):

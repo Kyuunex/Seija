@@ -22,34 +22,35 @@ class Queue(commands.Cog, name="Queue Management Commands"):
             attach_files=True,
             read_message_history=True,
         )
+        self.queue_bot_default_permissions = discord.PermissionOverwrite(
+            manage_channels=True,
+            manage_roles=True,
+            read_messages=True,
+            send_messages=True,
+            embed_links=True
+        )
 
     @commands.command(name="request_queue", brief="Request a queue", description="", pass_context=True)
-    async def make_queue_channel(self, ctx, queuetype = None):
+    async def make_queue_channel(self, ctx, queue_type = None):
         guildqueuecategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapper_queue_category", str(ctx.guild.id)]])
         if guildqueuecategory:
             if not db.query(["SELECT user_id FROM queues WHERE user_id = ? AND guild_id = ?", [str(ctx.message.author.id), str(ctx.guild.id)]]):
                 try:
                     await ctx.send("sure, gimme a moment")
-                    if not queuetype:
-                        queuetype = "std"
+                    if not queue_type:
+                        queue_type = "std"
                     guild = ctx.message.guild
-                    channeloverwrites = {
+                    channel_overwrites = {
                         guild.default_role: discord.PermissionOverwrite(read_messages=False),
                         ctx.message.author: self.queue_owner_default_permissions,
-                        guild.me: discord.PermissionOverwrite(
-                            manage_channels=True,
-                            manage_roles=True,
-                            read_messages=True,
-                            send_messages=True,
-                            embed_links=True
-                        )
+                        guild.me: self.queue_bot_default_permissions
                     }
-                    discordfriendlychannelname = "%s-%s-queue" % (
-                        ctx.message.author.display_name.replace(" ", "_").lower(), queuetype)
+                    discord_friendly_channel_name = "%s-%s-queue" % (
+                        ctx.message.author.display_name.replace(" ", "_").lower(), queue_type)
                     category = await reputation.validate_reputation_queues(self.bot, ctx.message.author)
-                    channel = await guild.create_text_channel(discordfriendlychannelname, overwrites=channeloverwrites, category=category)
+                    channel = await guild.create_text_channel(discord_friendly_channel_name, overwrites=channel_overwrites, category=category)
                     db.query(["INSERT INTO queues VALUES (?, ?, ?)", [str(channel.id), str(ctx.message.author.id), str(ctx.guild.id)]])
-                    await channel.send("%s done!" % (ctx.message.author.mention), embed=await self.docs.queue_management())
+                    await channel.send("%s done!" % ctx.author.mention, embed=await self.docs.queue_management())
                 except Exception as e:
                     await ctx.send(e)
             else:

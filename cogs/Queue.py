@@ -4,7 +4,6 @@ from modules import permissions
 from modules import reputation
 import discord
 from discord.ext import commands
-import asyncio
 
 
 class Queue(commands.Cog, name="Queue Management Commands"):
@@ -31,78 +30,118 @@ class Queue(commands.Cog, name="Queue Management Commands"):
         )
 
     @commands.command(name="request_queue", brief="Request a queue", description="", pass_context=True)
-    async def make_queue_channel(self, ctx, queue_type = None):
-        guildqueuecategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_mapper_queue_category", str(ctx.guild.id)]])
-        if guildqueuecategory:
-            if not db.query(["SELECT user_id FROM queues WHERE user_id = ? AND guild_id = ?", [str(ctx.message.author.id), str(ctx.guild.id)]]):
-                try:
-                    await ctx.send("sure, gimme a moment")
-                    if not queue_type:
-                        queue_type = "std"
-                    guild = ctx.message.guild
-                    channel_overwrites = {
-                        guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                        ctx.message.author: self.queue_owner_default_permissions,
-                        guild.me: self.queue_bot_default_permissions
-                    }
-                    discord_friendly_channel_name = "%s-%s-queue" % (
-                        ctx.message.author.display_name.replace(" ", "_").lower(), queue_type)
-                    category = await reputation.validate_reputation_queues(self.bot, ctx.message.author)
-                    channel = await guild.create_text_channel(discord_friendly_channel_name, overwrites=channel_overwrites, category=category)
-                    db.query(["INSERT INTO queues VALUES (?, ?, ?)", [str(channel.id), str(ctx.message.author.id), str(ctx.guild.id)]])
-                    await channel.send("%s done!" % ctx.author.mention, embed=await self.docs.queue_management())
-                except Exception as e:
-                    await ctx.send(e)
-            else:
-                await ctx.send("you already have a queue though. or it was deleted when i was offline, in this case, ping kyuunex")
+    async def make_queue_channel(self, ctx, queue_type=None):
+        guild_queue_category = db.query(["SELECT value FROM config "
+                                         "WHERE setting = ? AND parent = ?",
+                                         ["guild_mapper_queue_category", str(ctx.guild.id)]])
+        if guild_queue_category:
+            member_already_has_a_queue = db.query(["SELECT channel_id FROM queues "
+                                                   "WHERE user_id = ? AND guild_id = ?",
+                                                   [str(ctx.author.id), str(ctx.guild.id)]])
+            if member_already_has_a_queue:
+                already_existing_queue = self.bot.get_channel(int(member_already_has_a_queue[0][0]))
+                if already_existing_queue:
+                    await ctx.send("you already have one <#%s>" % str(already_existing_queue.id))
+                    return
+                else:
+                    db.query(["DELETE FROM queues WHERE channel_id = ?", [str(member_already_has_a_queue[0][0])]])
+
+            try:
+                await ctx.send("sure, gimme a moment")
+                if not queue_type:
+                    queue_type = "std"
+                guild = ctx.guild
+                channel_overwrites = {
+                    guild.default_role: discord.PermissionOverwrite(read_messages=False),
+                    ctx.message.author: self.queue_owner_default_permissions,
+                    guild.me: self.queue_bot_default_permissions
+                }
+                channel_name = "%s-%s-queue" % (
+                    ctx.author.display_name.replace(" ", "_").lower(), queue_type)
+                category = await reputation.validate_reputation_queues(self.bot, ctx.author)
+                channel = await guild.create_text_channel(channel_name,
+                                                          overwrites=channel_overwrites, category=category)
+                db.query(["INSERT INTO queues VALUES (?, ?, ?)",
+                          [str(channel.id), str(ctx.author.id), str(ctx.guild.id)]])
+                await channel.send("%s done!" % ctx.author.mention, embed=await self.docs.queue_management())
+            except Exception as e:
+                await ctx.send(e)
         else:
             await ctx.send("Not enabled in this server yet.")
 
     @commands.command(name="open", brief="Open the queue", description="", pass_context=True)
-    async def openq(self, ctx):
-        if (db.query(["SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check_admin(ctx.message.author.id)):
-            if db.query(["SELECT user_id FROM queues WHERE channel_id = ?", [str(ctx.message.channel.id)]]):
-                await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=True)
-                await reputation.unarchive_queue(self.bot, ctx, ctx.message.author)
-                await ctx.send("queue open!")
+    async def open(self, ctx):
+        queue_owner_check = db.query(["SELECT user_id FROM queues "
+                                      "WHERE user_id = ? AND channel_id = ?",
+                                      [str(ctx.author.id), str(ctx.channel.id)]])
+        is_queue_channel = db.query(["SELECT user_id FROM queues "
+                                     "WHERE channel_id = ?",
+                                     [str(ctx.channel.id)]])
+        if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
+            await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=None, send_messages=True)
+            await reputation.unarchive_queue(self.bot, ctx, ctx.author)
+            await ctx.send("queue open!")
 
     @commands.command(name="close", brief="Close the queue", description="", pass_context=True)
-    async def closeq(self, ctx):
-        if (db.query(["SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check_admin(ctx.message.author.id)):
-            if db.query(["SELECT user_id FROM queues WHERE channel_id = ?", [str(ctx.message.channel.id)]]):
-                await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=False)
-                await ctx.send("queue closed!")
+    async def close(self, ctx):
+        queue_owner_check = db.query(["SELECT user_id FROM queues "
+                                      "WHERE user_id = ? AND channel_id = ?",
+                                      [str(ctx.author.id), str(ctx.channel.id)]])
+        is_queue_channel = db.query(["SELECT user_id FROM queues "
+                                     "WHERE channel_id = ?",
+                                     [str(ctx.channel.id)]])
+        if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
+            await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=None, send_messages=False)
+            await ctx.send("queue closed!")
 
     @commands.command(name="show", brief="Show the queue", description="", pass_context=True)
-    async def showq(self, ctx):
-        if (db.query(["SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check_admin(ctx.message.author.id)):
-            if db.query(["SELECT user_id FROM queues WHERE channel_id = ?", [str(ctx.message.channel.id)]]):
-                await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=None, send_messages=False)
-                await ctx.send("queue is visible to everyone, but it's still closed. use 'open command if you want people to post in it.")
+    async def show(self, ctx):
+        queue_owner_check = db.query(["SELECT user_id FROM queues "
+                                      "WHERE user_id = ? AND channel_id = ?",
+                                      [str(ctx.author.id), str(ctx.channel.id)]])
+        is_queue_channel = db.query(["SELECT user_id FROM queues "
+                                     "WHERE channel_id = ?",
+                                     [str(ctx.channel.id)]])
+        if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
+            await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=None, send_messages=False)
+            await ctx.send("queue is visible to everyone, but it's still closed. "
+                           "use `'open` command if you want people to post in it.")
 
     @commands.command(name="hide", brief="Hide the queue", description="", pass_context=True)
-    async def hideq(self, ctx):
-        if (db.query(["SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check_admin(ctx.message.author.id)):
-            if db.query(["SELECT user_id FROM queues WHERE channel_id = ?", [str(ctx.message.channel.id)]]):
-                await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=False, send_messages=False)
-                await ctx.send("queue hidden!")
+    async def hide(self, ctx):
+        queue_owner_check = db.query(["SELECT user_id FROM queues "
+                                      "WHERE user_id = ? AND channel_id = ?",
+                                      [str(ctx.author.id), str(ctx.channel.id)]])
+        is_queue_channel = db.query(["SELECT user_id FROM queues "
+                                     "WHERE channel_id = ?",
+                                     [str(ctx.channel.id)]])
+        if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
+            await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False)
+            await ctx.send("queue hidden!")
 
     @commands.command(name="archive", brief="Archive the queue", description="", pass_context=True)
-    async def archiveq(self, ctx):
-        if (db.query(["SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?", [str(ctx.message.author.id), str(ctx.message.channel.id)]])) or (permissions.check_admin(ctx.message.author.id)):
-            if db.query(["SELECT user_id FROM queues WHERE channel_id = ?", [str(ctx.message.channel.id)]]):
-                guildarchivecategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_archive_category", str(ctx.guild.id)]])
-                if guildarchivecategory:
-                    archivecategory = self.bot.get_channel(int(guildarchivecategory[0][0]))
-                    await ctx.message.channel.edit(reason=None, category=archivecategory)
-                    await ctx.message.channel.set_permissions(ctx.message.guild.default_role, read_messages=False, send_messages=False)
-                    await ctx.send("queue archived!")
+    async def archive(self, ctx):
+        queue_owner_check = db.query(["SELECT user_id FROM queues "
+                                      "WHERE user_id = ? AND channel_id = ?",
+                                      [str(ctx.author.id), str(ctx.channel.id)]])
+        is_queue_channel = db.query(["SELECT user_id FROM queues "
+                                     "WHERE channel_id = ?",
+                                     [str(ctx.channel.id)]])
+        if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
+            guild_archive_category_id = db.query(["SELECT value FROM config "
+                                                  "WHERE setting = ? AND parent = ?",
+                                                  ["guild_archive_category", str(ctx.guild.id)]])
+            if guild_archive_category_id:
+                archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
+                await ctx.channel.edit(reason=None, category=archive_category)
+                await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False)
+                await ctx.send("queue archived!")
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, deleted_channel):
         try:
-            db.query(["DELETE FROM queues WHERE channel_id = ?",[str(deleted_channel.id)]])
-            print("channel %s is deleted. maybe not a queue" % (deleted_channel.name))
+            db.query(["DELETE FROM queues WHERE channel_id = ?", [str(deleted_channel.id)]])
+            print("channel %s is deleted. maybe not a queue" % deleted_channel.name)
         except Exception as e:
             print(e)
 
@@ -113,7 +152,8 @@ class Queue(commands.Cog, name="Queue Management Commands"):
             queue_channel = self.bot.get_channel(int(queue_id[0][0]))
             if queue_channel:
                 await queue_channel.set_permissions(target=member, overwrite=self.queue_owner_default_permissions)
-                await queue_channel.send("the queue owner has returned. next time you open the queue, it will be unarchived.")
+                await queue_channel.send("the queue owner has returned. "
+                                         "next time you open the queue, it will be unarchived.")
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
@@ -122,11 +162,15 @@ class Queue(commands.Cog, name="Queue Management Commands"):
             queue_channel = self.bot.get_channel(int(queue_id[0][0]))
             if queue_channel:
                 await queue_channel.send("the queue owner has left")
-                guildarchivecategory = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_archive_category", str(queue_channel.guild.id)]])
-                if guildarchivecategory:
-                    archivecategory = self.bot.get_channel(int(guildarchivecategory[0][0]))
-                    await queue_channel.edit(reason=None, category=archivecategory)
-                    await queue_channel.set_permissions(queue_channel.guild.default_role, read_messages=False, send_messages=False)
+                guild_archive_category_id = db.query(["SELECT value FROM config "
+                                                      "WHERE setting = ? AND parent = ?",
+                                                      ["guild_archive_category", str(queue_channel.guild.id)]])
+                if guild_archive_category_id:
+                    archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
+                    await queue_channel.edit(reason=None, category=archive_category)
+                    await queue_channel.set_permissions(queue_channel.guild.default_role,
+                                                        read_messages=False,
+                                                        send_messages=False)
                     await queue_channel.send("queue archived!")
 
 

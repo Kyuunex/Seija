@@ -79,8 +79,8 @@ class Docs(commands.Cog, name="Pretty Bot Documentation"):
         text += "\nFor queue management commands, type `'docs queue_management`"
         text += "\n"
         text += "\n**Remember:**"
-        text += "\n**__DO NOT__ create a queue __only__ for GD requests.**"
-        text += "\n**__IT SHOULD__ be a queue, not diary, not image dump. " \
+        text += "\n**__Do not__ create a queue __only__ for GD requests.**"
+        text += "\n**__It should__ be a queue, not diary, not image dump. " \
                 "You can be creative and do other things but it's primary purpose must be a queue.**"
         embed = discord.Embed(title="With this command, you can create a queue channel.", description=text,
                               color=0xbd3661)
@@ -91,21 +91,20 @@ class Docs(commands.Cog, name="Pretty Bot Documentation"):
     async def mapset_channel(self):
         text = "**__Mapset channel creation command:__**: "
         text += "\n`'request_mapset_channel (mapset id) (song name)` - This is the general command to create a channel."
-        text += "\n`(song name)` is an optional argument that is not required. " \
-                "But it must be written in quotes if supplied."
+        text += "\n`(song name)` is an optional argument that is not required. "
         text += "\nIf the mapset is not yet uploaded, `(mapset id)` can be set to `0` " \
                 "but in that case, `(song name)` argument is required."
         text += "\n"
         text += "\n**__Examples:__**"
         text += "\n`'request_mapset_channel 817793` - Example usage with mapset id."
-        text += "\n`'request_mapset_channel 0 \"Futanari Nari ni\"` - Example usage with just song name."
+        text += "\n`'request_mapset_channel 0 Futanari Nari ni` - Example usage with just song name."
         text += "\n"
         text += "\nFor mapset channel management commands, type `'docs mapset_channel_management`"
         text += "\n"
         text += "\n**Remember:**"
-        text += "\n**__DO NOT__ create a mapset channel for single person sets. " \
+        text += "\n**__Do not__ create a mapset channel for single person sets. " \
                 "Only do it if you have guest difficulties or if this is a collab.**"
-        text += "\n**__DO NOT__ create a channel if you __already__ don't have a collaborator.**"
+        text += "\n**__Do not__ create a channel unless you have collaborators ready.**"
         embed = discord.Embed(title="With this command, you can create a mapset channel for collaborators.",
                               description=text, color=0xbd3661)
         embed.set_author(name=self.author_text, icon_url=self.author_icon)
@@ -126,6 +125,11 @@ class Docs(commands.Cog, name="Pretty Bot Documentation"):
                         inline=False)
         embed.add_field(name="'hide",
                         value="Hide the queue, only admins can see the queue. Nobody else can see and post in it.",
+                        inline=False)
+        embed.add_field(name="'archive",
+                        value="Move the queue to an archive category, "
+                              "only admins can see the queue. "
+                              "Nobody else can see and post in it.",
                         inline=False)
         embed.set_author(name=self.author_text, icon_url=self.author_icon)
         embed.set_footer(text=self.footer_text, icon_url=self.footer_icon)

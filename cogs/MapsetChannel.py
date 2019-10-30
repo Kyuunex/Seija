@@ -75,15 +75,14 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
             await ctx.send("not your mapset channel")
 
     async def get_member_by_name_or_id(self, ctx, user_id):
-        member = ctx.guild.get_member_named(user_id)
-        if not member:
-            try:
+        try:
+            if user_id.isdigit():
                 return ctx.guild.get_member(int(user_id))
-            except Exception as e:
-                print(e)
-                return None
-        else:
-            return member
+            else:
+                return ctx.guild.get_member_named(user_id)
+        except Exception as e:
+            print(e)
+            return None
 
     @commands.command(name="abandon", brief="Abandon the mapset and untrack", description="", pass_context=True)
     async def abandon(self, ctx):

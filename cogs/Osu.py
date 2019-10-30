@@ -37,7 +37,7 @@ class Osu(commands.Cog, name="osu!"):
             except:
                 timestamp_desc = ""
         else:
-            timestamp_link = (string).strip().replace(" ", "_")
+            timestamp_link = string.strip().replace(" ", "_")
             timestamp_desc = ""
         embed = discord.Embed(
             description=str("<osu://edit/%s> %s" % (timestamp_link, timestamp_desc)),

@@ -71,8 +71,8 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                 await ctx.send(e)
 
     @commands.command(name="force_track", brief="Force Track a mapset in the current channel", description="",
-                      pass_context=True, hidden=True)
-    @commands.check(permissions.is_admin)
+                      pass_context=True)
+    @commands.check(permissions.is_owner)
     async def force_track(self, ctx, mapset_id: str):
         if await self.track(mapset_id, ctx.message.channel.id):
             try:
@@ -86,8 +86,8 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             await ctx.send("Error")
 
     @commands.command(name="force_untrack", brief="Force untrack a mapset in the current channel", description="",
-                      pass_context=True, hidden=True)
-    @commands.check(permissions.is_admin)
+                      pass_context=True)
+    @commands.check(permissions.is_owner)
     async def force_untrack(self, ctx, mapset_id: str):
         if await self.untrack(mapset_id, ctx.message.channel.id):
             await ctx.send("Untracked")

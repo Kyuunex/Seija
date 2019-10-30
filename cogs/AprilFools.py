@@ -13,8 +13,7 @@ class AprilFools(commands.Cog, name="April Fools Management Commands"):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="af_2018_apply", brief="Apply April fools commands", description="", pass_context=True,
-                      hidden=True)
+    @commands.command(name="af_2018_apply", brief="Apply April fools commands", description="", pass_context=True)
     @commands.check(permissions.is_owner)
     async def af_apply(self, ctx):
         await ctx.message.delete()
@@ -29,8 +28,7 @@ class AprilFools(commands.Cog, name="April Fools Management Commands"):
             print(e)
             await ctx.send(":ok_hand:")
 
-    @commands.command(name="af_2018_restore", brief="Restore from April fools", description="", pass_context=True,
-                      hidden=True)
+    @commands.command(name="af_2018_restore", brief="Restore from April fools", description="", pass_context=True)
     @commands.check(permissions.is_owner)
     async def af_restore(self, ctx):
         await ctx.message.delete()

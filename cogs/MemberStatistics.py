@@ -98,8 +98,8 @@ class MemberStatistics(commands.Cog, name="Member Statistics Commands"):
                 contents = "\n"
             embed = discord.Embed(description=contents, color=0xbd3661)
             embed.set_author(name="Country Demographics")
-            await ctx.send(embed=embed)
-            # TODO: add a send_professionally command to avoid implementing a way around 2000 char limit every time
+        await ctx.send(embed=embed)
+        # TODO: add a send_professionally command to avoid implementing a way around 2000 char limit every time
 
     async def stats_calc(self, data):
         results = dict(Counter(data))

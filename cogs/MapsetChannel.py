@@ -34,7 +34,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
             embed_links=True
         )
 
-    @commands.command(name="add", brief="Add a user in the current mapset channel", pass_context=True)
+    @commands.command(name="add", brief="Add a user in the current mapset channel")
     async def add(self, ctx, user_id: str):
         role_id_list = db.query(["SELECT role_id FROM mapset_channels "
                                  "WHERE user_id = ? AND channel_id = ?",
@@ -54,7 +54,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
         else:
             await ctx.send("not your mapset channel")
 
-    @commands.command(name="remove", brief="Remove a user from the current mapset channel", pass_context=True)
+    @commands.command(name="remove", brief="Remove a user from the current mapset channel")
     async def remove(self, ctx, user_id: str):
         role_id_list = db.query(["SELECT role_id FROM mapset_channels "
                                  "WHERE user_id = ? AND channel_id = ?",
@@ -84,7 +84,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
             print(e)
             return None
 
-    @commands.command(name="abandon", brief="Abandon the mapset and untrack", description="", pass_context=True)
+    @commands.command(name="abandon", brief="Abandon the mapset and untrack", description="")
     async def abandon(self, ctx):
         guild_archive_category_id = db.query(["SELECT value FROM config "
                                               "WHERE setting = ? AND parent = ?",
@@ -117,7 +117,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
             await ctx.send("no archive category set for this server")
 
     @commands.command(name="set_id", brief="Set a mapset id for this channel",
-                      description="Useful if you created this channel without setting an id", pass_context=True)
+                      description="Useful if you created this channel without setting an id")
     async def set_mapset_id(self, ctx, mapset_id: int):
         mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
                                        "WHERE user_id = ? AND channel_id = ?",
@@ -133,7 +133,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
                 await ctx.send(e)
 
     @commands.command(name="set_owner", brief="Transfer set ownership to another discord account",
-                      description="user_id can only be that discord account's id", pass_context=True)
+                      description="user_id can only be that discord account's id")
     async def set_owner_id(self, ctx, user_id: int):
         mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
                                        "WHERE user_id = ? AND channel_id = ?",
@@ -151,13 +151,13 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
             except Exception as e:
                 await ctx.send(e)
 
-    @commands.command(name="list_mapset_channels", brief="List all mapset channel", description="", pass_context=True)
+    @commands.command(name="list_mapset_channels", brief="List all mapset channel", description="")
     @commands.check(permissions.is_admin)
     async def list_mapset_channels(self, ctx):
         for channel in db.query("SELECT * FROM mapset_channels"):
             await ctx.send("channel_id <#%s> | role_id %s | user_id <@%s> | mapset_id %s | guild_id %s " % channel)
 
-    @commands.command(name="nuke", brief="Nuke a requested mapset channel", description="", pass_context=True)
+    @commands.command(name="nuke", brief="Nuke a requested mapset channel", description="")
     @commands.check(permissions.is_admin)
     async def nuke(self, ctx):
         role_id = db.query(["SELECT role_id FROM mapset_channels "
@@ -190,8 +190,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
 
     @commands.command(name="request_mapset_channel",
                       brief="Request a mapset channel",
-                      description="",
-                      pass_context=True)
+                      description="")
     async def make_mapset_channel(self, ctx, mapset_id="0", *, mapset_title=None):
         guild_mapset_category_id = db.query(["SELECT value FROM config "
                                              "WHERE setting = ? AND parent = ?",

@@ -29,7 +29,7 @@ class Queue(commands.Cog, name="Queue Management Commands"):
             embed_links=True
         )
 
-    @commands.command(name="request_queue", brief="Request a queue", description="", pass_context=True)
+    @commands.command(name="request_queue", brief="Request a queue", description="")
     async def make_queue_channel(self, ctx, queue_type=None):
         guild_queue_category = db.query(["SELECT value FROM config "
                                          "WHERE setting = ? AND parent = ?",
@@ -69,7 +69,7 @@ class Queue(commands.Cog, name="Queue Management Commands"):
         else:
             await ctx.send("Not enabled in this server yet.")
 
-    @commands.command(name="open", brief="Open the queue", description="", pass_context=True)
+    @commands.command(name="open", brief="Open the queue", description="")
     async def open(self, ctx):
         queue_owner_check = db.query(["SELECT user_id FROM queues "
                                       "WHERE user_id = ? AND channel_id = ?",
@@ -82,7 +82,7 @@ class Queue(commands.Cog, name="Queue Management Commands"):
             await reputation.unarchive_queue(self.bot, ctx, ctx.author)
             await ctx.send("queue open!")
 
-    @commands.command(name="close", brief="Close the queue", description="", pass_context=True)
+    @commands.command(name="close", brief="Close the queue", description="")
     async def close(self, ctx):
         queue_owner_check = db.query(["SELECT user_id FROM queues "
                                       "WHERE user_id = ? AND channel_id = ?",
@@ -94,7 +94,7 @@ class Queue(commands.Cog, name="Queue Management Commands"):
             await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=None, send_messages=False)
             await ctx.send("queue closed!")
 
-    @commands.command(name="show", brief="Show the queue", description="", pass_context=True)
+    @commands.command(name="show", brief="Show the queue", description="")
     async def show(self, ctx):
         queue_owner_check = db.query(["SELECT user_id FROM queues "
                                       "WHERE user_id = ? AND channel_id = ?",
@@ -107,7 +107,7 @@ class Queue(commands.Cog, name="Queue Management Commands"):
             await ctx.send("queue is visible to everyone, but it's still closed. "
                            "use `'open` command if you want people to post in it.")
 
-    @commands.command(name="hide", brief="Hide the queue", description="", pass_context=True)
+    @commands.command(name="hide", brief="Hide the queue", description="")
     async def hide(self, ctx):
         queue_owner_check = db.query(["SELECT user_id FROM queues "
                                       "WHERE user_id = ? AND channel_id = ?",
@@ -119,7 +119,7 @@ class Queue(commands.Cog, name="Queue Management Commands"):
             await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False)
             await ctx.send("queue hidden!")
 
-    @commands.command(name="archive", brief="Archive the queue", description="", pass_context=True)
+    @commands.command(name="archive", brief="Archive the queue", description="")
     async def archive(self, ctx):
         queue_owner_check = db.query(["SELECT user_id FROM queues "
                                       "WHERE user_id = ? AND channel_id = ?",

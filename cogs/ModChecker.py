@@ -17,7 +17,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
         self.veto_channel_list = db.query(["SELECT value FROM config WHERE setting = ?", ["guild_veto_channel"]])
         self.bot.loop.create_task(self.modchecker_background_loop())
 
-    @commands.command(name="track", brief="Track the mapset in this channel", description="", pass_context=True)
+    @commands.command(name="track", brief="Track the mapset in this channel", description="")
     async def track_command(self, ctx, tracking_mode="classic"):
         mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
                                        "WHERE user_id = ? AND channel_id = ?",
@@ -56,7 +56,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             except Exception as e:
                 await ctx.send(e)
 
-    @commands.command(name="untrack", brief="Untrack everything in this channel", description="", pass_context=True)
+    @commands.command(name="untrack", brief="Untrack everything in this channel", description="")
     async def untrack_command(self, ctx):
         mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
                                        "WHERE user_id = ? AND channel_id = ?",
@@ -70,8 +70,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             except Exception as e:
                 await ctx.send(e)
 
-    @commands.command(name="force_track", brief="Force Track a mapset in the current channel", description="",
-                      pass_context=True)
+    @commands.command(name="force_track", brief="Force Track a mapset in the current channel", description="")
     @commands.check(permissions.is_owner)
     async def force_track(self, ctx, mapset_id: str):
         if await self.track(mapset_id, ctx.message.channel.id):
@@ -85,8 +84,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
         else:
             await ctx.send("Error")
 
-    @commands.command(name="force_untrack", brief="Force untrack a mapset in the current channel", description="",
-                      pass_context=True)
+    @commands.command(name="force_untrack", brief="Force untrack a mapset in the current channel", description="")
     @commands.check(permissions.is_owner)
     async def force_untrack(self, ctx, mapset_id: str):
         if await self.untrack(mapset_id, ctx.message.channel.id):
@@ -94,8 +92,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
         else:
             await ctx.send("No tracking record found")
 
-    @commands.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="",
-                      pass_context=True)
+    @commands.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="")
     async def veto(self, ctx, mapset_id: int):
         if (str(ctx.channel.id),) in self.veto_channel_list:
             if await self.track(mapset_id, ctx.message.channel.id, "veto"):
@@ -109,8 +106,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             else:
                 await ctx.send("Error")
 
-    @commands.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode", description="",
-                      pass_context=True)
+    @commands.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode", description="")
     async def unveto(self, ctx, mapset_id: int):
         if (str(ctx.channel.id),) in self.veto_channel_list:
             if await self.untrack(mapset_id, ctx.message.channel.id):
@@ -124,7 +120,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             else:
                 await ctx.send("No tracking record found")
 
-    @commands.command(name="sublist", brief="List all tracked mapsets everywhere", description="", pass_context=True)
+    @commands.command(name="sublist", brief="List all tracked mapsets everywhere", description="")
     @commands.check(permissions.is_admin)
     async def sublist(self, ctx):
         for oneentry in db.query("SELECT * FROM mod_tracking"):

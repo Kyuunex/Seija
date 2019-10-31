@@ -20,15 +20,15 @@ class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
         if which_guild:
             query = db.query(["SELECT * FROM users WHERE user_id = ?", [str(after.id)]])
             if query:
-                osuprofile = await osu.get_user(u=query[0][1])
-                if osuprofile:
+                osu_profile = await osu.get_user(u=query[0][1])
+                if osu_profile:
                     for this_guild in which_guild:
                         guild = self.bot.get_guild(int(this_guild[1]))
                         now = datetime.datetime.now()
-                        auditchannel = self.bot.get_channel(int(this_guild[3]))
-                        if auditchannel:
+                        audit_channel = self.bot.get_channel(int(this_guild[3]))
+                        if audit_channel:
                             member = guild.get_member(int(after.id))
-                            await self.one_guild_member_sync(auditchannel, query, now, member, osuprofile)
+                            await self.one_guild_member_sync(audit_channel, query, now, member, osu_profile)
 
     async def member_name_syncing_loop(self):
         print("Member Name Syncing Loop launched!")

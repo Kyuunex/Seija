@@ -15,7 +15,7 @@ class MemberVerification(commands.Cog, name="Member Verification"):
         self.bot = bot
         self.verify_channel_list = db.query(["SELECT value FROM config WHERE setting = ?", ["guild_verify_channel"]])
 
-    @commands.command(name="verify", brief="Manually verify a user", description="", pass_context=True)
+    @commands.command(name="verify", brief="Manually verify a user", description="")
     @commands.check(permissions.is_admin)
     async def verify(self, ctx, osu_id: str, user_id: int, preverify: str = None):
         try:
@@ -31,7 +31,7 @@ class MemberVerification(commands.Cog, name="Member Verification"):
             print("in verify")
             print(e)
 
-    @commands.command(name="unverify", brief="Unverify a member and delete it from db", description="", pass_context=True)
+    @commands.command(name="unverify", brief="Unverify a member and delete it from db", description="")
     @commands.check(permissions.is_admin)
     async def unverify(self, ctx, user_id):
         db.query(["DELETE FROM users WHERE user_id = ?", [str(user_id), ]])
@@ -44,7 +44,7 @@ class MemberVerification(commands.Cog, name="Member Verification"):
             except Exception as e:
                 await ctx.send(e)
 
-    @commands.command(name="mass_verify", brief="Insert multiple users into the database from a csv file", description="", pass_context=True)
+    @commands.command(name="mass_verify", brief="Insert multiple users into the database from a csv file", description="")
     @commands.check(permissions.is_owner)
     async def mass_verify(self, ctx, mention_users: str = None):
         try:

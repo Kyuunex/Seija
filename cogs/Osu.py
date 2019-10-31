@@ -8,7 +8,7 @@ class Osu(commands.Cog, name="osu!"):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="mapset", brief="Show mapset info", description="", pass_context=True)
+    @commands.command(name="mapset", brief="Show mapset info", description="")
     async def mapset(self, ctx, mapset_id: str):
         result = await osu.get_beatmapset(s=mapset_id)
         embed = await osuembed.beatmapset(result)
@@ -17,7 +17,7 @@ class Osu(commands.Cog, name="osu!"):
         else:
             await ctx.send(content='`No mapset found with that ID`')
 
-    @commands.command(name="user", brief="Show osu user info", description="", pass_context=True)
+    @commands.command(name="user", brief="Show osu user info", description="")
     async def user(self, ctx, *, username):
         result = await osu.get_user(u=username)
         embed = await osuembed.user(result)
@@ -27,7 +27,7 @@ class Osu(commands.Cog, name="osu!"):
             await ctx.send(content='`No user found with that username`')
 
     @commands.command(name="ts", brief="Send an osu editor clickable timestamp",
-                      description="Must start with a timestamp", pass_context=True)
+                      description="Must start with a timestamp")
     async def ts(self, ctx, *, string):
         if "-" in string:
             timestamp_data = string.split("-")

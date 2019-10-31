@@ -13,7 +13,7 @@ class Docs(commands.Cog, name="Pretty Bot Documentation"):
         self.footer_text = "Made by Kyuunex"
         self.veto_channel_id_list = db.query(["SELECT value FROM config WHERE setting = ?", ["guild_veto_channel"]])
 
-    @commands.command(name="docs", brief="Pretty help command", description="", pass_context=True)
+    @commands.command(name="docs", brief="Pretty help command", description="")
     async def docs(self, ctx, sub_help=None):
         if sub_help == "veto":
             if (str(ctx.channel.id),) in self.veto_channel_id_list:

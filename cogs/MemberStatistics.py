@@ -11,96 +11,97 @@ class MemberStatistics(commands.Cog, name="Member Statistics Commands"):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="demographics", brief="Send server demographics stats", description="", pass_context=True)
+    @commands.command(name="demographics", brief="Send server demographics stats", description="")
     @commands.check(permissions.is_admin)
     async def demographics(self, ctx):
         async with ctx.channel.typing():
-            masterlist = []
+            master_list = []
+            query = db.query("SELECT country,user_id FROM users")
             for member in ctx.guild.members:
                 if not member.bot:
-                    query = db.query(["SELECT country FROM users WHERE user_id = ?", [str(member.id)]])
-                    if query:  # [5]
-                        masterlist.append(query[0][0])
-            stats = await self.statscalc(masterlist)
+                    for user_in_db in query:
+                        if str(member.id) == user_in_db[1]:
+                            master_list.append(user_in_db[0])
+            stats = await self.stats_calc(master_list)
 
             rank = 0
             contents = ""
-            memberamount = len(masterlist)
+            member_amount = len(master_list)
 
-            for oneentry in stats:
+            for stat in stats:
                 rank += 1
-                amount = str(oneentry[1]) + " Members"
-                percentage = str(round(float(int(oneentry[1]) * 100 / memberamount), 2))
+                amount = str(stat[1]) + " Members"
+                percentage = str(round(float(int(stat[1]) * 100 / member_amount), 2))
                 try:
-                    countryobject = pycountry.countries.get(alpha_2=oneentry[0])
-                    countryname = countryobject.name
-                    countryflag = ":flag_%s:" % (oneentry[0].lower())
+                    country_object = pycountry.countries.get(alpha_2=stat[0])
+                    country_name = country_object.name
+                    country_flag = ":flag_%s:" % (stat[0].lower())
                 except:
-                    countryflag = ":gay_pride_flag:"
-                    countryname = oneentry[0]
+                    country_flag = ":gay_pride_flag:"
+                    country_name = "??"+stat[0]
                 contents += "**[%s]** : %s **%s** : %s : %s %% \n" % (
-                rank, countryflag, countryname, amount, percentage)
+                    rank, country_flag, country_name, amount, percentage)
                 if len(contents) > 1800:
-                    statsembed = discord.Embed(description=contents, color=0xbd3661)
-                    statsembed.set_author(name="Server Demographics")
-                    await ctx.send(embed=statsembed)
+                    embed = discord.Embed(description=contents, color=0xbd3661)
+                    embed.set_author(name="Server Demographics")
+                    await ctx.send(embed=embed)
                     contents = ""
 
             if contents == "":
                 contents = "\n"
-            statsembed = discord.Embed(description=contents, color=0xbd3661)
-            statsembed.set_author(name="Server Demographics")
-        await ctx.send(embed=statsembed)
+            embed = discord.Embed(description=contents, color=0xbd3661)
+            embed.set_author(name="Server Demographics")
+        await ctx.send(embed=embed)
 
     @commands.command(name="from", brief="Get a list of members from specified country",
-                      description="Takes Alpha-2, Alpha-3 codes and full country names", pass_context=True)
+                      description="Takes Alpha-2, Alpha-3 codes and full country names")
     async def users_from(self, ctx, *, country_code="US"):
         async with ctx.channel.typing():
             try:
                 if len(country_code) == 2:
-                    countryobject = pycountry.countries.get(alpha_2=country_code.upper())
+                    country_object = pycountry.countries.get(alpha_2=country_code.upper())
                 elif len(country_code) == 3:
-                    countryobject = pycountry.countries.get(alpha_3=country_code.upper())
+                    country_object = pycountry.countries.get(alpha_3=country_code.upper())
                 else:
-                    countryobject = pycountry.countries.get(name=country_code)
-                countryname = countryobject.name
-                countryflag = ":flag_%s:" % (countryobject.alpha_2.lower())
+                    country_object = pycountry.countries.get(name=country_code)
+                country_name = country_object.name
+                country_flag = ":flag_%s:" % (country_object.alpha_2.lower())
             except:
-                countryobject = None
-                countryflag = "\n"
-                countryname = ""
+                await ctx.send("Country not found. "
+                               "Keep in mind that full country names are case-sensitive. "
+                               "\nYou can also try searching with Alpha-2 and Alpha-3 codes.")
+                return None
 
-            masterlist = []
-            if countryobject:
-                for member in ctx.guild.members:
-                    if not member.bot:
-                        query = db.query(["SELECT osu_username, osu_id FROM users WHERE country = ? AND user_id = ?",
-                                          [str(countryobject.alpha_2.upper()), str(member.id)]])
-                        if query:
-                            masterlist.append(query[0])
-            memberamount = len(masterlist)
-            masterlist.sort()
-            contents = "%s members from %s %s\n" % (str(memberamount), countryflag, countryname)
+            master_list = []
+            query = db.query(["SELECT osu_username, osu_id, user_id FROM users "
+                              "WHERE country = ? ",
+                              [str(country_object.alpha_2.upper())]])
+            for member in ctx.guild.members:
+                if not member.bot:
+                    for db_user in query:
+                        if str(member.id) == str(db_user[2]):
+                            master_list.append(db_user)
 
-            for one_member in masterlist:
+            member_amount = len(master_list)
+            master_list.sort()
+            contents = "%s members from %s %s\n" % (str(member_amount), country_flag, country_name)
+
+            for one_member in master_list:
                 contents += "[%s](https://osu.ppy.sh/users/%s)\n" % (one_member[0], one_member[1])
                 if len(contents) > 1800:
-                    statsembed = discord.Embed(description=contents, color=0xbd3661)
-                    statsembed.set_author(name="Country Demographics")
-                    await ctx.send(embed=statsembed)
+                    embed = discord.Embed(description=contents, color=0xbd3661)
+                    embed.set_author(name="Country Demographics")
+                    await ctx.send(embed=embed)
                     contents = ""
 
             if contents == "":
                 contents = "\n"
-            statsembed = discord.Embed(description=contents, color=0xbd3661)
-            statsembed.set_author(name="Country Demographics")
-        if countryobject:
-            await ctx.send(embed=statsembed)
-        else:
-            await ctx.send(
-                "Country not found. Keep in mind that full country names are case-sensetive.\nYou can also try searching with alpha 2 codes.")
+            embed = discord.Embed(description=contents, color=0xbd3661)
+            embed.set_author(name="Country Demographics")
+            await ctx.send(embed=embed)
+            # TODO: add a send_professionally command to avoid implementing a way around 2000 char limit every time
 
-    async def statscalc(self, data):
+    async def stats_calc(self, data):
         results = dict(Counter(data))
         return reversed(sorted(results.items(), key=operator.itemgetter(1)))
 

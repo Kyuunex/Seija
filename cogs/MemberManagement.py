@@ -73,14 +73,15 @@ class MemberManagement(commands.Cog, name="Member Management"):
                     if osu_id:
                         try:
                             mapsets = await osu.get_beatmapsets(u=osu_id[0][0])
-                            if mapsets:
-                                ranked_amount = await self.count_ranked_beatmapsets(mapsets)
-                                if ranked_amount >= amount:
-                                    await member.add_roles(new_role, reason="reputation updated")
-                                    await member.remove_roles(old_role, reason="removed old reputation")
-                                    output += "%s\n" % member.mention
                         except Exception as e:
                             await ctx.send(e)
+                            mapsets = None
+                        if mapsets:
+                            ranked_amount = await self.count_ranked_beatmapsets(mapsets)
+                            if ranked_amount >= amount:
+                                await member.add_roles(new_role, reason="reputation updated")
+                                await member.remove_roles(old_role, reason="removed old reputation")
+                                output += "%s\n" % member.mention
                     await asyncio.sleep(0.5)
             await ctx.send(output)
 

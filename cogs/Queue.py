@@ -58,7 +58,7 @@ class Queue(commands.Cog, name="Queue Management Commands"):
                 }
                 channel_name = "%s-%s-queue" % (
                     ctx.author.display_name.replace(" ", "_").lower(), queue_type)
-                category = await reputation.validate_reputation_queues(self.bot, ctx.author)
+                category = await reputation.get_queue_category(self.bot, ctx.author)
                 channel = await guild.create_text_channel(channel_name,
                                                           overwrites=channel_overwrites, category=category)
                 db.query(["INSERT INTO queues VALUES (?, ?, ?)",
@@ -118,6 +118,17 @@ class Queue(commands.Cog, name="Queue Management Commands"):
         if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
             await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False)
             await ctx.send("queue hidden!")
+
+    @commands.command(name="recategorize", brief="Recategorize the queue", description="")
+    async def recategorize(self, ctx):
+        queue_owner_check = db.query(["SELECT user_id FROM queues "
+                                      "WHERE user_id = ? AND channel_id = ?",
+                                      [str(ctx.author.id), str(ctx.channel.id)]])
+        is_queue_channel = db.query(["SELECT user_id FROM queues "
+                                     "WHERE channel_id = ?",
+                                     [str(ctx.channel.id)]])
+        if queue_owner_check and is_queue_channel:
+            await ctx.channel.edit(reason=None, category=await reputation.get_queue_category(self.bot, ctx.author))
 
     @commands.command(name="archive", brief="Archive the queue", description="")
     async def archive(self, ctx):

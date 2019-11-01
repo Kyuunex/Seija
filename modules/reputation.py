@@ -1,5 +1,4 @@
 import discord
-import asyncio
 
 from modules import db
 
@@ -15,6 +14,7 @@ async def get_category_object(client, guild, setting, id_only=None):
     else:
         return False
 
+
 async def get_role_object(client, guild, setting, id_only=None):
     role_id = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", [setting, str(guild.id)]])
     if role_id:
@@ -28,27 +28,29 @@ async def get_role_object(client, guild, setting, id_only=None):
 
 
 async def unarchive_channel(client, ctx, setting):
-    if int(ctx.channel.category_id) == int(await get_category_object(client, ctx.guild, "guild_archive_category", id_only=True)):
+    if int(ctx.channel.category_id) == int(
+            await get_category_object(client, ctx.guild, "guild_archive_category", id_only=True)):
         await ctx.message.channel.edit(reason=None, category=await get_category_object(client, ctx.guild, setting))
         await ctx.send("Unarchived")
 
 
 async def unarchive_queue(client, ctx, member):
-    if int(ctx.channel.category_id) == int(await get_category_object(client, ctx.guild, "guild_archive_category", id_only=True)):
-        await ctx.message.channel.edit(reason=None, category=await validate_reputation_queues(client, member))
+    if int(ctx.channel.category_id) == int(
+            await get_category_object(client, ctx.guild, "guild_archive_category", id_only=True)):
+        await ctx.channel.edit(reason=None, category=await get_queue_category(client, member))
         await ctx.send("Unarchived")
 
 
-async def validate_reputation_queues(client, member):
+async def get_queue_category(client, member):
     if (await get_role_object(client, member.guild, "guild_nat_role")) in member.roles:
-        return (await get_category_object(client, member.guild, "guild_bn_nat_queue_category"))
+        return await get_category_object(client, member.guild, "guild_bn_nat_queue_category")
     elif (await get_role_object(client, member.guild, "guild_bn_role")) in member.roles:
-        return (await get_category_object(client, member.guild, "guild_bn_nat_queue_category"))
+        return await get_category_object(client, member.guild, "guild_bn_nat_queue_category")
     elif (await get_role_object(client, member.guild, "guild_experienced_mapper_role")) in member.roles:
-        return (await get_category_object(client, member.guild, "guild_ranked_mapper_queue_category"))
+        return await get_category_object(client, member.guild, "guild_ranked_mapper_queue_category")
     elif (await get_role_object(client, member.guild, "guild_ranked_mapper_role")) in member.roles:
-        return (await get_category_object(client, member.guild, "guild_ranked_mapper_queue_category"))
+        return await get_category_object(client, member.guild, "guild_ranked_mapper_queue_category")
     elif (await get_role_object(client, member.guild, "guild_mapper_role")) in member.roles:
-        return (await get_category_object(client, member.guild, "guild_mapper_queue_category"))
+        return await get_category_object(client, member.guild, "guild_mapper_queue_category")
     else:
         return None

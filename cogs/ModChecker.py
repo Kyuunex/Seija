@@ -30,8 +30,9 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                     await ctx.send("Deleted all previously existing tracking records in this channel")
                     await asyncio.sleep(1)
 
-                mapset_id = db.query(
-                    ["SELECT mapset_id FROM mapset_channels WHERE channel_id = ?", [str(ctx.channel.id)]])
+                mapset_id = db.query(["SELECT mapset_id FROM mapset_channels "
+                                      "WHERE channel_id = ?",
+                                      [str(ctx.channel.id)]])
                 if mapset_id:
                     if str(mapset_id[0][0]) != "0":
                         if await self.track(str(mapset_id[0][0]), ctx.channel.id):
@@ -63,39 +64,17 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                                        [str(ctx.author.id), str(ctx.channel.id)]])
         if mapset_owner_check or await permissions.is_admin(ctx):
             try:
-                if db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]]):
-                    db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.message.channel.id)]])
-                    db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.message.channel.id)]])
+                if db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]]):
+                    db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]])
+                    db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.channel.id)]])
                     await ctx.send("Untracked everything in this channel")
             except Exception as e:
                 await ctx.send(e)
 
-    @commands.command(name="force_track", brief="Force Track a mapset in the current channel", description="")
-    @commands.check(permissions.is_owner)
-    async def force_track(self, ctx, mapset_id: str):
-        if await self.track(mapset_id, ctx.message.channel.id):
-            try:
-                result = await osu.get_beatmapset(s=mapset_id)
-                embed = await osuembed.beatmapset(result)
-                await ctx.send("Tracked", embed=embed)
-            except:
-                print("Connection issues?")
-                await ctx.send("Connection issues?")
-        else:
-            await ctx.send("Error")
-
-    @commands.command(name="force_untrack", brief="Force untrack a mapset in the current channel", description="")
-    @commands.check(permissions.is_owner)
-    async def force_untrack(self, ctx, mapset_id: str):
-        if await self.untrack(mapset_id, ctx.message.channel.id):
-            await ctx.send("Untracked")
-        else:
-            await ctx.send("No tracking record found")
-
     @commands.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="")
     async def veto(self, ctx, mapset_id: int):
         if (str(ctx.channel.id),) in self.veto_channel_list:
-            if await self.track(mapset_id, ctx.message.channel.id, "veto"):
+            if await self.track(mapset_id, ctx.channel.id, "veto"):
                 try:
                     result = await osu.get_beatmapset(s=mapset_id)
                     embed = await osuembed.beatmapset(result)
@@ -109,7 +88,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
     @commands.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode", description="")
     async def unveto(self, ctx, mapset_id: int):
         if (str(ctx.channel.id),) in self.veto_channel_list:
-            if await self.untrack(mapset_id, ctx.message.channel.id):
+            if await self.untrack(mapset_id, ctx.channel.id):
                 try:
                     result = await osu.get_beatmapset(s=mapset_id)
                     embed = await osuembed.beatmapset(result)

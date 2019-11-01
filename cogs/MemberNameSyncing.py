@@ -3,7 +3,6 @@ from discord.ext import commands
 from modules import db
 import time
 import asyncio
-import upsidedown
 import datetime
 from modules.connections import osu as osu
 import osuembed
@@ -12,23 +11,26 @@ import osuembed
 class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
     def __init__(self, bot):
         self.bot = bot
-        self.bot.loop.create_task(self.member_name_syncing_loop())
+        self.guild_event_tracker_list = db.query(["SELECT * FROM config "
+                                                  "WHERE setting = ?",
+                                                  ["guild_user_event_tracker"]])
+        if self.guild_event_tracker_list:
+            self.bot.loop.create_task(self.member_name_syncing_loop())
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
-        which_guild = db.query(["SELECT * FROM config WHERE setting = ?", ["guild_user_event_tracker"]])
-        if which_guild:
-            query = db.query(["SELECT * FROM users WHERE user_id = ?", [str(after.id)]])
-            if query:
-                osu_profile = await osu.get_user(u=query[0][1])
-                if osu_profile:
-                    for this_guild in which_guild:
-                        guild = self.bot.get_guild(int(this_guild[1]))
-                        now = datetime.datetime.now()
-                        audit_channel = self.bot.get_channel(int(this_guild[3]))
-                        if audit_channel:
-                            member = guild.get_member(int(after.id))
-                            await self.one_guild_member_sync(audit_channel, query, now, member, osu_profile)
+        if before.name != after.name:
+            if self.guild_event_tracker_list:
+                query = db.query(["SELECT * FROM users WHERE user_id = ?", [str(after.id)]])
+                if query:
+                    osu_profile = await osu.get_user(u=query[0][1])
+                    if osu_profile:
+                        for this_guild in self.guild_event_tracker_list:
+                            guild = self.bot.get_guild(int(this_guild[1]))
+                            audit_channel = self.bot.get_channel(int(this_guild[3]))
+                            if audit_channel:
+                                member = guild.get_member(int(after.id))
+                                await self.sync_nickname(audit_channel, query[0], member, osu_profile)
 
     async def member_name_syncing_loop(self):
         print("Member Name Syncing Loop launched!")
@@ -36,55 +38,44 @@ class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
         while not self.bot.is_closed():
             try:
                 await asyncio.sleep(3600)
-                print(time.strftime('%X %x %Z') + ' | user event tracker')
-                memberfeedchannellist = db.query(
-                    ["SELECT * FROM config WHERE setting = ?", ["guild_user_event_tracker"]])
-                if memberfeedchannellist:
-                    now = datetime.datetime.now()
-                    for onechannel in memberfeedchannellist:
-                        auditchannel = self.bot.get_channel(int(onechannel[3]))
-                        feedchannel = self.bot.get_channel(int(onechannel[2]))
-                        guild = self.bot.get_guild(int(onechannel[1]))
-                        for member in guild.members:
-                            if not member.bot:
-                                query = db.query(["SELECT * FROM users WHERE user_id = ?", [str(member.id)]])
-                                if query:
-                                    # print(time.strftime('%X %x %Z')+" | mapping_username_loop currently checking %s" % (str(query[0][1])))
-                                    try:
-                                        check_if_restricted_user_in_db = db.query(
-                                            ["SELECT osu_id FROM restricted_users WHERE guild_id = ? AND osu_id = ?",
-                                             [str(guild.id), str(query[0][1])]])
-                                        osuprofile = await osu.get_user(u=query[0][1], event_days="1")
-                                        if osuprofile:
-                                            await self.one_guild_member_sync(auditchannel, query, now, member,
-                                                                             osuprofile)
-                                            await self.check_events(feedchannel, osuprofile, "user_event_history",
-                                                                    str(feedchannel.id))
-                                            if check_if_restricted_user_in_db:
-                                                await auditchannel.send(
-                                                    "%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | unrestricted lol" % (
-                                                    member.mention, str(query[0][2]), str(query[0][1]),
-                                                    str(query[0][1])))
-                                                db.query(
-                                                    ["DELETE FROM restricted_users WHERE guild_id = ? AND osu_id = ?",
-                                                     [str(guild.id), str(query[0][1])]])
-                                        else:
-                                            # at this point we are sure that the user is restricted.
-                                            if not check_if_restricted_user_in_db:
-                                                await auditchannel.send(
-                                                    "%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | restricted" % (
-                                                    member.mention, str(query[0][2]), str(query[0][1]),
-                                                    str(query[0][1])))
-                                                db.query(["INSERT INTO restricted_users VALUES (?,?)",
-                                                          [str(guild.id), str(query[0][1])]])
-                                    except Exception as e:
-                                        print(e)
-                                        print("Connection issues?")
-                                        await asyncio.sleep(120)
-                                else:
-                                    await self.send_notice("%s | not in db" % (member.mention), auditchannel, now)
-                                await asyncio.sleep(1)
-                print(time.strftime('%X %x %Z') + ' | mapping username loop finished')
+                print(time.strftime('%X %x %Z') + ' | member_name_syncing_loop start')
+                user_list = db.query("SELECT * FROM users")
+                restricted_user_list = db.query("SELECT guild_id, osu_id FROM restricted_users")
+                for guild_sync_record in self.guild_event_tracker_list:
+
+                    audit_channel = self.bot.get_channel(int(guild_sync_record[3]))
+                    feed_channel = self.bot.get_channel(int(guild_sync_record[2]))
+                    guild = self.bot.get_guild(int(guild_sync_record[1]))
+
+                    for member in guild.members:
+                        for db_user in user_list:
+                            if (not member.bot) and (str(member.id) == str(db_user[0])):
+                                try:
+                                    osu_profile = await osu.get_user(u=db_user[1], event_days="1")
+                                    if osu_profile:
+                                        await self.sync_nickname(audit_channel, db_user, member, osu_profile)
+                                        await self.check_events(feed_channel, osu_profile)
+                                        if (str(guild.id), str(db_user[1])) in restricted_user_list:
+                                            await audit_channel.send(
+                                                "%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | unrestricted lol" %
+                                                (member.mention, str(db_user[2]), str(db_user[1]), str(db_user[1])))
+                                            db.query(["DELETE FROM restricted_users "
+                                                      "WHERE guild_id = ? AND osu_id = ?",
+                                                      [str(guild.id), str(db_user[1])]])
+                                    else:
+                                        # at this point we are sure that the user is restricted.
+                                        if not (str(guild.id), str(db_user[1])) in restricted_user_list:
+                                            await audit_channel.send(
+                                                "%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | restricted" %
+                                                (member.mention, str(db_user[2]), str(db_user[1]), str(db_user[1])))
+                                            db.query(["INSERT INTO restricted_users VALUES (?,?)",
+                                                      [str(guild.id), str(db_user[1])]])
+                                except Exception as e:
+                                    print(e)
+                                    print("Connection issues?")
+                                    await asyncio.sleep(120)
+                            await asyncio.sleep(1)
+                print(time.strftime('%X %x %Z') + ' | member_name_syncing_loop finished')
                 await asyncio.sleep(3600)
             except Exception as e:
                 print(time.strftime('%X %x %Z'))
@@ -92,62 +83,41 @@ class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
                 print(e)
                 await asyncio.sleep(7200)
 
-    async def one_guild_member_sync(self, auditchannel, query, now, member, osuprofile):
-        if "04-01T" in str(now.isoformat()):
-            osuusername = upsidedown.transform(osuprofile.name)
-        else:
-            osuusername = osuprofile.name
-        if str(query[0][2]) != osuusername:
-            await auditchannel.send(
-                "`%s` namechanged to `%s`. osu_id = `%s`" % (str(query[0][2]), osuusername, str(query[0][1])))
-            if str(query[0][1]) == str(4116573):
-                await auditchannel.send(
-                    "This is bor btw. Yes, I actually added this specific message for bor in this bot.")
-        if member.display_name != osuusername:
-            if "1" in str(query[0][7]):
-                await self.send_notice("%s | `%s` | `%s` | username not updated as `no_sync` was set for this user" % (
-                str(member.mention), osuusername, str(query[0][1])), auditchannel, now)
-            else:
+    async def sync_nickname(self, audit_channel, db_user, member, osu_profile):
+        # if "04-01T" in str(now.isoformat()):
+        #     osu_username = upsidedown.transform(osu_profile.name)
+        if str(db_user[2]) != osu_profile.name:
+            await audit_channel.send("`%s` namechanged to `%s`. osu_id = `%s`" %
+                                     (str(db_user[2]), osu_profile.name, str(db_user[1])))
+            if str(db_user[1]) == str(4116573):
+                await audit_channel.send("btw, this is bor. yes, i actually added this specific message for bor.")
+
+        if member.display_name != osu_profile.name:
+            if not ("1" in str(db_user[7])):
                 old_nickname = member.display_name
                 try:
-                    await member.edit(nick=osuusername)
-                except Exception as e:
-                    await auditchannel.send(e)
-                    await auditchannel.send(
-                        "%s | `%s` | `%s` | no perms to update" % (member.mention, osuusername, str(query[0][1])))
-                await auditchannel.send("%s | `%s` | `%s` | nickname updated, old nickname `%s`" % (
-                member.mention, osuusername, str(query[0][1]), old_nickname))
-        db.query(
-            [
-                "UPDATE users SET country = ?, pp = ?, osu_join_date = ?, osu_username = ? WHERE user_id = ?;",
-                [
-                    str(osuprofile.country),
-                    str(osuprofile.pp_raw),
-                    str(osuprofile.join_date),
-                    str(osuprofile.name),
-                    str(member.id)
-                ]
-            ]
-        )
+                    await member.edit(nick=osu_profile.name)
+                    await audit_channel.send("%s | `%s` | `%s` | nickname updated, old nickname `%s`" %
+                                             (member.mention, osu_profile.name, str(db_user[1]), old_nickname))
+                except:
+                    await audit_channel.send("%s | `%s` | `%s` | no perms to update" %
+                                             (member.mention, osu_profile.name, str(db_user[1])))
+        db.query(["UPDATE users SET country = ?, pp = ?, "
+                  "osu_join_date = ?, osu_username = ? WHERE user_id = ?;",
+                  [str(osu_profile.country), str(osu_profile.pp_raw),
+                   str(osu_profile.join_date), str(osu_profile.name), str(member.id)]])
 
-    async def send_notice(self, notice, channel, now):
-        if not db.query(["SELECT notice FROM notices WHERE notice = ?", [notice]]):
-            await channel.send(notice)
-            db.query(["INSERT INTO notices VALUES (?, ?)", [str(now.isoformat()), notice]])
-
-    async def check_events(self, channel, user, history_table_name, channel_id=0):
-        # print(time.strftime('%X %x %Z')+" | currently checking %s" % (user.name))
+    async def check_events(self, channel, user):
         for event in user.events:
-            if not db.query(["SELECT event_id FROM %s WHERE event_id = ?" % (history_table_name), [str(event.id)]]):
-                db.query(["INSERT INTO %s VALUES (?, ?, ?)" % (history_table_name),
-                          [str(user.id), str(event.id), str(channel_id)]])
+            if not db.query(["SELECT event_id FROM user_event_history WHERE event_id = ?", [str(event.id)]]):
+                db.query(["INSERT INTO user_event_history VALUES (?, ?, ?)",
+                          [str(user.id), str(event.id), str(channel.id)]])
                 event_color = await self.get_event_color(event.display_text)
                 if event_color:
                     result = await osu.get_beatmapset(s=event.beatmapset_id)
                     embed = await osuembed.beatmapset(result, event_color)
                     if embed:
-                        display_text = (event.display_text).replace("@", "")
-                        # print(display_text)
+                        display_text = event.display_text.replace("@", "")
                         await channel.send(display_text, embed=embed)
 
     async def get_event_color(self, string):

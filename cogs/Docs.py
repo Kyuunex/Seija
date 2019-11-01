@@ -131,6 +131,10 @@ class Docs(commands.Cog, name="Pretty Bot Documentation"):
                               "only admins can see the queue. "
                               "Nobody else can see and post in it.",
                         inline=False)
+        embed.add_field(name="'recategorize",
+                        value="Move the queue to correct category "
+                              "if you became BN or ranked a map or ten.",
+                        inline=False)
         embed.set_author(name=self.author_text, icon_url=self.author_icon)
         embed.set_footer(text=self.footer_text, icon_url=self.footer_icon)
         return embed

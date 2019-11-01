@@ -73,8 +73,8 @@ class MemberManagement(commands.Cog, name="Member Management"):
                     if osu_id:
                         try:
                             mapsets = await osu.get_beatmapsets(u=osu_id[0][0])
-                        except Exception as e:
-                            await ctx.send(e)
+                        except:
+                            # await ctx.send(e)
                             mapsets = None
                         if mapsets:
                             ranked_amount = await self.count_ranked_beatmapsets(mapsets)

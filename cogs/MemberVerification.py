@@ -4,10 +4,7 @@ from modules import db
 from modules import permissions
 from modules.connections import osu as osu
 import time
-import asyncio
 import osuembed
-import datetime
-import upsidedown
 
 
 class MemberVerification(commands.Cog, name="Member Verification"):
@@ -15,86 +12,60 @@ class MemberVerification(commands.Cog, name="Member Verification"):
         self.bot = bot
         self.verify_channel_list = db.query(["SELECT value FROM config WHERE setting = ?", ["guild_verify_channel"]])
 
-    @commands.command(name="verify", brief="Manually verify a user", description="")
+    @commands.command(name="verify", brief="Manually verify a member", description="")
     @commands.check(permissions.is_admin)
-    async def verify(self, ctx, osu_id: str, user_id: int, preverify: str = None):
-        try:
-            if preverify == "preverify":
-                await self.verifyer(ctx.message.channel, str(user_id), None, osu_id, "Preverified: %s" % (str(user_id)))
-            elif preverify == "restricted":
-                db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)", [str(user_id), str(osu_id), "", "", "", "", "", ""]])
-                await ctx.send("lol ok")
-            else:
-                await self.verifyer(ctx.message.channel, ctx.guild.get_member(user_id), ctx.message.guild, osu_id, "Manually Verified: %s" % (ctx.guild.get_member(user_id).name))
-        except Exception as e:
-            print(time.strftime('%X %x %Z'))
-            print("in verify")
-            print(e)
+    async def verify(self, ctx, osu_id: str, user_id: int, flags: str = None):
+        if flags == "preverify":
+            ok_message = "Preverified: %s" % (str(user_id))
+            await self.verifyer(ctx.channel, str(user_id), None, osu_id, ok_message)
+        elif flags == "restricted":
+            db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
+                      [str(user_id), str(osu_id), "", "", "", "", "", ""]])
+            await ctx.send("lol ok")
+        else:
+            ok_message = "Manually Verified: %s" % ctx.guild.get_member(user_id).name
+            await self.verifyer(ctx.channel, ctx.guild.get_member(user_id), ctx.guild, osu_id, ok_message)
 
     @commands.command(name="unverify", brief="Unverify a member and delete it from db", description="")
     @commands.check(permissions.is_admin)
     async def unverify(self, ctx, user_id):
-        db.query(["DELETE FROM users WHERE user_id = ?", [str(user_id), ]])
+        db.query(["DELETE FROM users WHERE user_id = ?", [str(user_id)]])
         member = ctx.guild.get_member(int(user_id))
         if member:
             try:
                 await member.edit(roles=[])
                 await member.edit(nick=None)
                 await ctx.send("Done")
-            except Exception as e:
-                await ctx.send(e)
-
-    @commands.command(name="mass_verify", brief="Insert multiple users into the database from a csv file", description="")
-    @commands.check(permissions.is_owner)
-    async def mass_verify(self, ctx, mention_users: str = None):
-        try:
-            # TODO: this might be broken check later
-            csv_file = open("data/users.csv", encoding="utf8").read().splitlines()
-            if mention_users == "m":
-                tag = "Preverified: <@%s>"
-            else:
-                tag = "Preverified: %s"
-            for one_user in csv_file:
-                uzer = one_user.split(',')
-                await self.verifyer(ctx.message.channel, str(uzer[1]), None, uzer[0], tag % (str(uzer[1])))
-                await asyncio.sleep(1)
-        except Exception as e:
-            print(time.strftime('%X %x %Z'))
-            print("in userdb")
-            print(e)
+            except:
+                await ctx.send("no perms to change nickname and/or remove roles")
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        try:
-            guildverifychannel = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_channel", str(member.guild.id)]])
-            if guildverifychannel:
-                join_channel_object = self.bot.get_channel(int((guildverifychannel)[0][0]))
-                if not member.bot:
-                    lookupuser = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
-                    if lookupuser:
-                        print("user %s joined with osu_id %s" % (str(member.id), str(lookupuser[0][0])))
-                        verifyattempt = await self.verifyer(join_channel_object, member, member.guild, lookupuser[0][0], "Welcome aboard %s! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.mention))
+        guildverifychannel = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", ["guild_verify_channel", str(member.guild.id)]])
+        if guildverifychannel:
+            join_channel_object = self.bot.get_channel(int((guildverifychannel)[0][0]))
+            if not member.bot:
+                lookupuser = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id), ]])
+                if lookupuser:
+                    print("user %s joined with osu_id %s" % (str(member.id), str(lookupuser[0][0])))
+                    verifyattempt = await self.verifyer(join_channel_object, member, member.guild, lookupuser[0][0], "Welcome aboard %s! Since we know who you are, I have automatically verified you. Enjoy your stay!" % (member.mention))
 
-                        if not verifyattempt:
-                            await join_channel_object.send("Hello %s. We have a verification system in this server, to keep raids and spam out. It seems like you are in my database but the profile I know of you is restricted. If this is not correct, tag Kyuunex. Actually this message should never come up idk why it did." % (member.mention))
-                    else:
-                        await join_channel_object.send("Welcome %s! We have a verification system in this server so that we know who you are, give you appropriate roles and keep raids/spam out." % (member.mention))
-                        try:
-                            osuprofile = await osu.get_user(u=member.name)
-                        except Exception as e:
-                            print(e)
-                            print("Connection issues?")
-                            osuprofile = None
-                        if osuprofile:
-                            await join_channel_object.send(content='Is this your osu profile? If yes, type `yes`, if not, link your profile.', embed=await osuembed.user(osuprofile))
-                        else:
-                            await join_channel_object.send('Please post a link to your osu profile and I will verify you instantly.')
+                    if not verifyattempt:
+                        await join_channel_object.send("Hello %s. We have a verification system in this server, to keep raids and spam out. It seems like you are in my database but the profile I know of you is restricted. If this is not correct, tag Kyuunex. Actually this message should never come up idk why it did." % (member.mention))
                 else:
-                    await join_channel_object.send('beep boop boop beep, %s has joined our army of bots' % (member.mention))
-        except Exception as e:
-            print(time.strftime('%X %x %Z'))
-            print("in on_member_join")
-            print(e)
+                    await join_channel_object.send("Welcome %s! We have a verification system in this server so that we know who you are, give you appropriate roles and keep raids/spam out." % (member.mention))
+                    try:
+                        osuprofile = await osu.get_user(u=member.name)
+                    except Exception as e:
+                        print(e)
+                        print("Connection issues?")
+                        osuprofile = None
+                    if osuprofile:
+                        await join_channel_object.send(content='Is this your osu profile? If yes, type `yes`, if not, link your profile.', embed=await osuembed.user(osuprofile))
+                    else:
+                        await join_channel_object.send('Please post a link to your osu profile and I will verify you instantly.')
+            else:
+                await join_channel_object.send('beep boop boop beep, %s has joined our army of bots' % (member.mention))
 
     @commands.Cog.listener()
     async def on_message(self, message):

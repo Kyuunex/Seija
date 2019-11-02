@@ -110,8 +110,8 @@ class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
     async def check_events(self, channel, user):
         for event in user.events:
             if not db.query(["SELECT event_id FROM user_event_history WHERE event_id = ?", [str(event.id)]]):
-                db.query(["INSERT INTO user_event_history VALUES (?, ?, ?)",
-                          [str(user.id), str(event.id), str(channel.id)]])
+                db.query(["INSERT INTO user_event_history VALUES (?, ?, ?, ?)",
+                          [str(user.id), str(event.id), str(channel.id), str(int(time.time()))]])
                 event_color = await self.get_event_color(event.display_text)
                 if event_color:
                     result = await osu.get_beatmapset(s=event.beatmapset_id)

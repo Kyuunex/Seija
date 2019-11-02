@@ -123,12 +123,6 @@ class MemberVerification(commands.Cog, name="Member Verification"):
         else:
             return None
 
-        already_linked_to = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
-        if already_linked_to:
-            await channel.send("%s it seems like your discord account is already in my database and "
-                               "is linked to <https://osu.ppy.sh/users/%s>" % (member.mention, already_linked_to[0][0]))
-            return None
-
         try:
             osu_profile = await osu.get_user(u=osu_id_to_lookup)
         except:
@@ -146,6 +140,9 @@ class MemberVerification(commands.Cog, name="Member Verification"):
             await channel.send(error_message)
             return None
 
+        ranked_amount = await self.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(osu_profile.id)))
+        role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
+
         check_if_new_discord_account = db.query(["SELECT user_id FROM users WHERE osu_id = ?", [str(osu_profile.id)]])
         if check_if_new_discord_account:
             if str(check_if_new_discord_account[0][0]) != str(member.id):
@@ -154,8 +151,22 @@ class MemberVerification(commands.Cog, name="Member Verification"):
                                    (check_if_new_discord_account[0][0]))
                 return None
 
-        ranked_amount = await self.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(osu_profile.id)))
-        role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
+        already_linked_to = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
+        if already_linked_to:
+            if str(osu_profile.id) != already_linked_to[0][0]:
+                await channel.send("%s it seems like your discord account is already in my database and "
+                                   "is linked to <https://osu.ppy.sh/users/%s>" %
+                                   (member.mention, already_linked_to[0][0]))
+                return None
+            else:
+                try:
+                    await member.add_roles(role)
+                    await member.edit(nick=osu_profile.name)
+                except:
+                    pass
+                await channel.send(content="%s i already know lol. here, have some roles" % member.mention)
+                return None
+
         try:
             await member.add_roles(role)
             await member.edit(nick=osu_profile.name)

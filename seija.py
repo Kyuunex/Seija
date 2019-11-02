@@ -10,7 +10,7 @@ from modules.connections import database_file as database_file
 from modules.connections import bot_token as bot_token
 
 command_prefix = '\''
-app_version = "t20191101"
+app_version = "t20191102"
 client = commands.Bot(command_prefix=command_prefix,
                       description='Seija %s' % app_version)
 
@@ -29,6 +29,9 @@ if not os.path.exists(database_file):
     db.query("CREATE TABLE queues (channel_id, user_id, guild_id)")
     db.query("CREATE TABLE mapset_channels (channel_id, role_id, user_id, mapset_id, guild_id)")
     db.query("CREATE TABLE name_backups (id, name)")
+    db.query("CREATE TABLE member_goodbye_messages (message)")
+    db.query(["INSERT INTO member_goodbye_messages VALUES (?)", ["%s is going for loved"]])
+    db.query(["INSERT INTO member_goodbye_messages VALUES (?)", ["%s was told to remap one too many times"]])
 
 initial_extensions = [
     'cogs.BotManagement',

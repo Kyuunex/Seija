@@ -41,7 +41,7 @@ class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
                 await asyncio.sleep(10)
                 print(time.strftime('%X %x %Z') + ' | event_history_cleanup_loop start')
                 before = int(time.time()) - 172800
-                db.query(["SELECT event_id FROM user_event_history WHERE timestamp < ?", [before]])
+                db.query(["DELETE FROM user_event_history WHERE timestamp < ?", [before]])
                 print(time.strftime('%X %x %Z') + ' | event_history_cleanup_loop finished')
                 await asyncio.sleep(86400)
             except Exception as e:

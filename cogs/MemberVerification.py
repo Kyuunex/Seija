@@ -84,7 +84,7 @@ class MemberVerification(commands.Cog, name="Member Verification"):
                     if osu_id:
                         try:
                             osu_profile = await osu.get_user(u=osu_id[0][0])
-                            embed = await osuembed.user(osu_profile)
+                            embed = await osuembed.user(osu_profile, 0xffffff, "User left")
                             member_name = osu_profile.name
                         except:
                             print("Connection issues?")

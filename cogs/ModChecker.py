@@ -18,7 +18,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
         self.bot.loop.create_task(self.modchecker_background_loop())
 
     @commands.command(name="track", brief="Track the mapset in this channel", description="")
-    async def track_command(self, ctx, tracking_mode="classic"):
+    async def track_command(self, ctx, tracking_mode="timeline"):
         mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
                                        "WHERE user_id = ? AND channel_id = ?",
                                        [str(ctx.author.id), str(ctx.channel.id)]])
@@ -131,7 +131,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                     if beatmapset_discussions:
                         status = await self.check_status(channel, mapset_id, beatmapset_discussions)
                         if status:
-                            if tracking_mode == "veto" or tracking_mode == "classic":
+                            if tracking_mode == "veto" or tracking_mode == "timeline":
                                 await self.timeline_mode_tracking(beatmapset_discussions, channel, mapset_id,
                                                                   tracking_mode)
                             elif tracking_mode == "notification":
@@ -166,7 +166,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                 print(onemod)
         db.mass_query(allposts)
 
-    async def track(self, mapset_id, channel_id, tracking_mode="classic"):
+    async def track(self, mapset_id, channel_id, tracking_mode="timeline"):
         if not db.query(["SELECT mapset_id FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
                          [str(mapset_id), str(channel_id)]]):
             beatmapset_discussions = await osuweb.get_beatmapset_discussions(str(mapset_id))
@@ -338,7 +338,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
 
     async def modpost(self, subpostobject, beatmapset_discussions, newevent, tracking_mode):
         if subpostobject:
-            if tracking_mode == "classic":
+            if tracking_mode == "timeline":
                 title = str(
                     await self.get_diffname(beatmapset_discussions["beatmapset"]["beatmaps"], newevent['beatmap_id']))
             elif tracking_mode == "veto":

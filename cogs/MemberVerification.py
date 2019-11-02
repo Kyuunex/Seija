@@ -25,8 +25,11 @@ class MemberVerification(commands.Cog, name="Member Verification"):
             if osu_profile:
                 ranked_amount = await self.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(osu_profile.id)))
                 role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
-                await member.add_roles(role)
-                await member.edit(nick=osu_profile.name)
+                try:
+                    await member.add_roles(role)
+                    await member.edit(nick=osu_profile.name)
+                except:
+                    pass
                 embed = await osuembed.user(osu_profile)
                 db.query(["DELETE FROM users WHERE user_id = ?", [str(member.id)]])
                 db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",

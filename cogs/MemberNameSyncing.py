@@ -16,6 +16,7 @@ class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
                                                   ["guild_user_event_tracker"]])
         if self.guild_event_tracker_list:
             self.bot.loop.create_task(self.member_name_syncing_loop())
+        self.bot.loop.create_task(self.event_history_cleanup_loop())
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
@@ -31,6 +32,23 @@ class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
                             if audit_channel:
                                 member = guild.get_member(int(after.id))
                                 await self.sync_nickname(audit_channel, query[0], member, osu_profile)
+
+    async def event_history_cleanup_loop(self):
+        print("Event History Cleanup Loop launched!")
+        await self.bot.wait_until_ready()
+        while not self.bot.is_closed():
+            try:
+                await asyncio.sleep(10)
+                print(time.strftime('%X %x %Z') + ' | event_history_cleanup_loop start')
+                before = int(time.time()) - 172800
+                db.query(["SELECT event_id FROM user_event_history WHERE timestamp < ?", [before]])
+                print(time.strftime('%X %x %Z') + ' | event_history_cleanup_loop finished')
+                await asyncio.sleep(86400)
+            except Exception as e:
+                print(time.strftime('%X %x %Z'))
+                print("in event_history_cleanup_loop")
+                print(e)
+                await asyncio.sleep(86400)
 
     async def member_name_syncing_loop(self):
         print("Member Name Syncing Loop launched!")

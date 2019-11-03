@@ -160,12 +160,11 @@ class Docs(commands.Cog, name="Pretty Bot Documentation"):
                         value="Transfer set ownership to another discord account. "
                               "user_id can only be that discord account's id.",
                         inline=False)
-        # embed.add_field(name="'track (tracking_mode)",
-        #                 value="Track the mapset in this channel. "
-        #                       "For tracking_mode, specify 'classic' for discussion/timeline type, "
-        #                       "specify 'notification' for notification type.",
-        #                 inline=False)
-        embed.add_field(name="'track", value="Track the mapset in this channel", inline=False)
+        embed.add_field(name="'track (tracking_mode)",
+                        value="Track the mapset in this channel. "
+                              "For (tracking_mode), specify `timeline` for discussion/timeline type, "
+                              "specify `notification` for notification type.",
+                        inline=False)
         embed.add_field(name="'untrack", value="Untrack everything in this channel.", inline=False)
         embed.set_author(name=self.author_text, icon_url=self.author_icon)
         embed.set_footer(text=self.footer_text, icon_url=self.footer_icon)

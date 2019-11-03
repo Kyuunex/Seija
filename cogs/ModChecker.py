@@ -271,7 +271,12 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             db.query(["UPDATE mapset_status SET status = ? WHERE mapset_id = ? AND channel_id = ?",
                       [str(current_status), str(mapset_id), str(channel.id)]])
             if current_status == "1":
-                await channel.send("new mods")
+                unresolved_diffs = await self.get_unresolved_diffs(discussions)
+                return_message = "new mods on: "
+                for diff in unresolved_diffs:
+                    return_message += "\n> %s" % self.get_diff_name(discussions["beatmapset"]["beatmaps"], diff)
+                return_message += "\nno further notifications until all mods are resolved"
+                await channel.send(return_message.replace("@", ""))
         return None
 
     async def check_if_resolved(self, discussions):
@@ -279,6 +284,19 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             if mod:
                 if not mod['resolved']:
                     return "1"
+
+    async def get_unresolved_diffs(self, discussions):
+        return_list = []
+        for mod in discussions["beatmapset"]["discussions"]:
+            if mod:
+                if not mod['resolved']:
+                    if not mod['beatmap_id']:
+                        if not False in return_list:
+                            return_list.append(False)
+                    else:
+                        if not str(mod['beatmap_id'] in return_list):
+                            return_list.append(str(mod['beatmap_id']))
+        return return_list
 
     async def mod_post_embed(self, post, discussions, mod, tracking_mode):
         if not post:
@@ -337,7 +355,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
     def get_diff_name(self, beatmaps, beatmap_id):
         for beatmap in beatmaps:
             if beatmap_id:
-                if beatmap['id'] == beatmap_id:
+                if str(beatmap['id']) == str(beatmap_id):
                     return beatmap['version']
             else:
                 return "All difficulties"

@@ -111,33 +111,108 @@ class MemberVerification(commands.Cog, name="Member Verification"):
             return await self.get_role_from_db("guild_mapper_role", guild)
 
     async def respond_to_verification(self, message):
-        member = message.author
-        channel = message.channel
         split_message = []
         if '/' in message.content:
             split_message = message.content.split('/')
         if 'https://osu.ppy.sh/u' in message.content:
-            osu_id_to_lookup = split_message[4].split(' ')[0]
+            profile_id = split_message[4].split('#')[0].split(' ')[0]
+            await self.profile_id_verification(message, profile_id)
+            return None
         elif message.content.lower() == "yes":
-            osu_id_to_lookup = member.name
+            profile_id = message.author.name
+            await self.profile_id_verification(message, profile_id)
+            return None
+        elif 'https://osu.ppy.sh/beatmapsets/' in message.content:
+            mapset_id = split_message[4].split('#')[0].split(' ')[0]
+            await self.mapset_id_verification(message, mapset_id)
+            return None
         else:
             return None
 
+    async def mapset_id_verification(self, message, mapset_id):
+        channel = message.channel
+        member = message.author
         try:
-            osu_profile = await osu.get_user(u=osu_id_to_lookup)
+            mapset = await osu.get_beatmapset(s=mapset_id)
+        except:
+            await channel.send("i am having connection issues to osu servers, verifying you. "
+                               "<@155976140073205761> should look into this")
+            return None
+
+        if not mapset:
+            await channel.send("verification failure, I can\'t find any map with that link")
+            return None
+
+        try:
+            is_not_restricted = await osu.get_user(u=mapset.creator_id)
+            if is_not_restricted:
+                await channel.send("verification failure, "
+                                   "verification through mapset is reserved for restricted users only")
+                return None
+        except:
+            pass
+
+        ranked_amount = await self.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(mapset.creator_id)))
+        role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
+
+        check_if_new_discord_account = db.query(["SELECT user_id FROM users "
+                                                 "WHERE osu_id = ?",
+                                                 [str(mapset.creator_id)]])
+        if check_if_new_discord_account:
+            if str(check_if_new_discord_account[0][0]) != str(member.id):
+                await channel.send("this osu account is already linked to <@%s> in my database. "
+                                   "if there's a problem, for example, you got a new discord account, ping kyuunex." %
+                                   (check_if_new_discord_account[0][0]))
+                return None
+
+        already_linked_to = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
+        if already_linked_to:
+            if str(mapset.creator_id) != already_linked_to[0][0]:
+                await channel.send("%s it seems like your discord account is already in my database and "
+                                   "is linked to <https://osu.ppy.sh/users/%s>" %
+                                   (member.mention, already_linked_to[0][0]))
+                return None
+            else:
+                try:
+                    await member.add_roles(role)
+                    await member.edit(nick=mapset.creator)
+                except:
+                    pass
+                await channel.send(content="%s i already know lol. here, have some roles" % member.mention)
+                return None
+
+        try:
+            await member.add_roles(role)
+            await member.edit(nick=mapset.creator)
+        except:
+            pass
+        embed = await osuembed.beatmapset(mapset)
+        db.query(["DELETE FROM users WHERE user_id = ?", [str(member.id)]])
+        db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
+                  [str(member.id), str(mapset.creator_id), str(mapset.creator), "", "", "", str(ranked_amount), "0"]])
+        await channel.send(content="`Verified through mapset: %s`" % member.name, embed=embed)
+
+    async def profile_id_verification(self, message, osu_id):
+        channel = message.channel
+        member = message.author
+        try:
+            osu_profile = await osu.get_user(u=osu_id)
         except:
             await channel.send("i am having connection issues to osu servers, verifying you. "
                                "<@155976140073205761> should look into this")
             return None
 
         if not osu_profile:
-            error_message = "verification failure, " \
-                            "either your discord username does not match a username of any osu account " \
-                            "or you linked an incorrect profile. " \
-                            "this error also pops up if you are restricted, in that case ping a manager and " \
-                            "we'll get this sorted out"
-
-            await channel.send(error_message)
+            if osu_id.isdigit():
+                await channel.send("verification failure, "
+                                   "i can't find any profile from that link or you are restricted. "
+                                   "if you are restricted, link any of your recently uploaded maps (new site only)")
+            else:
+                await channel.send("verification failure, "
+                                   "either your discord username does not match a username of any osu account "
+                                   "or you linked an incorrect profile. "
+                                   "this error also pops up if you are restricted, in that case, "
+                                   "link any of your recently uploaded maps (new site only)")
             return None
 
         ranked_amount = await self.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(osu_profile.id)))

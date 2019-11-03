@@ -19,12 +19,23 @@ class ModChecker(commands.Cog, name="Mod Checker"):
 
     @commands.command(name="track", brief="Track the mapset in this channel", description="")
     async def track(self, ctx, tracking_mode="timeline"):
-        tracking_mode = "timeline"  # temporary
         mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
                                        "WHERE user_id = ? AND channel_id = ?",
                                        [str(ctx.author.id), str(ctx.channel.id)]])
         if not (mapset_owner_check or await permissions.is_admin(ctx)):
             return None
+
+        if tracking_mode.isdigit():
+            await ctx.send("you are using the command incorrectly")
+            return None
+        else:
+            if tracking_mode == "timeline":
+                tracking_mode = "timeline"
+            elif tracking_mode == "notification":
+                tracking_mode = "notification"
+            else:
+                await ctx.send("you are using the command incorrectly")
+                return None
 
         if db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]]):
             db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]])
@@ -51,7 +62,8 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             await ctx.send("i refuse to track graveyarded and ranked sets")
             return None
 
-        await self.insert_mod_history_in_db(discussions, str(ctx.channel.id))
+        if tracking_mode == "timeline":
+            await self.insert_mod_history_in_db(discussions, str(ctx.channel.id))
 
         db.query(["INSERT INTO mod_tracking VALUES (?,?,?)",
                   [str(mapset_id[0][0]), str(ctx.channel.id), tracking_mode]])
@@ -186,7 +198,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                 if tracking_mode == "veto" or tracking_mode == "timeline":
                     await self.timeline_mode_tracking(discussions, channel, mapset_id, tracking_mode)
                 elif tracking_mode == "notification":
-                    await self.notification_mode_tracking(discussions, channel, mapset_id, tracking_mode)
+                    await self.notification_mode_tracking(discussions, channel, mapset_id)
 
                 await asyncio.sleep(120)
             await asyncio.sleep(1800)
@@ -244,7 +256,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                                         except Exception as e:
                                             print(e)
 
-    async def notification_mode_tracking(self, discussions, channel, mapset_id, tracking_mode):
+    async def notification_mode_tracking(self, discussions, channel, mapset_id):
         current_status = await self.check_if_resolved(discussions)  # 1 - we have new mods, 0 - no new mods
         cached_status = db.query(["SELECT status FROM mapset_status "
                                   "WHERE mapset_id = ? AND channel_id = ?",

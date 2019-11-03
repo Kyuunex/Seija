@@ -104,7 +104,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
                     db.query(["DELETE FROM mod_posts "
                               "WHERE channel_id = ?",
                               [str(ctx.channel.id)]])
-                    await ctx.send("un-tracked everything in this channel")
+                    await ctx.send("untracked everything in this channel")
 
                     archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                     await ctx.channel.edit(reason="mapset abandoned", category=archive_category)
@@ -165,7 +165,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
                             [str(ctx.channel.id)]])
         if role_id:
             try:
-                await ctx.send("nuking channel and role in 2 seconds! un-tracking also")
+                await ctx.send("nuking channel and role in 2 seconds! untracking also")
                 await asyncio.sleep(2)
                 role = discord.utils.get(ctx.guild.roles, id=int(role_id[0][0]))
 
@@ -175,7 +175,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
                 db.query(["DELETE FROM mod_posts "
                           "WHERE channel_id = ?",
                           [str(ctx.channel.id)]])
-                await ctx.send("un-tracked")
+                await ctx.send("untracked")
                 await asyncio.sleep(2)
 
                 db.query(["DELETE FROM mapset_channels "
@@ -301,7 +301,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
                     await channel.send("the mapset owner has left the server")
                     db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(channel.id)]])
                     db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(channel.id)]])
-                    await channel.send("un-tracked everything in this channel")
+                    await channel.send("untracked everything in this channel")
                     guild_archive_category_id = db.query(["SELECT value FROM config "
                                                           "WHERE setting = ? AND parent = ?",
                                                           ["guild_archive_category", str(channel.guild.id)]])

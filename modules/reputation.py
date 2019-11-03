@@ -30,7 +30,7 @@ async def get_role_object(client, guild, setting, id_only=None):
 async def unarchive_channel(client, ctx, setting):
     if int(ctx.channel.category_id) == int(
             await get_category_object(client, ctx.guild, "guild_archive_category", id_only=True)):
-        await ctx.message.channel.edit(reason=None, category=await get_category_object(client, ctx.guild, setting))
+        await ctx.channel.edit(reason=None, category=await get_category_object(client, ctx.guild, setting))
         await ctx.send("Unarchived")
 
 

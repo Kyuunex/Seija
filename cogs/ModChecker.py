@@ -15,274 +15,314 @@ class ModChecker(commands.Cog, name="Mod Checker"):
     def __init__(self, bot):
         self.bot = bot
         self.veto_channel_list = db.query(["SELECT value FROM config WHERE setting = ?", ["guild_veto_channel"]])
-        self.bot.loop.create_task(self.modchecker_background_loop())
+        self.bot.loop.create_task(self.mod_checker_background_loop())
 
     @commands.command(name="track", brief="Track the mapset in this channel", description="")
-    async def track_command(self, ctx, tracking_mode="timeline"):
+    async def track(self, ctx, tracking_mode="timeline"):
+        tracking_mode = "timeline"  # temporary
         mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
                                        "WHERE user_id = ? AND channel_id = ?",
                                        [str(ctx.author.id), str(ctx.channel.id)]])
-        if mapset_owner_check or await permissions.is_admin(ctx):
+        if not (mapset_owner_check or await permissions.is_admin(ctx)):
+            return None
+
+        if db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]]):
+            db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]])
+            db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.channel.id)]])
+            await ctx.send("Deleted all previously existing tracking records in this channel")
+            await asyncio.sleep(1)
+
+        mapset_id = db.query(["SELECT mapset_id FROM mapset_channels "
+                              "WHERE channel_id = ?",
+                              [str(ctx.channel.id)]])
+        if not mapset_id:
+            await ctx.send("Set a mapset id for this channel first, using the `'set_id (mapset_id)` command.")
+            return None
+        if str(mapset_id[0][0]) == "0":
+            await ctx.send("Set a mapset id for this channel first, using the `'set_id (mapset_id)` command.")
+            return None
+
+        discussions = await osuweb.get_beatmapset_discussions(str(mapset_id[0][0]))
+        if not discussions:
+            await ctx.send("I am unable to find a modding v2 page for this mapset")
+            return None
+
+        if discussions["beatmapset"]["status"] == "graveyard" or discussions["beatmapset"]["status"] == "ranked":
+            await ctx.send("i refuse to track graveyarded and ranked sets")
+            return None
+
+        await self.insert_mod_history_in_db(discussions, str(ctx.channel.id))
+
+        db.query(["INSERT INTO mod_tracking VALUES (?,?,?)",
+                  [str(mapset_id[0][0]), str(ctx.channel.id), tracking_mode]])
+        try:
+            beatmap_object = await osu.get_beatmapset(s=str(mapset_id[0][0]))
+            embed = await osuembed.beatmapset(beatmap_object)
+
+            await ctx.send("Tracked", embed=embed)
             try:
-                if db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]]):
-                    db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]])
-                    db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.channel.id)]])
-                    await ctx.send("Deleted all previously existing tracking records in this channel")
-                    await asyncio.sleep(1)
-
-                mapset_id = db.query(["SELECT mapset_id FROM mapset_channels "
-                                      "WHERE channel_id = ?",
-                                      [str(ctx.channel.id)]])
-                if mapset_id:
-                    if str(mapset_id[0][0]) != "0":
-                        if await self.track(str(mapset_id[0][0]), ctx.channel.id):
-                            try:
-                                beatmap_object = await osu.get_beatmapset(s=str(mapset_id[0][0]))
-                                tracked_embed = await osuembed.beatmapset(beatmap_object)
-
-                                await ctx.send("Tracked", embed=tracked_embed)
-                                try:
-                                    await reputation.unarchive_channel(self.bot, ctx, "guild_mapset_category")
-                                except:
-                                    pass
-                            except:
-                                print("Connection issues?")
-                                await ctx.send("Connection issues? try again")
-                        else:
-                            await ctx.send("Error")
-                    else:
-                        await ctx.send("Set a mapset id for this channel first, using the `'set_id (mapset_id)` command.")
-                else:
-                    await ctx.send("Set a mapset id for this channel first, using the `'set_id (mapset_id)` command.")
-            except Exception as e:
-                await ctx.send(e)
+                await reputation.unarchive_channel(self.bot, ctx, "guild_mapset_category")
+            except:
+                pass
+        except:
+            await ctx.send("Connection issues? try again")
 
     @commands.command(name="untrack", brief="Untrack everything in this channel", description="")
-    async def untrack_command(self, ctx):
+    async def untrack(self, ctx):
         mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
                                        "WHERE user_id = ? AND channel_id = ?",
                                        [str(ctx.author.id), str(ctx.channel.id)]])
-        if mapset_owner_check or await permissions.is_admin(ctx):
-            try:
-                if db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]]):
-                    db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]])
-                    db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.channel.id)]])
-                    await ctx.send("Untracked everything in this channel")
-            except Exception as e:
-                await ctx.send(e)
+        if not (mapset_owner_check or await permissions.is_admin(ctx)):
+            return None
+
+        db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]])
+        db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.channel.id)]])
+        await ctx.send("Untracked everything in this channel")
 
     @commands.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="")
-    async def veto(self, ctx, mapset_id: int):
-        if (str(ctx.channel.id),) in self.veto_channel_list:
-            if await self.track(mapset_id, ctx.channel.id, "veto"):
-                try:
-                    result = await osu.get_beatmapset(s=mapset_id)
-                    embed = await osuembed.beatmapset(result)
-                    await ctx.send("Tracked in veto mode", embed=embed)
-                except:
-                    print("Connection issues?")
-                    await ctx.send("Connection issues?")
-            else:
-                await ctx.send("Error")
+    async def veto(self, ctx, mapset_id):
+        if not ((str(ctx.channel.id),) in self.veto_channel_list):
+            return None
+
+        if not mapset_id.isdigit():
+            await ctx.send("a mapset_id is supposed to be all numbers")
+            return None
+
+        if db.query(["SELECT mapset_id FROM mod_tracking "
+                     "WHERE mapset_id = ? AND channel_id = ?",
+                     [str(mapset_id), str(ctx.channel.id)]]):
+            await ctx.send("This mapset is already tracked in this channel")
+            return None
+
+        discussions = await osuweb.get_beatmapset_discussions(str(mapset_id))
+        if not discussions:
+            await ctx.send("I am unable to find a modding v2 page for this mapset")
+            return None
+
+        if discussions["beatmapset"]["status"] == "graveyard" or discussions["beatmapset"]["status"] == "ranked":
+            await ctx.send("i refuse to track graveyarded and ranked sets")
+            return None
+
+        await self.insert_mod_history_in_db(discussions, str(ctx.channel.id))
+        db.query(["INSERT INTO mod_tracking VALUES (?,?,?)",
+                  [str(mapset_id), str(ctx.channel.id), "veto"]])
+        try:
+            result = await osu.get_beatmapset(s=mapset_id)
+            embed = await osuembed.beatmapset(result)
+
+            await ctx.send("Tracked in veto mode", embed=embed)
+        except:
+            await ctx.send("tracked")
 
     @commands.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode", description="")
-    async def unveto(self, ctx, mapset_id: int):
-        if (str(ctx.channel.id),) in self.veto_channel_list:
-            if await self.untrack(mapset_id, ctx.channel.id):
-                try:
-                    result = await osu.get_beatmapset(s=mapset_id)
-                    embed = await osuembed.beatmapset(result)
-                    await ctx.send("Untracked this", embed=embed)
-                except:
-                    print("Connection issues?")
-                    await ctx.send("Connection issues?")
-            else:
-                await ctx.send("No tracking record found")
+    async def unveto(self, ctx, mapset_id):
+        if not ((str(ctx.channel.id),) in self.veto_channel_list):
+            return None
+
+        if not mapset_id.isdigit():
+            await ctx.send("a mapset_id is supposed to be all numbers")
+            return None
+
+        db.query(["DELETE FROM mod_tracking "
+                  "WHERE mapset_id = ? AND channel_id = ?",
+                  [str(mapset_id), str(ctx.channel.id)]])
+        db.query(["DELETE FROM mod_posts "
+                  "WHERE mapset_id = ? AND channel_id = ?",
+                  [str(mapset_id), str(ctx.channel.id)]])
+        try:
+            result = await osu.get_beatmapset(s=mapset_id)
+            embed = await osuembed.beatmapset(result)
+            await ctx.send("I untracked this mapset in this channel", embed=embed)
+        except:
+            await ctx.send("done")
 
     @commands.command(name="sublist", brief="List all tracked mapsets everywhere", description="")
     @commands.check(permissions.is_admin)
     async def sublist(self, ctx):
-        for oneentry in db.query("SELECT * FROM mod_tracking"):
+        for mapset in db.query("SELECT * FROM mod_tracking"):
             try:
-                result = await osu.get_beatmapset(s=str(oneentry[0]))
+                result = await osu.get_beatmapset(s=str(mapset[0]))
                 embed = await osuembed.beatmapset(result)
-                await ctx.send(content="mapset_id %s | channel <#%s> | tracking_mode %s" % (oneentry), embed=embed)
             except:
-                print("Connection issues?")
                 await ctx.send("Connection issues?")
+                embed = None
+            await ctx.send(content="mapset_id %s | channel <#%s> | tracking_mode %s" % mapset, embed=embed)
 
-    async def modchecker_background_loop(self):
+    async def mod_checker_background_loop(self):
         print("Mod checking Background Loop launched!")
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
-            for oneentry in db.query("SELECT * FROM mod_tracking"):
-                channel = self.bot.get_channel(int(oneentry[1]))
-                if channel:
-                    mapset_id = str(oneentry[0])
-                    tracking_mode = str(oneentry[2])
-                    print(time.strftime('%X %x %Z') + ' | ' + oneentry[0])
+            for track_entry in db.query("SELECT * FROM mod_tracking"):
+                print(time.strftime('%X %x %Z') + ' | ' + track_entry[0])
+                channel = self.bot.get_channel(int(track_entry[1]))
 
-                    try:
-                        beatmapset_discussions = await osuweb.get_beatmapset_discussions(mapset_id)
-                    except Exception as e:
-                        print(e)
-                        beatmapset_discussions = []
+                if not channel:
+                    print("channel %s is deleted for mapset %s" % (track_entry[1], track_entry[0]))
+                    db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(track_entry[1])]])
+                    db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(track_entry[1])]])
+                    db.query(["DELETE FROM mapset_channels  WHERE channel_id = ?", [str(track_entry[1])]])
+                    continue
 
-                    if beatmapset_discussions:
-                        status = await self.check_status(channel, mapset_id, beatmapset_discussions)
-                        if status:
-                            if tracking_mode == "veto" or tracking_mode == "timeline":
-                                await self.timeline_mode_tracking(beatmapset_discussions, channel, mapset_id,
-                                                                  tracking_mode)
-                            elif tracking_mode == "notification":
-                                await self.notification_mode_tracking(beatmapset_discussions, channel, mapset_id,
-                                                                      tracking_mode)
-                        else:
-                            print("No actual discussions found at %s or mapset untracked automatically" % (mapset_id))
-                    else:
-                        print("%s | modchecker connection issues" % (time.strftime('%X %x %Z')))
-                        await asyncio.sleep(300)
-                else:
-                    print(
-                        "someone manually removed the channel with id %s and mapset id %s" % (oneentry[1], oneentry[0]))
+                mapset_id = str(track_entry[0])
+                tracking_mode = str(track_entry[2])
+
+                if not db.query(["SELECT * FROM mod_tracking "
+                                 "WHERE mapset_id = ? AND channel_id = ? AND mode = ?",
+                                 [str(mapset_id), str(channel.id), str(tracking_mode)]]):
+                    continue
+
+                try:
+                    discussions = await osuweb.get_beatmapset_discussions(mapset_id)
+                    if not discussions:
+                        continue
+                except Exception as e:
+                    print(e)
+                    await asyncio.sleep(300)
+                    continue
+
+                if not await self.check_status(channel, mapset_id, discussions):
+                    continue
+
+                if tracking_mode == "veto" or tracking_mode == "timeline":
+                    await self.timeline_mode_tracking(discussions, channel, mapset_id, tracking_mode)
+                elif tracking_mode == "notification":
+                    await self.notification_mode_tracking(discussions, channel, mapset_id, tracking_mode)
+
                 await asyncio.sleep(120)
             await asyncio.sleep(1800)
 
-    async def populatedb(self, discussions, channel_id):
-        mod_posts = discussions["beatmapset"]["discussions"]
-        allposts = []
-        for onemod in mod_posts:
+    async def insert_mod_history_in_db(self, discussions, channel_id):
+        mass_query = []
+        for mod in discussions["beatmapset"]["discussions"]:
             try:
-                if onemod:
-                    if 'posts' in onemod:
-                        for subpost in onemod["posts"]:
-                            if subpost:
-                                allposts.append(["INSERT INTO mod_posts VALUES (?,?,?)",
-                                                 [str(subpost["id"]), str(onemod["beatmapset_id"]), str(channel_id)]])
-            except Exception as e:
-                print(time.strftime('%X %x %Z'))
-                print("in modchecker.populatedb")
-                print(e)
-                print(onemod)
-        db.mass_query(allposts)
+                if mod:
+                    if 'posts' in mod:
+                        for post in mod["posts"]:
+                            if post:
+                                mass_query.append(["INSERT INTO mod_posts VALUES (?,?,?)",
+                                                   [str(post["id"]), str(post["beatmapset_id"]), str(channel_id)]])
+            except:
+                pass
+        db.mass_query(mass_query)
 
-    async def track(self, mapset_id, channel_id, tracking_mode="timeline"):
-        if not db.query(["SELECT mapset_id FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
-                         [str(mapset_id), str(channel_id)]]):
-            beatmapset_discussions = await osuweb.get_beatmapset_discussions(str(mapset_id))
-            if beatmapset_discussions:
-                await self.populatedb(beatmapset_discussions, str(channel_id))
-                db.query(["INSERT INTO mod_tracking VALUES (?,?,?)", [str(mapset_id), str(channel_id), tracking_mode]])
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    async def untrack(self, mapset_id, channel_id):
-        if db.query(["SELECT mapset_id FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
-                     [str(mapset_id), str(channel_id)]]):
-            db.query(
-                ["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]])
-            db.query(
-                ["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel_id)]])
-            return True
-        else:
-            return False
-
-    async def check_status(self, channel, mapset_id, beatmapset_discussions):
-        status = beatmapset_discussions["beatmapset"]["status"]
+    async def check_status(self, channel, mapset_id, discussions):
+        status = discussions["beatmapset"]["status"]
         if (status == "wip") or (status == "qualified") or (status == "pending"):
-            discussions = True
-        elif status == "ranked":
-            discussions = None
-            if await self.untrack(mapset_id, channel.id):
-                try:
-                    mapset_object = await osu.get_beatmapset(s=mapset_id)
-                    embedthis = await osuembed.beatmapset(mapset_object)
-                except:
-                    print("Connection issues?")
-                    embedthis = None
-                await channel.send(
-                    content='I detected that this map is ranked now. Since the modding stage is finished, and the map is moved to the ranked section, I will no longer be checking for mods on this mapset.',
-                    embed=embedthis)
-        elif status == "graveyard":
-            discussions = None
-            if await self.untrack(mapset_id, channel.id):
-                try:
-                    mapset_object = await osu.get_beatmapset(s=mapset_id)
-                    embedthis = await osuembed.beatmapset(mapset_object)
-                except:
-                    print("Connection issues?")
-                    embedthis = None
-                await channel.send(
-                    content="I detected that this map is graveyarded now and so, I am untracking it. Type `'track` after you ungraveyard it, to continue tracking it. Please understand that we don't wanna track dead sets.",
-                    embed=embedthis)
-        elif status == "deleted":
-            discussions = None
-            if await self.untrack(mapset_id, channel.id):
-                await channel.send(
-                    content='I detected that the mapset with the id %s has been deleted, so I am untracking.' % (
-                        str(mapset_id)))
-        else:
-            discussions = None
-            await channel.send(content='<@155976140073205761> something went wrong, please check the console output.')
-            print("%s / %s" % (status, mapset_id))
-        return discussions
-
-    async def timeline_mode_tracking(self, beatmapset_discussions, channel, mapset_id, tracking_mode):
-        if db.query(["SELECT * FROM mod_tracking WHERE mapset_id = ? AND channel_id = ? AND mode = ?",
-                     [str(mapset_id), str(channel.id), str(tracking_mode)]]):
-            for discussion in beatmapset_discussions["beatmapset"]["discussions"]:
-                if discussion:
-                    if 'posts' in discussion:
-                        for subpostobject in discussion['posts']:
-                            if subpostobject:
-                                if not db.query(["SELECT post_id FROM mod_posts WHERE post_id = ? AND channel_id = ?",
-                                                 [str(subpostobject['id']), str(channel.id)]]):
-                                    db.query(["INSERT INTO mod_posts VALUES (?,?,?)",
-                                              [str(subpostobject["id"]), str(mapset_id), str(channel.id)]])
-                                    if (not subpostobject['system']) and (not subpostobject["message"] == "r") and (
-                                    not subpostobject["message"] == "res") and (
-                                    not subpostobject["message"] == "resolved"):
-                                        modtopost = await self.modpost(subpostobject, beatmapset_discussions,
-                                                                       discussion, tracking_mode)
-                                        if modtopost:
-                                            try:
-                                                await channel.send(embed=modtopost)
-                                            except Exception as e:
-                                                print(e)
-
-    async def notification_mode_tracking(self, beatmapset_discussions, channel, mapset_id,
-                                         tracking_mode):  # channel is important
-        if db.query(["SELECT * FROM mod_tracking WHERE mapset_id = ? AND channel_id = ? AND mode = ?",
-                     [str(mapset_id), str(channel.id), str(tracking_mode)]]):
+            return True
+        elif (status == "ranked") or (status == "graveyard") or (status == "deleted"):
+            db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
+                      [str(mapset_id), str(channel.id)]])
+            db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
+                      [str(mapset_id), str(channel.id)]])
+            await channel.send(content="This mapset is either ranked, graveyarded or deleted, "
+                                       "so I am untracking it. "
+                                       "https://osu.ppy.sh/beatmapsets/%s" % mapset_id)
             return None
-        # cachedstatus = dbhandler.query(["SELECT unresolved FROM mapset_status WHERE mapset_id = ? AND channel_id = ?", [str(mapset_id), str(channel.id)]])
-        # for discussion in beatmapset_discussions["beatmapset"]["discussions"]:
-        #     try:
-        #         if discussion:
-        #             discussion['resolved'] == False
+        else:
+            await channel.send(content="<@155976140073205761> something went wrong, please check the console output.")
+            print("%s / %s" % (status, mapset_id))
+            return None
 
-        #     except Exception as e:
-        #         print(time.strftime('%X %x %Z'))
-        #         print("while looping through discussions")
-        #         print(e)
-        #         print(discussion)
+    async def timeline_mode_tracking(self, discussions, channel, mapset_id, tracking_mode):
+        history = db.query(["SELECT post_id FROM mod_posts WHERE channel_id = ?", [str(channel.id)]])
+        for mod in discussions["beatmapset"]["discussions"]:
+            if mod:
+                if 'posts' in mod:
+                    for post in mod['posts']:
+                        if post:
+                            if not ((str(post['id']),) in history):
+                                db.query(["INSERT INTO mod_posts VALUES (?,?,?)",
+                                          [str(post["id"]), str(mapset_id), str(channel.id)]])
+                                if ((not post['system']) and
+                                        (not post["message"] == "r") and
+                                        (not post["message"] == "res") and
+                                        (not post["message"] == "resolved")):
+                                    post_to_post = await self.mod_post_embed(post, discussions, mod, tracking_mode)
+                                    if post_to_post:
+                                        try:
+                                            await channel.send(embed=post_to_post)
+                                        except Exception as e:
+                                            print(e)
 
-    async def get_username(self, related_users, user_id):
+    async def notification_mode_tracking(self, discussions, channel, mapset_id, tracking_mode):
+        current_status = await self.check_if_resolved(discussions)  # 1 - we have new mods, 0 - no new mods
+        cached_status = db.query(["SELECT status FROM mapset_status "
+                                  "WHERE mapset_id = ? AND channel_id = ?",
+                                  [str(mapset_id), str(channel.id)]])
+        if not cached_status:
+            db.query(["INSERT INTO mapset_status VALUES (?, ?, ?)",
+                      [str(mapset_id), str(channel.id), str(current_status)]])
+            return None
+
+        cached_status = cached_status[0][0]
+        if cached_status != current_status:
+            db.query(["UPDATE mapset_status SET status = ? WHERE mapset_id = ? AND channel_id = ?",
+                      [str(current_status), str(mapset_id), str(channel.id)]])
+            if current_status == "1":
+                await channel.send("new mods")
+        return None
+
+    async def check_if_resolved(self, discussions):
+        for mod in discussions["beatmapset"]["discussions"]:
+            if mod:
+                if not mod['resolved']:
+                    return "1"
+
+    async def mod_post_embed(self, post, discussions, mod, tracking_mode):
+        if not post:
+            return None
+
+        mapset_diff_name = str(self.get_diff_name(discussions["beatmapset"]["beatmaps"], mod['beatmap_id']))
+        if tracking_mode == "veto":
+            mapset_title = str(discussions["beatmapset"]["title"])
+            title = "%s / %s" % (mapset_title, mapset_diff_name)
+            if mod['message_type'] == "hype":
+                return None
+            elif mod['message_type'] == "praise":
+                return None
+        else:
+            title = mapset_diff_name
+
+        footer = self.get_mod_type(mod)
+
+        embed = discord.Embed(
+            title=title,
+            url="https://osu.ppy.sh/beatmapsets/%s/discussion#/%s" %
+                (str(discussions["beatmapset"]["id"]), str(mod['id'])),
+            description=str(post['message']),
+            color=footer['color']
+        )
+        embed.set_author(
+            name=str(self.get_username_with_group(discussions["beatmapset"]["related_users"], str(post['user_id']))),
+            url="https://osu.ppy.sh/users/%s" % (str(post['user_id'])),
+            icon_url="https://a.ppy.sh/%s" % (str(post['user_id']))
+        )
+        embed.set_thumbnail(
+            url="https://b.ppy.sh/thumb/%sl.jpg" % (str(discussions["beatmapset"]["id"]))
+        )
+        embed.set_footer(
+            text=str(footer['text']),
+            icon_url=str(footer['icon'])
+        )
+        return embed
+
+    def get_username_with_group(self, related_users, user_id):
+        user = self.get_related_user(related_users, user_id)
+        if user['default_group'] == "bng":
+            return user['username'] + " [BN]"
+        elif user['default_group'] == "bng_limited":
+            return user['username'] + " [BN]"
+        elif user['default_group'] == "nat":
+            return user['username'] + " [NAT]"
+        else:
+            return user['username']
+
+    def get_related_user(self, related_users, user_id):
         for user in related_users:
             if str(user_id) == str(user['id']):
-                if user['default_group'] == "bng":
-                    return user['username'] + " [BN]"
-                elif user['default_group'] == "bng_limited":
-                    return user['username'] + " [BN]"
-                elif user['default_group'] == "nat":
-                    return user['username'] + " [NAT]"
-                else:
-                    return user['username']
+                return user
 
-    async def get_diffname(self, beatmaps, beatmap_id):
+    def get_diff_name(self, beatmaps, beatmap_id):
         for beatmap in beatmaps:
             if beatmap_id:
                 if beatmap['id'] == beatmap_id:
@@ -290,91 +330,50 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             else:
                 return "All difficulties"
 
-    async def get_modtype(self, newevent):
-        if newevent['resolved']:
-            footer = {
+    def get_mod_type(self, mod):
+        if mod['resolved']:
+            return {
                 'icon': "https://i.imgur.com/jjxrPpu.png",
                 'text': "RESOLVED",
                 'color': 0x77b255,
             }
-        else:
-            if newevent['message_type'] == "praise":
-                footer = {
-                    'icon': "https://i.imgur.com/2kFPL8m.png",
-                    'text': "Praise",
-                    'color': 0x44aadd,
-                }
-            elif newevent['message_type'] == "hype":
-                footer = {
-                    'icon': "https://i.imgur.com/fkJmW44.png",
-                    'text': "Hype",
-                    'color': 0x44aadd,
-                }
-            elif newevent['message_type'] == "mapper_note":
-                footer = {
-                    'icon': "https://i.imgur.com/HdmJ9i5.png",
-                    'text': "Note",
-                    'color': 0x8866ee,
-                }
-            elif newevent['message_type'] == "problem":
-                footer = {
-                    'icon': "https://i.imgur.com/qxyuJFF.png",
-                    'text': "Problem",
-                    'color': 0xcc5288,
-                }
-            elif newevent['message_type'] == "suggestion":
-                footer = {
-                    'icon': "https://i.imgur.com/Newgp6L.png",
-                    'text': "Suggestion",
-                    'color': 0xeeb02a,
-                }
-            else:
-                footer = {
-                    'icon': "",
-                    'text': newevent['message_type'],
-                    'color': 0xbd3661,
-                }
-        return footer
 
-    async def modpost(self, subpostobject, beatmapset_discussions, newevent, tracking_mode):
-        if subpostobject:
-            if tracking_mode == "timeline":
-                title = str(
-                    await self.get_diffname(beatmapset_discussions["beatmapset"]["beatmaps"], newevent['beatmap_id']))
-            elif tracking_mode == "veto":
-                title = "%s / %s" % (str(beatmapset_discussions["beatmapset"]["title"]), str(
-                    await self.get_diffname(beatmapset_discussions["beatmapset"]["beatmaps"], newevent['beatmap_id'])))
-                if newevent['message_type'] == "hype":
-                    return None
-                elif newevent['message_type'] == "praise":
-                    return None
-
-            footer = await self.get_modtype(newevent)
-            modpost = discord.Embed(
-                title=title,
-                url="https://osu.ppy.sh/beatmapsets/%s/discussion#/%s" % (
-                    str(beatmapset_discussions["beatmapset"]["id"]), str(newevent['id'])),
-                description=str(subpostobject['message']),
-                color=footer['color']
-            )
-            modpost.set_author(
-                name=str(await self.get_username(beatmapset_discussions["beatmapset"]["related_users"],
-                                                 str(subpostobject['user_id']))),
-                url="https://osu.ppy.sh/users/%s" % (
-                    str(subpostobject['user_id'])),
-                icon_url="https://a.ppy.sh/%s" % (str(subpostobject['user_id']))
-            )
-            modpost.set_thumbnail(
-                url="https://b.ppy.sh/thumb/%sl.jpg" % (
-                    str(beatmapset_discussions["beatmapset"]["id"]))
-            )
-            modpost.set_footer(
-                text=str(footer['text']),
-                icon_url=str(footer['icon'])
-            )
-            return modpost
+        if mod['message_type'] == "praise":
+            return {
+                'icon': "https://i.imgur.com/2kFPL8m.png",
+                'text': "Praise",
+                'color': 0x44aadd,
+            }
+        elif mod['message_type'] == "hype":
+            return {
+                'icon': "https://i.imgur.com/fkJmW44.png",
+                'text': "Hype",
+                'color': 0x44aadd,
+            }
+        elif mod['message_type'] == "mapper_note":
+            return {
+                'icon': "https://i.imgur.com/HdmJ9i5.png",
+                'text': "Note",
+                'color': 0x8866ee,
+            }
+        elif mod['message_type'] == "problem":
+            return {
+                'icon': "https://i.imgur.com/qxyuJFF.png",
+                'text': "Problem",
+                'color': 0xcc5288,
+            }
+        elif mod['message_type'] == "suggestion":
+            return {
+                'icon': "https://i.imgur.com/Newgp6L.png",
+                'text': "Suggestion",
+                'color': 0xeeb02a,
+            }
         else:
-            return None
+            return {
+                'icon': "",
+                'text': mod['message_type'],
+                'color': 0xbd3661,
+            }
 
 
 def setup(bot):

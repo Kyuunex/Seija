@@ -120,7 +120,7 @@ class Docs(commands.Cog, name="Pretty Bot Documentation"):
         embed.add_field(name="'open", value="Open the queue, everyone can see and post in it.", inline=False)
         embed.add_field(name="'close",
                         value="Close the queue, everyone can see but can't post in it. "
-                              "You can also use this command to un-hide the queue, "
+                              "You can also use this command to unhide the queue, "
                               "but again, nobody will be able to post in it.",
                         inline=False)
         embed.add_field(name="'hide",

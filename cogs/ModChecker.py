@@ -206,15 +206,12 @@ class ModChecker(commands.Cog, name="Mod Checker"):
     async def insert_mod_history_in_db(self, discussions, channel_id):
         mass_query = []
         for mod in discussions["beatmapset"]["discussions"]:
-            try:
-                if mod:
-                    if 'posts' in mod:
-                        for post in mod["posts"]:
-                            if post:
-                                mass_query.append(["INSERT INTO mod_posts VALUES (?,?,?)",
-                                                   [str(post["id"]), str(post["beatmapset_id"]), str(channel_id)]])
-            except:
-                pass
+            if mod:
+                if 'posts' in mod:
+                    for post in mod["posts"]:
+                        if post:
+                            mass_query.append(["INSERT INTO mod_posts VALUES (?,?,?)",
+                                               [str(post["id"]), str(mod["beatmapset_id"]), str(channel_id)]])
         db.mass_query(mass_query)
 
     async def check_status(self, channel, mapset_id, discussions):

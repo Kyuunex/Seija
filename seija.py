@@ -24,6 +24,7 @@ if not os.path.exists(database_file):
     db.query("CREATE TABLE mod_tracking (mapset_id, channel_id, mode)")
     db.query("CREATE TABLE mod_tracking_pauselist (mapset_id, channel_id, mode)")
     db.query("CREATE TABLE mapset_status (mapset_id, channel_id, status)")
+    db.query("CREATE TABLE map_owners (map_id, user_id)")
     db.query("CREATE TABLE notices (timestamp, notice)")
     db.query("CREATE TABLE restricted_users (guild_id, osu_id)")
     db.query("CREATE TABLE queues (channel_id, user_id, guild_id)")

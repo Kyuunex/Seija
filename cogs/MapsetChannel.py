@@ -276,7 +276,8 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
                                                   category=category,
                                                   topic=channel_topic)
         await ctx.author.add_roles(mapset_role)
-        await channel.send(content="%s done!" % ctx.author.mention,
+        await channel.send(content="%s done! Please keep in mind I don't automatically start tracking. "
+                                   "You can use the `'track` command bellow to start tracking." % ctx.author.mention,
                            embed=await self.docs.mapset_channel_management())
         db.query(["INSERT INTO mapset_channels "
                   "VALUES (?, ?, ?, ?, ?)",

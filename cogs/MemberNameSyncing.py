@@ -54,52 +54,43 @@ class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
         print("Member Name Syncing Loop launched!")
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
-            try:
-                await asyncio.sleep(3600)
-                print(time.strftime('%X %x %Z') + ' | member_name_syncing_loop start')
-                user_list = db.query("SELECT * FROM users")
-                restricted_user_list = db.query("SELECT guild_id, osu_id FROM restricted_users")
-                for guild_sync_record in self.guild_event_tracker_list:
+            await asyncio.sleep(10)
+            print(time.strftime('%X %x %Z') + ' | member_name_syncing_loop start')
+            user_list = db.query("SELECT * FROM users")
+            restricted_user_list = db.query("SELECT guild_id, osu_id FROM restricted_users")
+            for guild_sync_record in self.guild_event_tracker_list:
 
-                    audit_channel = self.bot.get_channel(int(guild_sync_record[3]))
-                    feed_channel = self.bot.get_channel(int(guild_sync_record[2]))
-                    guild = self.bot.get_guild(int(guild_sync_record[1]))
+                audit_channel = self.bot.get_channel(int(guild_sync_record[3]))
+                feed_channel = self.bot.get_channel(int(guild_sync_record[2]))
+                guild = self.bot.get_guild(int(guild_sync_record[1]))
 
-                    for member in guild.members:
-                        for db_user in user_list:
-                            if (not member.bot) and (str(member.id) == str(db_user[0])):
-                                try:
-                                    osu_profile = await osu.get_user(u=db_user[1], event_days="1")
-                                    if osu_profile:
-                                        await self.sync_nickname(audit_channel, db_user, member, osu_profile)
-                                        await self.check_events(feed_channel, osu_profile)
-                                        if (str(guild.id), str(db_user[1])) in restricted_user_list:
-                                            await audit_channel.send(
-                                                "%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | unrestricted lol" %
-                                                (member.mention, str(db_user[2]), str(db_user[1]), str(db_user[1])))
-                                            db.query(["DELETE FROM restricted_users "
-                                                      "WHERE guild_id = ? AND osu_id = ?",
-                                                      [str(guild.id), str(db_user[1])]])
-                                    else:
-                                        # at this point we are sure that the user is restricted.
-                                        if not (str(guild.id), str(db_user[1])) in restricted_user_list:
-                                            await audit_channel.send(
-                                                "%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | restricted" %
-                                                (member.mention, str(db_user[2]), str(db_user[1]), str(db_user[1])))
-                                            db.query(["INSERT INTO restricted_users VALUES (?,?)",
-                                                      [str(guild.id), str(db_user[1])]])
-                                except Exception as e:
-                                    print(e)
-                                    print("Connection issues?")
-                                    await asyncio.sleep(120)
-                            await asyncio.sleep(1)
-                print(time.strftime('%X %x %Z') + ' | member_name_syncing_loop finished')
-                await asyncio.sleep(3600)
-            except Exception as e:
-                print(time.strftime('%X %x %Z'))
-                print("in member_name_syncing_loop")
-                print(e)
-                await asyncio.sleep(7200)
+                for member in guild.members:
+                    for db_user in user_list:
+                        if (not member.bot) and (str(member.id) == str(db_user[0])):
+                            print("syncing %s aka %s" % (db_user[1], db_user[1]))
+                            osu_profile = await osu.get_user(u=db_user[1], event_days="1")
+                            # TODO: break here if connection problems
+                            if osu_profile:
+                                await self.sync_nickname(audit_channel, db_user, member, osu_profile)
+                                await self.check_events(feed_channel, osu_profile)
+                                if (str(guild.id), str(db_user[1])) in restricted_user_list:
+                                    await audit_channel.send(
+                                        "%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | unrestricted lol" %
+                                        (member.mention, str(db_user[2]), str(db_user[1]), str(db_user[1])))
+                                    db.query(["DELETE FROM restricted_users "
+                                              "WHERE guild_id = ? AND osu_id = ?",
+                                              [str(guild.id), str(db_user[1])]])
+                            else:
+                                # at this point we are sure that the user is restricted.
+                                if not (str(guild.id), str(db_user[1])) in restricted_user_list:
+                                    await audit_channel.send(
+                                        "%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | restricted" %
+                                        (member.mention, str(db_user[2]), str(db_user[1]), str(db_user[1])))
+                                    db.query(["INSERT INTO restricted_users VALUES (?,?)",
+                                              [str(guild.id), str(db_user[1])]])
+                        await asyncio.sleep(1)
+            print(time.strftime('%X %x %Z') + ' | member_name_syncing_loop finished')
+            await asyncio.sleep(7200)
 
     async def sync_nickname(self, audit_channel, db_user, member, osu_profile):
         # if "04-01T" in str(now.isoformat()):

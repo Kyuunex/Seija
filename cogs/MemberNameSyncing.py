@@ -65,11 +65,15 @@ class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
                 guild = self.bot.get_guild(int(guild_sync_record[1]))
 
                 for member in guild.members:
+                    if member.bot:
+                        continue
                     for db_user in user_list:
-                        if (not member.bot) and (str(member.id) == str(db_user[0])):
-                            print("syncing %s aka %s" % (db_user[1], db_user[1]))
-                            osu_profile = await osu.get_user(u=db_user[1], event_days="1")
-                            # TODO: break here if connection problems
+                        if str(member.id) == str(db_user[0]):
+                            try:
+                                osu_profile = await osu.get_user(u=db_user[1], event_days="1")
+                            except Exception as e:
+                                print(e)
+                                break
                             if osu_profile:
                                 await self.sync_nickname(audit_channel, db_user, member, osu_profile)
                                 await self.check_events(feed_channel, osu_profile)
@@ -88,7 +92,7 @@ class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
                                         (member.mention, str(db_user[2]), str(db_user[1]), str(db_user[1])))
                                     db.query(["INSERT INTO restricted_users VALUES (?,?)",
                                               [str(guild.id), str(db_user[1])]])
-                        await asyncio.sleep(1)
+                            await asyncio.sleep(1)
             print(time.strftime('%X %x %Z') + ' | member_name_syncing_loop finished')
             await asyncio.sleep(7200)
 

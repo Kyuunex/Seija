@@ -10,7 +10,7 @@ from modules.connections import database_file as database_file
 from modules.connections import bot_token as bot_token
 
 command_prefix = '\''
-app_version = "t20191105"
+app_version = "t20191107"
 client = commands.Bot(command_prefix=command_prefix,
                       description='Seija %s' % app_version)
 
@@ -21,6 +21,7 @@ if not os.path.exists(database_file):
     db.query("CREATE TABLE config (setting, parent, value, flag)")
     db.query("CREATE TABLE admins (user_id, permissions)")
     db.query("CREATE TABLE mod_posts (post_id, mapset_id, channel_id)")
+    db.query("CREATE TABLE mapset_events (event_id, mapset_id, channel_id)")
     db.query("CREATE TABLE mod_tracking (mapset_id, channel_id, mode)")
     db.query("CREATE TABLE mod_tracking_pauselist (mapset_id, channel_id, mode)")
     db.query("CREATE TABLE mapset_status (mapset_id, channel_id, status)")

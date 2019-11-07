@@ -12,6 +12,7 @@ from modules.connections import osu as osu
 
 
 class ModChecker(commands.Cog, name="Mod Checker"):
+    # TODO: add event inserts in db upon track
     def __init__(self, bot):
         self.bot = bot
         self.veto_channel_list = db.query(["SELECT value FROM config WHERE setting = ?", ["guild_veto_channel"]])
@@ -200,6 +201,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                 elif tracking_mode == "notification":
                     await self.notification_mode_tracking(discussions, channel, mapset_id)
 
+                await self.check_nomination_status(discussions, channel, mapset_id, tracking_mode)
                 await asyncio.sleep(120)
             await asyncio.sleep(1800)
 
@@ -218,14 +220,46 @@ class ModChecker(commands.Cog, name="Mod Checker"):
         status = discussions["beatmapset"]["status"]
         if (status == "wip") or (status == "qualified") or (status == "pending"):
             return True
-        elif (status == "ranked") or (status == "graveyard") or (status == "deleted"):
+        elif status == "graveyard":
             db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
                       [str(mapset_id), str(channel.id)]])
             db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
                       [str(mapset_id), str(channel.id)]])
-            await channel.send(content="This mapset is either ranked, graveyarded or deleted, "
-                                       "so I am untracking it. "
+            await channel.send(content="This mapset is graveyarded, so I am untracking it. "
+                                       "I don't wanna track dead sets."
                                        "https://osu.ppy.sh/beatmapsets/%s" % mapset_id)
+            return None
+        elif status == "deleted":
+            db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
+                      [str(mapset_id), str(channel.id)]])
+            db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
+                      [str(mapset_id), str(channel.id)]])
+            await channel.send(content="This mapset is deleted, so I am untracking it. "
+                                       "why tho????????????? channel archived and will be nuked in a week "
+                                       "along with it's role."
+                                       "https://osu.ppy.sh/beatmapsets/%s" % mapset_id)
+            guild_archive_category_id = db.query(["SELECT value FROM config "
+                                                  "WHERE setting = ? AND parent = ?",
+                                                  ["guild_archive_category", str(channel.guild.id)]])
+            if guild_archive_category_id:
+                archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
+                await channel.edit(reason="mapset deleted!", category=archive_category)
+            return None
+        elif status == "ranked":
+            db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
+                      [str(mapset_id), str(channel.id)]])
+            db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
+                      [str(mapset_id), str(channel.id)]])
+            await channel.send(content="This mapset is ranked, so I am untracking it. "
+                                       "There is no point in continuing to do so. "
+                                       "Channel archived!"
+                                       "https://osu.ppy.sh/beatmapsets/%s" % mapset_id)
+            guild_archive_category_id = db.query(["SELECT value FROM config "
+                                                  "WHERE setting = ? AND parent = ?",
+                                                  ["guild_archive_category", str(channel.guild.id)]])
+            if guild_archive_category_id:
+                archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
+                await channel.edit(reason="mapset ranked!", category=archive_category)
             return None
         else:
             await channel.send(content="<@155976140073205761> something went wrong, please check the console output.")
@@ -276,6 +310,51 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                 await channel.send(return_message.replace("@", ""))
         return None
 
+    async def check_nomination_status(self, discussions, channel, mapset_id, tracking_mode):
+        history = db.query(["SELECT event_id FROM mapset_events WHERE channel_id = ?", [str(channel.id)]])
+        for event in discussions["beatmapset"]["events"]:
+            if event:
+                if self.get_icon(event['type']):
+                    if not ((str(event['id']),) in history):
+                        db.query(["INSERT INTO mapset_events VALUES (?,?,?)",
+                                  [str(event["id"]), str(mapset_id), str(channel.id)]])
+                        event_to_post = await self.nomnom_embed(event, discussions, tracking_mode)
+                        if event_to_post:
+                            try:
+                                await channel.send(embed=event_to_post)
+                            except Exception as e:
+                                print(e)
+
+        return None
+
+    def get_icon(self, type):
+        if type == "nomination_reset":
+            return {
+                'text': ":anger_right: Bubble pop",
+                'color': 0xfc7b03,
+            }
+        elif type == "disqualify":
+            return {
+                'text': ":broken_heart: Disqualified",
+                'color': 0xfc0303,
+            }
+        elif type == "nominate":
+            return {
+                'text': ":thought_balloon: Bubble",
+                'color': 0x03fc6f,
+            }
+        elif type == "qualify":
+            return {
+                'text': ":heart: qualified",
+                'color': 0x0373fc,
+            }
+        elif type == "rank":
+            return {
+                'text': ":sparkling_heart: ranked",
+                'color': 0x0373fc,
+            }
+        return None
+
     async def check_if_resolved(self, discussions):
         for mod in discussions["beatmapset"]["discussions"]:
             if mod:
@@ -294,6 +373,38 @@ class ModChecker(commands.Cog, name="Mod Checker"):
                         if not str(mod['beatmap_id'] in return_list):
                             return_list.append(str(mod['beatmap_id']))
         return return_list
+
+    async def nomnom_embed(self, event, discussions, tracking_mode):
+        if not event:
+            return None
+
+        if tracking_mode == "veto":
+            mapset_title = str(discussions["beatmapset"]["title"])
+            title = "%s" % mapset_title
+        else:
+            title = ""
+
+        icon = self.get_icon(event['type'])
+
+        embed = discord.Embed(
+            title=title,
+            url="https://osu.ppy.sh/beatmapsets/%s/discussion" % str(discussions["beatmapset"]["id"]),
+            description=str(icon['text']),
+            color=icon['color']
+        )
+        if event['user_id']:
+            embed.set_author(
+                name=str(self.get_username_with_group(discussions["beatmapset"]["related_users"], event['user_id'])),
+                url="https://osu.ppy.sh/users/%s" % (str(event['user_id'])),
+                icon_url="https://a.ppy.sh/%s" % (str(event['user_id']))
+            )
+        embed.set_thumbnail(
+            url="https://b.ppy.sh/thumb/%sl.jpg" % (str(discussions["beatmapset"]["id"]))
+        )
+        embed.set_footer(
+            text=str(event['created_at']),
+        )
+        return embed
 
     async def mod_post_embed(self, post, discussions, mod, tracking_mode):
         if not post:
@@ -345,9 +456,11 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             return user['username']
 
     def get_related_user(self, related_users, user_id):
-        for user in related_users:
-            if str(user_id) == str(user['id']):
-                return user
+        if user_id:
+            for user in related_users:
+                if str(user_id) == str(user['id']):
+                    return user
+        return ""
 
     def get_diff_name(self, beatmaps, beatmap_id):
         for beatmap in beatmaps:

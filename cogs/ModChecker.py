@@ -330,7 +330,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
     def get_icon(self, type):
         if type == "nomination_reset":
             return {
-                'text': ":anger_right: Bubble pop",
+                'text': ":anger_right: Nomination Reset",
                 'color': 0xfc7b03,
             }
         elif type == "disqualify":
@@ -340,17 +340,17 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             }
         elif type == "nominate":
             return {
-                'text': ":thought_balloon: Bubble",
+                'text': ":thought_balloon: Nominated",
                 'color': 0x03fc6f,
             }
         elif type == "qualify":
             return {
-                'text': ":heart: qualified",
+                'text': ":heart: Qualified",
                 'color': 0x0373fc,
             }
         elif type == "rank":
             return {
-                'text': ":sparkling_heart: ranked",
+                'text': ":sparkling_heart: Ranked",
                 'color': 0x0373fc,
             }
         return None

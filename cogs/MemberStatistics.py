@@ -13,6 +13,7 @@ class MemberStatistics(commands.Cog, name="Member Statistics Commands"):
 
     @commands.command(name="demographics", brief="Send server demographics stats", description="")
     @commands.check(permissions.is_admin)
+    @commands.guild_only()
     async def demographics(self, ctx):
         async with ctx.channel.typing():
             master_list = []
@@ -55,6 +56,7 @@ class MemberStatistics(commands.Cog, name="Member Statistics Commands"):
 
     @commands.command(name="from", brief="Get a list of members from specified country",
                       description="Takes Alpha-2, Alpha-3 codes and full country names")
+    @commands.guild_only()
     async def users_from(self, ctx, *, country_code="US"):
         async with ctx.channel.typing():
             try:

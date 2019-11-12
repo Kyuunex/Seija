@@ -13,9 +13,10 @@ class AprilFools(commands.Cog, name="April Fools Management Commands"):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="af_2018_apply", brief="Apply April fools commands", description="")
+    @commands.command(name="af_2019_apply", brief="Apply April fools 2019 commands", description="")
     @commands.check(permissions.is_owner)
-    async def af_apply(self, ctx):
+    @commands.guild_only()
+    async def af_2019_apply(self, ctx):
         await ctx.message.delete()
         await self.apply_guild(ctx)
         await self.apply_channels(ctx)
@@ -28,9 +29,10 @@ class AprilFools(commands.Cog, name="April Fools Management Commands"):
             print(e)
             await ctx.send(":ok_hand:")
 
-    @commands.command(name="af_2018_restore", brief="Restore from April fools", description="")
+    @commands.command(name="af_2019_restore", brief="Restore from April fools 2019", description="")
     @commands.check(permissions.is_owner)
-    async def af_restore(self, ctx):
+    @commands.guild_only()
+    async def af_2019_restore(self, ctx):
         await ctx.message.delete()
         await self.restore_guild(ctx)
         await self.restore_channels(ctx)
@@ -38,6 +40,18 @@ class AprilFools(commands.Cog, name="April Fools Management Commands"):
         await self.restore_roles(ctx)
         await self.rotate_logo(ctx)
         await ctx.send(":ok_hand:")
+
+    @commands.command(name="af_2020_apply", brief="Apply April fools 2020 commands", description="")
+    @commands.check(permissions.is_owner)
+    @commands.guild_only()
+    async def af_2020_apply(self, ctx):
+        pass
+
+    @commands.command(name="af_2020_restore", brief="Restore from April fools 2020", description="")
+    @commands.check(permissions.is_owner)
+    @commands.guild_only()
+    async def af_2020_apply(self, ctx):
+        pass
 
     async def apply_channels(self, ctx):
         guild = ctx.guild

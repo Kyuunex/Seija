@@ -18,6 +18,7 @@ class MemberVerification(commands.Cog, name="Member Verification"):
 
     @commands.command(name="verify", brief="Manually verify a member", description="")
     @commands.check(permissions.is_admin)
+    @commands.guild_only()
     async def verify(self, ctx, user_id, osu_id):
         member = ctx.guild.get_member(int(user_id))
         if member:
@@ -46,6 +47,7 @@ class MemberVerification(commands.Cog, name="Member Verification"):
 
     @commands.command(name="unverify", brief="Unverify a member and delete it from db", description="")
     @commands.check(permissions.is_admin)
+    @commands.guild_only()
     async def unverify(self, ctx, user_id):
         db.query(["DELETE FROM users WHERE user_id = ?", [str(user_id)]])
         member = ctx.guild.get_member(int(user_id))

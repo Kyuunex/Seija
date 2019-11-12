@@ -28,6 +28,7 @@ class Osu(commands.Cog, name="osu!"):
 
     @commands.command(name="ts", brief="Send an osu editor clickable timestamp",
                       description="Must start with a timestamp")
+    @commands.guild_only()
     async def ts(self, ctx, *, string):
         if "-" in string:
             timestamp_data = string.split("-")

@@ -35,6 +35,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
         )
 
     @commands.command(name="add", brief="Add a user in the current mapset channel")
+    @commands.guild_only()
     async def add(self, ctx, user_id: str):
         role_id_list = db.query(["SELECT role_id FROM mapset_channels "
                                  "WHERE user_id = ? AND channel_id = ?",
@@ -55,6 +56,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
             await ctx.send("not your mapset channel")
 
     @commands.command(name="remove", brief="Remove a user from the current mapset channel")
+    @commands.guild_only()
     async def remove(self, ctx, user_id: str):
         role_id_list = db.query(["SELECT role_id FROM mapset_channels "
                                  "WHERE user_id = ? AND channel_id = ?",
@@ -85,11 +87,13 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
             return None
 
     @commands.command(name="claim_diff", brief="Claim a difficulty", description="")
+    @commands.guild_only()
     @commands.check(permissions.is_admin)
     async def claim_diff(self, ctx, map_id):
         db.query(["INSERT INTO map_owners VALUES (?, ?)", [str(map_id), str(ctx.author.id)]])
 
     @commands.command(name="abandon", brief="Abandon the mapset and untrack", description="")
+    @commands.guild_only()
     async def abandon(self, ctx):
         guild_archive_category_id = db.query(["SELECT value FROM config "
                                               "WHERE setting = ? AND parent = ?",
@@ -124,6 +128,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
 
     @commands.command(name="set_id", brief="Set a mapset id for this channel",
                       description="Useful if you created this channel without setting an id")
+    @commands.guild_only()
     async def set_mapset_id(self, ctx, mapset_id: str):
         mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
                                        "WHERE user_id = ? AND channel_id = ?",
@@ -152,6 +157,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
 
     @commands.command(name="set_owner", brief="Transfer set ownership to another discord account",
                       description="user_id can only be that discord account's id")
+    @commands.guild_only()
     async def set_owner_id(self, ctx, user_id: str):
         mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
                                        "WHERE user_id = ? AND channel_id = ?",
@@ -179,6 +185,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
 
     @commands.command(name="nuke", brief="Nuke a requested mapset channel", description="")
     @commands.check(permissions.is_admin)
+    @commands.guild_only()
     async def nuke(self, ctx):
         role_id = db.query(["SELECT role_id FROM mapset_channels "
                             "WHERE channel_id = ?",
@@ -211,6 +218,7 @@ class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
     @commands.command(name="request_mapset_channel",
                       brief="Request a mapset channel",
                       description="")
+    @commands.guild_only()
     async def make_mapset_channel(self, ctx, mapset_id="0", *, mapset_title=None):
         guild_mapset_category_id = db.query(["SELECT value FROM config "
                                              "WHERE setting = ? AND parent = ?",

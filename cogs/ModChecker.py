@@ -19,6 +19,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
         self.bot.loop.create_task(self.mod_checker_background_loop())
 
     @commands.command(name="track", brief="Track the mapset in this channel", description="")
+    @commands.guild_only()
     async def track(self, ctx, tracking_mode="timeline"):
         mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
                                        "WHERE user_id = ? AND channel_id = ?",
@@ -81,6 +82,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             await ctx.send("Connection issues? try again")
 
     @commands.command(name="untrack", brief="Untrack everything in this channel", description="")
+    @commands.guild_only()
     async def untrack(self, ctx):
         mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
                                        "WHERE user_id = ? AND channel_id = ?",
@@ -93,6 +95,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
         await ctx.send("Untracked everything in this channel")
 
     @commands.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="")
+    @commands.guild_only()
     async def veto(self, ctx, mapset_id):
         if not ((str(ctx.channel.id),) in self.veto_channel_list):
             return None
@@ -128,6 +131,7 @@ class ModChecker(commands.Cog, name="Mod Checker"):
             await ctx.send("tracked")
 
     @commands.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode", description="")
+    @commands.guild_only()
     async def unveto(self, ctx, mapset_id):
         if not ((str(ctx.channel.id),) in self.veto_channel_list):
             return None

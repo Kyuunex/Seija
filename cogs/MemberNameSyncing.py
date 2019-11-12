@@ -73,6 +73,7 @@ class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
                                 osu_profile = await osu.get_user(u=db_user[1], event_days="1")
                             except Exception as e:
                                 print(e)
+                                await asyncio.sleep(120)
                                 break
                             if osu_profile:
                                 await self.sync_nickname(audit_channel, db_user, member, osu_profile)

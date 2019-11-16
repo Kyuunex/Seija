@@ -11,7 +11,7 @@ from modules.connections import osuweb as osuweb
 from modules.connections import osu as osu
 
 
-class ModChecker(commands.Cog, name="Mod Checker"):
+class ModChecker(commands.Cog):
     # TODO: add event inserts in db upon track
     def __init__(self, bot):
         self.bot = bot

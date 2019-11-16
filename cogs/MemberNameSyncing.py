@@ -8,7 +8,7 @@ from modules.connections import osu as osu
 import osuembed
 
 
-class MemberNameSyncing(commands.Cog, name="Member Name Syncing"):
+class MemberNameSyncing(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.guild_event_tracker_list = db.query(["SELECT * FROM config "

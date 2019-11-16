@@ -3,7 +3,7 @@ from discord.ext import commands
 from modules import db
 
 
-class Docs(commands.Cog, name="Pretty Bot Documentation"):
+class Docs(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.help_thumbnail = "https://i.imgur.com/JhL9PV8.png"

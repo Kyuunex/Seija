@@ -8,7 +8,7 @@ from modules.connections import osu as osu
 import osuembed
 
 
-class MemberVerification(commands.Cog, name="Member Verification"):
+class MemberVerification(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.verify_channel_list = db.query(["SELECT value, parent FROM config "

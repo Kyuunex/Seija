@@ -9,7 +9,7 @@ from discord.ext import commands
 from PIL import Image
 
 
-class AprilFools(commands.Cog, name="April Fools Management Commands"):
+class AprilFools(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 

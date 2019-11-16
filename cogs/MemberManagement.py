@@ -9,7 +9,7 @@ import osuembed
 from modules.connections import osu as osu
 
 
-class MemberManagement(commands.Cog, name="Member Management"):
+class MemberManagement(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 

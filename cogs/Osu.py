@@ -4,7 +4,7 @@ from modules.connections import osu as osu
 import osuembed
 
 
-class Osu(commands.Cog, name="osu!"):
+class Osu(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 

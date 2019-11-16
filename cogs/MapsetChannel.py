@@ -9,7 +9,7 @@ import asyncio
 from modules.connections import osu as osu
 
 
-class MapsetChannel(commands.Cog, name="Mapset Management Commands"):
+class MapsetChannel(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.docs = Docs(bot)

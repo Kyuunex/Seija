@@ -49,17 +49,12 @@ class MemberManagement(commands.Cog):
             else:
                 await ctx.send("<https://osu.ppy.sh/users/%s>" % osu_id[0][0])
 
-    @commands.command(name="check_ranked", brief="Automatically give out ranked roles", description="")
+    @commands.command(name="check_ranked", brief="Update member roles based on their ranking amount", description="")
     @commands.check(permissions.is_admin)
     @commands.guild_only()
     async def check_ranked(self, ctx):
-        await self.check_ranked_amount_by_role(ctx, 1, "guild_mapper_role", "guild_ranked_mapper_role")
-
-    @commands.command(name="check_experienced", brief="Automatically give out experienced role", description="")
-    @commands.check(permissions.is_admin)
-    @commands.guild_only()
-    async def check_experienced(self, ctx):
         await self.check_ranked_amount_by_role(ctx, 10, "guild_ranked_mapper_role", "guild_experienced_mapper_role")
+        await self.check_ranked_amount_by_role(ctx, 1, "guild_mapper_role", "guild_ranked_mapper_role")
 
     async def check_ranked_amount_by_role(self, ctx, amount, old_role_setting, new_role_setting):
         old_role_id = db.query(["SELECT value FROM config "
@@ -71,7 +66,7 @@ class MemberManagement(commands.Cog):
         old_role = discord.utils.get(ctx.guild.roles, id=int(old_role_id[0][0]))
         new_role = discord.utils.get(ctx.guild.roles, id=int(new_role_id[0][0]))
         if old_role and new_role:
-            output = "I have updated the roles of the following members:\n"
+            updated_members = ""
             async with ctx.channel.typing():
                 for member in old_role.members:
                     osu_id = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
@@ -86,9 +81,13 @@ class MemberManagement(commands.Cog):
                             if ranked_amount >= amount:
                                 await member.add_roles(new_role, reason="reputation updated")
                                 await member.remove_roles(old_role, reason="removed old reputation")
-                                output += "%s\n" % member.mention
+                                updated_members += "%s\n" % member.mention
                     await asyncio.sleep(0.5)
-            await ctx.send(output)
+            if len(updated_members) > 0:
+                output = "I gave %s to the following members:\n" % new_role_setting
+                await ctx.send(output+updated_members)
+            else:
+                await ctx.send("no new member updated with %s" % new_role_setting)
 
     async def count_ranked_beatmapsets(self, mapsets):
         try:

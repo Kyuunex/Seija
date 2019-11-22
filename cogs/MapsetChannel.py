@@ -95,9 +95,9 @@ class MapsetChannel(commands.Cog):
     @commands.command(name="abandon", brief="Abandon the mapset and untrack", description="")
     @commands.guild_only()
     async def abandon(self, ctx):
-        guild_archive_category_id = db.query(["SELECT value FROM config "
-                                              "WHERE setting = ? AND parent = ?",
-                                              ["guild_archive_category", str(ctx.guild.id)]])
+        guild_archive_category_id = db.query(["SELECT category_id FROM categories "
+                                              "WHERE setting = ? AND guild_id = ?",
+                                              ["archive", str(ctx.guild.id)]])
         if not guild_archive_category_id:
             await ctx.send("no archive category set for this server")
             return None
@@ -220,9 +220,9 @@ class MapsetChannel(commands.Cog):
                       description="")
     @commands.guild_only()
     async def make_mapset_channel(self, ctx, mapset_id="0", *, mapset_title=None):
-        guild_mapset_category_id = db.query(["SELECT value FROM config "
-                                             "WHERE setting = ? AND parent = ?",
-                                             ["guild_mapset_category", str(ctx.guild.id)]])
+        guild_mapset_category_id = db.query(["SELECT category_id FROM categories "
+                                             "WHERE setting = ? AND guild_id = ?",
+                                             ["mapset", str(ctx.guild.id)]])
 
         if not mapset_id.isdigit():
             await ctx.send("first argument must be a number")
@@ -331,9 +331,9 @@ class MapsetChannel(commands.Cog):
                     db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(channel.id)]])
                     db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(channel.id)]])
                     await channel.send("untracked everything in this channel")
-                    guild_archive_category_id = db.query(["SELECT value FROM config "
-                                                          "WHERE setting = ? AND parent = ?",
-                                                          ["guild_archive_category", str(channel.guild.id)]])
+                    guild_archive_category_id = db.query(["SELECT category_id FROM categories "
+                                                          "WHERE setting = ? AND guild_id = ?",
+                                                          ["archive", str(channel.guild.id)]])
                     if guild_archive_category_id:
                         archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                         await channel.edit(reason=None, category=archive_category)

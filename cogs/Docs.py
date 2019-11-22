@@ -9,9 +9,9 @@ class Docs(commands.Cog):
         self.help_thumbnail = "https://i.imgur.com/JhL9PV8.png"
         self.author_icon = "https://i.imgur.com/1icHC5a.png"
         self.author_text = "Seija"
-        self.footer_icon = 'https://avatars0.githubusercontent.com/u/5400432'
+        self.footer_icon = "https://avatars0.githubusercontent.com/u/5400432"
         self.footer_text = "Made by Kyuunex"
-        self.veto_channel_id_list = db.query(["SELECT value FROM config WHERE setting = ?", ["guild_veto_channel"]])
+        self.veto_channel_id_list = db.query(["SELECT channel_id FROM channels WHERE setting = ?", ["veto"]])
 
     @commands.command(name="docs", brief="Pretty help command", description="")
     async def docs(self, ctx, sub_help=None):

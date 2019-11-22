@@ -15,7 +15,7 @@ class Osu(commands.Cog):
         if embed:
             await ctx.send(embed=embed)
         else:
-            await ctx.send(content='`No mapset found with that ID`')
+            await ctx.send(content="`No mapset found with that ID`")
 
     @commands.command(name="user", brief="Show osu user info", description="")
     async def user(self, ctx, *, username):
@@ -24,7 +24,7 @@ class Osu(commands.Cog):
         if embed:
             await ctx.send(embed=embed)
         else:
-            await ctx.send(content='`No user found with that username`')
+            await ctx.send(content="`No user found with that username`")
 
     @commands.command(name="ts", brief="Send an osu editor clickable timestamp",
                       description="Must start with a timestamp")

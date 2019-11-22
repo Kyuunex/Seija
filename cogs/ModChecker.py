@@ -15,7 +15,7 @@ class ModChecker(commands.Cog):
     # TODO: add event inserts in db upon track
     def __init__(self, bot):
         self.bot = bot
-        self.veto_channel_list = db.query(["SELECT value FROM config WHERE setting = ?", ["guild_veto_channel"]])
+        self.veto_channel_list = db.query(["SELECT channel_id FROM channels WHERE setting = ?", ["veto"]])
         self.bot.loop.create_task(self.mod_checker_background_loop())
 
     @commands.command(name="track", brief="Track the mapset in this channel", description="")
@@ -75,7 +75,7 @@ class ModChecker(commands.Cog):
 
             await ctx.send("Tracked", embed=embed)
             try:
-                await reputation.unarchive_channel(self.bot, ctx, "guild_mapset_category")
+                await reputation.unarchive_channel(self.bot, ctx, "mapset")
             except:
                 pass
         except:
@@ -170,7 +170,7 @@ class ModChecker(commands.Cog):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
             for track_entry in db.query("SELECT * FROM mod_tracking"):
-                print(time.strftime('%X %x %Z') + ' | ' + track_entry[0])
+                print(time.strftime("%X %x %Z") + " | " + track_entry[0])
                 channel = self.bot.get_channel(int(track_entry[1]))
 
                 if not channel:
@@ -213,7 +213,7 @@ class ModChecker(commands.Cog):
         mass_query = []
         for mod in discussions["beatmapset"]["discussions"]:
             if mod:
-                if 'posts' in mod:
+                if "posts" in mod:
                     for post in mod["posts"]:
                         if post:
                             mass_query.append(["INSERT INTO mod_posts VALUES (?,?,?)",
@@ -230,7 +230,8 @@ class ModChecker(commands.Cog):
             db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
                       [str(mapset_id), str(channel.id)]])
             await channel.send(content="This mapset is graveyarded, so I am untracking it. "
-                                       "I don't wanna track dead sets."
+                                       "I don't wanna track dead sets. "
+                                       "You can track again after it's ungraveyarded"
                                        "https://osu.ppy.sh/beatmapsets/%s" % mapset_id)
             return None
         elif status == "deleted":
@@ -242,9 +243,9 @@ class ModChecker(commands.Cog):
                                        "why tho????????????? channel archived and will be nuked in a week "
                                        "along with it's role."
                                        "https://osu.ppy.sh/beatmapsets/%s" % mapset_id)
-            guild_archive_category_id = db.query(["SELECT value FROM config "
-                                                  "WHERE setting = ? AND parent = ?",
-                                                  ["guild_archive_category", str(channel.guild.id)]])
+            guild_archive_category_id = db.query(["SELECT category_id FROM categories "
+                                                  "WHERE setting = ? AND guild_id = ?",
+                                                  ["archive", str(channel.guild.id)]])
             if guild_archive_category_id:
                 archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                 await channel.edit(reason="mapset deleted!", category=archive_category)
@@ -258,9 +259,9 @@ class ModChecker(commands.Cog):
                                        "There is no point in continuing to do so. "
                                        "Channel archived!"
                                        "https://osu.ppy.sh/beatmapsets/%s" % mapset_id)
-            guild_archive_category_id = db.query(["SELECT value FROM config "
-                                                  "WHERE setting = ? AND parent = ?",
-                                                  ["guild_archive_category", str(channel.guild.id)]])
+            guild_archive_category_id = db.query(["SELECT category_id FROM categories "
+                                                  "WHERE setting = ? AND guild_id = ?",
+                                                  ["archive", str(channel.guild.id)]])
             if guild_archive_category_id:
                 archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                 await channel.edit(reason="mapset ranked!", category=archive_category)
@@ -274,13 +275,13 @@ class ModChecker(commands.Cog):
         history = db.query(["SELECT post_id FROM mod_posts WHERE channel_id = ?", [str(channel.id)]])
         for mod in discussions["beatmapset"]["discussions"]:
             if mod:
-                if 'posts' in mod:
-                    for post in mod['posts']:
+                if "posts" in mod:
+                    for post in mod["posts"]:
                         if post:
-                            if not ((str(post['id']),) in history):
+                            if not ((str(post["id"]),) in history):
                                 db.query(["INSERT INTO mod_posts VALUES (?,?,?)",
                                           [str(post["id"]), str(mapset_id), str(channel.id)]])
-                                if ((not post['system']) and
+                                if ((not post["system"]) and
                                         (not post["message"] == "r") and
                                         (not post["message"] == "res") and
                                         (not post["message"] == "resolved")):
@@ -318,8 +319,8 @@ class ModChecker(commands.Cog):
         history = db.query(["SELECT event_id FROM mapset_events WHERE channel_id = ?", [str(channel.id)]])
         for event in discussions["beatmapset"]["events"]:
             if event:
-                if self.get_icon(event['type']):
-                    if not ((str(event['id']),) in history):
+                if self.get_icon(event["type"]):
+                    if not ((str(event["id"]),) in history):
                         db.query(["INSERT INTO mapset_events VALUES (?,?,?)",
                                   [str(event["id"]), str(mapset_id), str(channel.id)]])
                         event_to_post = await self.nomnom_embed(event, discussions, tracking_mode)
@@ -334,48 +335,48 @@ class ModChecker(commands.Cog):
     def get_icon(self, type):
         if type == "nomination_reset":
             return {
-                'text': ":anger_right: Nomination Reset",
-                'color': 0xfc7b03,
+                "text": ":anger_right: Nomination Reset",
+                "color": 0xfc7b03,
             }
         elif type == "disqualify":
             return {
-                'text': ":broken_heart: Disqualified",
-                'color': 0xfc0303,
+                "text": ":broken_heart: Disqualified",
+                "color": 0xfc0303,
             }
         elif type == "nominate":
             return {
-                'text': ":thought_balloon: Nominated",
-                'color': 0x03fc6f,
+                "text": ":thought_balloon: Nominated",
+                "color": 0x03fc6f,
             }
         elif type == "qualify":
             return {
-                'text': ":heart: Qualified",
-                'color': 0x0373fc,
+                "text": ":heart: Qualified",
+                "color": 0x0373fc,
             }
         elif type == "rank":
             return {
-                'text': ":sparkling_heart: Ranked",
-                'color': 0x0373fc,
+                "text": ":sparkling_heart: Ranked",
+                "color": 0x0373fc,
             }
         return None
 
     async def check_if_resolved(self, discussions):
         for mod in discussions["beatmapset"]["discussions"]:
             if mod:
-                if not mod['resolved']:
+                if not mod["resolved"]:
                     return "1"
 
     async def get_unresolved_diffs(self, discussions):
         return_list = []
         for mod in discussions["beatmapset"]["discussions"]:
             if mod:
-                if not mod['resolved']:
-                    if not mod['beatmap_id']:
+                if not mod["resolved"]:
+                    if not mod["beatmap_id"]:
                         if not False in return_list:
                             return_list.append(False)
                     else:
-                        if not str(mod['beatmap_id'] in return_list):
-                            return_list.append(str(mod['beatmap_id']))
+                        if not str(mod["beatmap_id"] in return_list):
+                            return_list.append(str(mod["beatmap_id"]))
         return return_list
 
     async def nomnom_embed(self, event, discussions, tracking_mode):
@@ -388,25 +389,25 @@ class ModChecker(commands.Cog):
         else:
             title = ""
 
-        icon = self.get_icon(event['type'])
+        icon = self.get_icon(event["type"])
 
         embed = discord.Embed(
             title=title,
             url="https://osu.ppy.sh/beatmapsets/%s/discussion" % str(discussions["beatmapset"]["id"]),
-            description=str(icon['text']),
-            color=icon['color']
+            description=str(icon["text"]),
+            color=icon["color"]
         )
-        if event['user_id']:
+        if event["user_id"]:
             embed.set_author(
-                name=str(self.get_username_with_group(discussions["beatmapset"]["related_users"], event['user_id'])),
-                url="https://osu.ppy.sh/users/%s" % (str(event['user_id'])),
-                icon_url="https://a.ppy.sh/%s" % (str(event['user_id']))
+                name=str(self.get_username_with_group(discussions["beatmapset"]["related_users"], event["user_id"])),
+                url="https://osu.ppy.sh/users/%s" % (str(event["user_id"])),
+                icon_url="https://a.ppy.sh/%s" % (str(event["user_id"]))
             )
         embed.set_thumbnail(
             url="https://b.ppy.sh/thumb/%sl.jpg" % (str(discussions["beatmapset"]["id"]))
         )
         embed.set_footer(
-            text=str(event['created_at']),
+            text=str(event["created_at"]),
         )
         return embed
 
@@ -414,13 +415,13 @@ class ModChecker(commands.Cog):
         if not post:
             return None
 
-        mapset_diff_name = str(self.get_diff_name(discussions["beatmapset"]["beatmaps"], mod['beatmap_id']))
+        mapset_diff_name = str(self.get_diff_name(discussions["beatmapset"]["beatmaps"], mod["beatmap_id"]))
         if tracking_mode == "veto":
             mapset_title = str(discussions["beatmapset"]["title"])
             title = "%s / %s" % (mapset_title, mapset_diff_name)
-            if mod['message_type'] == "hype":
+            if mod["message_type"] == "hype":
                 return None
-            elif mod['message_type'] == "praise":
+            elif mod["message_type"] == "praise":
                 return None
         else:
             title = mapset_diff_name
@@ -430,93 +431,93 @@ class ModChecker(commands.Cog):
         embed = discord.Embed(
             title=title,
             url="https://osu.ppy.sh/beatmapsets/%s/discussion#/%s" %
-                (str(discussions["beatmapset"]["id"]), str(mod['id'])),
-            description=str(post['message']),
-            color=footer['color']
+                (str(discussions["beatmapset"]["id"]), str(mod["id"])),
+            description=str(post["message"]),
+            color=footer["color"]
         )
         embed.set_author(
-            name=str(self.get_username_with_group(discussions["beatmapset"]["related_users"], str(post['user_id']))),
-            url="https://osu.ppy.sh/users/%s" % (str(post['user_id'])),
-            icon_url="https://a.ppy.sh/%s" % (str(post['user_id']))
+            name=str(self.get_username_with_group(discussions["beatmapset"]["related_users"], str(post["user_id"]))),
+            url="https://osu.ppy.sh/users/%s" % (str(post["user_id"])),
+            icon_url="https://a.ppy.sh/%s" % (str(post["user_id"]))
         )
         embed.set_thumbnail(
             url="https://b.ppy.sh/thumb/%sl.jpg" % (str(discussions["beatmapset"]["id"]))
         )
         embed.set_footer(
-            text=str(footer['text']),
-            icon_url=str(footer['icon'])
+            text=str(footer["text"]),
+            icon_url=str(footer["icon"])
         )
         return embed
 
     def get_username_with_group(self, related_users, user_id):
         user = self.get_related_user(related_users, user_id)
-        if user['default_group'] == "bng":
-            return user['username'] + " [BN]"
-        elif user['default_group'] == "bng_limited":
-            return user['username'] + " [BN]"
-        elif user['default_group'] == "nat":
-            return user['username'] + " [NAT]"
+        if user["default_group"] == "bng":
+            return user["username"] + " [BN]"
+        elif user["default_group"] == "bng_limited":
+            return user["username"] + " [BN]"
+        elif user["default_group"] == "nat":
+            return user["username"] + " [NAT]"
         else:
-            return user['username']
+            return user["username"]
 
     def get_related_user(self, related_users, user_id):
         if user_id:
             for user in related_users:
-                if str(user_id) == str(user['id']):
+                if str(user_id) == str(user["id"]):
                     return user
         return ""
 
     def get_diff_name(self, beatmaps, beatmap_id):
         for beatmap in beatmaps:
             if beatmap_id:
-                if str(beatmap['id']) == str(beatmap_id):
-                    return beatmap['version']
+                if str(beatmap["id"]) == str(beatmap_id):
+                    return beatmap["version"]
             else:
                 return "All difficulties"
 
     def get_mod_type(self, mod):
-        if mod['resolved']:
+        if mod["resolved"]:
             return {
-                'icon': "https://i.imgur.com/jjxrPpu.png",
-                'text': "RESOLVED",
-                'color': 0x77b255,
+                "icon": "https://i.imgur.com/jjxrPpu.png",
+                "text": "RESOLVED",
+                "color": 0x77b255,
             }
 
-        if mod['message_type'] == "praise":
+        if mod["message_type"] == "praise":
             return {
-                'icon': "https://i.imgur.com/2kFPL8m.png",
-                'text': "Praise",
-                'color': 0x44aadd,
+                "icon": "https://i.imgur.com/2kFPL8m.png",
+                "text": "Praise",
+                "color": 0x44aadd,
             }
-        elif mod['message_type'] == "hype":
+        elif mod["message_type"] == "hype":
             return {
-                'icon': "https://i.imgur.com/fkJmW44.png",
-                'text': "Hype",
-                'color': 0x44aadd,
+                "icon": "https://i.imgur.com/fkJmW44.png",
+                "text": "Hype",
+                "color": 0x44aadd,
             }
-        elif mod['message_type'] == "mapper_note":
+        elif mod["message_type"] == "mapper_note":
             return {
-                'icon': "https://i.imgur.com/HdmJ9i5.png",
-                'text': "Note",
-                'color': 0x8866ee,
+                "icon": "https://i.imgur.com/HdmJ9i5.png",
+                "text": "Note",
+                "color": 0x8866ee,
             }
-        elif mod['message_type'] == "problem":
+        elif mod["message_type"] == "problem":
             return {
-                'icon': "https://i.imgur.com/qxyuJFF.png",
-                'text': "Problem",
-                'color': 0xcc5288,
+                "icon": "https://i.imgur.com/qxyuJFF.png",
+                "text": "Problem",
+                "color": 0xcc5288,
             }
-        elif mod['message_type'] == "suggestion":
+        elif mod["message_type"] == "suggestion":
             return {
-                'icon': "https://i.imgur.com/Newgp6L.png",
-                'text': "Suggestion",
-                'color': 0xeeb02a,
+                "icon": "https://i.imgur.com/Newgp6L.png",
+                "text": "Suggestion",
+                "color": 0xeeb02a,
             }
         else:
             return {
-                'icon': "",
-                'text': mod['message_type'],
-                'color': 0xbd3661,
+                "icon": "",
+                "text": mod["message_type"],
+                "color": 0xbd3661,
             }
 
 

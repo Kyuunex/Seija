@@ -142,9 +142,9 @@ class AprilFools(commands.Cog):
                     buffer = (await image_response.read())
                     im = Image.open(io.BytesIO(buffer))
                     im = im.rotate(180)
-                    im = im.convert('RGBA')
+                    im = im.convert("RGBA")
                     new_bytes = io.BytesIO()
-                    im.save(new_bytes, format='PNG')
+                    im.save(new_bytes, format="PNG")
                     new_bytes = new_bytes.getvalue()
             try:
                 await guild.edit(icon=new_bytes)

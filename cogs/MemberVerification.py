@@ -11,9 +11,9 @@ import osuembed
 class MemberVerification(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.verify_channel_list = db.query(["SELECT value, parent FROM config "
+        self.verify_channel_list = db.query(["SELECT channel_id, guild_id FROM channels "
                                              "WHERE setting = ?",
-                                             ["guild_verify_channel"]])
+                                             ["verify"]])
         self.member_goodbye_messages = db.query("SELECT message FROM member_goodbye_messages")
 
     @commands.command(name="verify", brief="Manually verify a member", description="")
@@ -67,7 +67,7 @@ class MemberVerification(commands.Cog):
                 if not member.bot:
                     await self.member_verification(channel, member)
                 else:
-                    await channel.send('beep boop boop beep, %s has joined our army of bots' % member.mention)
+                    await channel.send("beep boop boop beep, %s has joined our army of bots" % member.mention)
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -98,34 +98,34 @@ class MemberVerification(commands.Cog):
                     goodbye_message = random.choice(self.member_goodbye_messages)
                     await channel.send(goodbye_message[0] % member_name, embed=embed)
                 else:
-                    await channel.send('beep boop boop beep, %s has left our army of bots' % member.mention)
+                    await channel.send("beep boop boop beep, %s has left our army of bots" % member.mention)
 
     async def get_role_from_db(self, setting, guild):
-        role_id = db.query(["SELECT value FROM config WHERE setting = ? AND parent = ?", [setting, str(guild.id)]])
+        role_id = db.query(["SELECT role_id FROM roles WHERE setting = ? AND guild_id = ?", [setting, str(guild.id)]])
         return discord.utils.get(guild.roles, id=int(role_id[0][0]))
 
     async def get_role_based_on_reputation(self, guild, ranked_amount):
         if ranked_amount >= 10:
-            return await self.get_role_from_db("guild_experienced_mapper_role", guild)
+            return await self.get_role_from_db("experienced_mapper", guild)
         elif ranked_amount >= 1:
-            return await self.get_role_from_db("guild_ranked_mapper_role", guild)
+            return await self.get_role_from_db("ranked_mapper", guild)
         else:
-            return await self.get_role_from_db("guild_mapper_role", guild)
+            return await self.get_role_from_db("mapper", guild)
 
     async def respond_to_verification(self, message):
         split_message = []
-        if '/' in message.content:
-            split_message = message.content.split('/')
-        if 'https://osu.ppy.sh/u' in message.content:
-            profile_id = split_message[4].split('#')[0].split(' ')[0]
+        if "/" in message.content:
+            split_message = message.content.split("/")
+        if "https://osu.ppy.sh/u" in message.content:
+            profile_id = split_message[4].split("#")[0].split(" ")[0]
             await self.profile_id_verification(message, profile_id)
             return None
         elif message.content.lower() == "yes":
             profile_id = message.author.name
             await self.profile_id_verification(message, profile_id)
             return None
-        elif 'https://osu.ppy.sh/beatmapsets/' in message.content:
-            mapset_id = split_message[4].split('#')[0].split(' ')[0]
+        elif "https://osu.ppy.sh/beatmapsets/" in message.content:
+            mapset_id = split_message[4].split("#")[0].split(" ")[0]
             await self.mapset_id_verification(message, mapset_id)
             return None
         else:
@@ -282,7 +282,7 @@ class MemberVerification(commands.Cog):
                                            "If yes, type `yes`, if not, post a link to your profile.",
                                    embed=await osuembed.user(osu_profile))
             else:
-                await channel.send('Please post a link to your osu! profile and I will verify you instantly.')
+                await channel.send("Please post a link to your osu! profile and I will verify you instantly.")
 
     async def get_osu_profile(self, name):
         try:

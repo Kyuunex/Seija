@@ -17,7 +17,7 @@ class MemberStatistics(commands.Cog):
     async def demographics(self, ctx):
         async with ctx.channel.typing():
             master_list = []
-            query = db.query("SELECT country,user_id FROM users")
+            query = db.query("SELECT country, user_id FROM users")
             for member in ctx.guild.members:
                 if not member.bot:
                     for user_in_db in query:

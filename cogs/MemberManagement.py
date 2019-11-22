@@ -53,15 +53,15 @@ class MemberManagement(commands.Cog):
     @commands.check(permissions.is_admin)
     @commands.guild_only()
     async def check_ranked(self, ctx):
-        await self.check_ranked_amount_by_role(ctx, 10, "guild_ranked_mapper_role", "guild_experienced_mapper_role")
-        await self.check_ranked_amount_by_role(ctx, 1, "guild_mapper_role", "guild_ranked_mapper_role")
+        await self.check_ranked_amount_by_role(ctx, 10, "ranked_mapper", "experienced_mapper")
+        await self.check_ranked_amount_by_role(ctx, 1, "mapper", "ranked_mapper")
 
     async def check_ranked_amount_by_role(self, ctx, amount, old_role_setting, new_role_setting):
-        old_role_id = db.query(["SELECT value FROM config "
-                                "WHERE setting = ? AND parent = ?",
+        old_role_id = db.query(["SELECT value FROM roles "
+                                "WHERE role_id = ? AND guild_id = ?",
                                 [old_role_setting, str(ctx.guild.id)]])
-        new_role_id = db.query(["SELECT value FROM config "
-                                "WHERE setting = ? AND parent = ?",
+        new_role_id = db.query(["SELECT role_id FROM roles "
+                                "WHERE setting = ? AND guild_id = ?",
                                 [new_role_setting, str(ctx.guild.id)]])
         old_role = discord.utils.get(ctx.guild.roles, id=int(old_role_id[0][0]))
         new_role = discord.utils.get(ctx.guild.roles, id=int(new_role_id[0][0]))

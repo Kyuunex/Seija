@@ -32,9 +32,9 @@ class Queue(commands.Cog):
     @commands.command(name="request_queue", brief="Request a queue", description="")
     @commands.guild_only()
     async def make_queue_channel(self, ctx, queue_type=None):
-        guild_queue_category = db.query(["SELECT value FROM config "
-                                         "WHERE setting = ? AND parent = ?",
-                                         ["guild_mapper_queue_category", str(ctx.guild.id)]])
+        guild_queue_category = db.query(["SELECT category_id FROM categories "
+                                         "WHERE setting = ? AND guild_id = ?",
+                                         ["mapper_queue", str(ctx.guild.id)]])
         if guild_queue_category:
             member_already_has_a_queue = db.query(["SELECT channel_id FROM queues "
                                                    "WHERE user_id = ? AND guild_id = ?",
@@ -146,9 +146,9 @@ class Queue(commands.Cog):
                                      "WHERE channel_id = ?",
                                      [str(ctx.channel.id)]])
         if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
-            guild_archive_category_id = db.query(["SELECT value FROM config "
-                                                  "WHERE setting = ? AND parent = ?",
-                                                  ["guild_archive_category", str(ctx.guild.id)]])
+            guild_archive_category_id = db.query(["SELECT category_id FROM categories "
+                                                  "WHERE setting = ? AND guild_id = ?",
+                                                  ["archive", str(ctx.guild.id)]])
             if guild_archive_category_id:
                 archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                 await ctx.channel.edit(reason=None, category=archive_category)
@@ -180,9 +180,9 @@ class Queue(commands.Cog):
             queue_channel = self.bot.get_channel(int(queue_id[0][0]))
             if queue_channel:
                 await queue_channel.send("the queue owner has left")
-                guild_archive_category_id = db.query(["SELECT value FROM config "
-                                                      "WHERE setting = ? AND parent = ?",
-                                                      ["guild_archive_category", str(queue_channel.guild.id)]])
+                guild_archive_category_id = db.query(["SELECT category_id FROM categories "
+                                                      "WHERE setting = ? AND guild_id = ?",
+                                                      ["archive", str(queue_channel.guild.id)]])
                 if guild_archive_category_id:
                     archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                     await queue_channel.edit(reason=None, category=archive_category)

@@ -14,6 +14,9 @@ class MemberNameSyncing(commands.Cog):
         self.member_mapping_feed_list = db.query(["SELECT guild_id, channel_id FROM channels "
                                                   "WHERE setting = ?",
                                                   ["member_mapping_feed"]])
+        self.notices_channel_list = db.query(["SELECT guild_id, channel_id FROM channels "
+                                              "WHERE setting = ?",
+                                              ["notices"]])
         if self.member_mapping_feed_list:
             self.bot.loop.create_task(self.member_name_syncing_loop())
         self.bot.loop.create_task(self.event_history_cleanup_loop())
@@ -21,17 +24,19 @@ class MemberNameSyncing(commands.Cog):
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
         if before.name != after.name:
-            if self.member_mapping_feed_list:
+            if self.notices_channel_list:
                 query = db.query(["SELECT * FROM users WHERE user_id = ?", [str(after.id)]])
                 if query:
                     osu_profile = await osu.get_user(u=query[0][1])
                     if osu_profile:
-                        for this_guild in self.member_mapping_feed_list:
-                            guild = self.bot.get_guild(int(this_guild[1]))
-                            audit_channel = self.bot.get_channel(int(this_guild[3]))
-                            if audit_channel:
+                        for this_guild in self.notices_channel_list:
+                            guild = self.bot.get_guild(int(this_guild[0]))
+
+                            notices_channel = self.bot.get_channel(int(this_guild[1]))
+
+                            if notices_channel:
                                 member = guild.get_member(int(after.id))
-                                await self.sync_nickname(audit_channel, query[0], member, osu_profile)
+                                await self.sync_nickname(notices_channel, query[0], member, osu_profile)
 
     async def event_history_cleanup_loop(self):
         print("Event History Cleanup Loop launched!")
@@ -60,8 +65,8 @@ class MemberNameSyncing(commands.Cog):
             restricted_user_list = db.query("SELECT guild_id, osu_id FROM restricted_users")
             for mapping_feed_channel_id in self.member_mapping_feed_list:
 
-                feed_channel = self.bot.get_channel(int(mapping_feed_channel_id[2]))
-                guild = self.bot.get_guild(int(mapping_feed_channel_id[1]))
+                feed_channel = self.bot.get_channel(int(mapping_feed_channel_id[1]))
+                guild = self.bot.get_guild(int(mapping_feed_channel_id[0]))
 
                 guild_notices_channel = db.query(["SELECT channel_id FROM channels "
                                                   "WHERE setting = ? AND guild_id",

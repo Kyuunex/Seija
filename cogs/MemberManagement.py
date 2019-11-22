@@ -1,6 +1,5 @@
 import discord
 import asyncio
-import time
 from discord.ext import commands
 from modules import permissions
 from modules import db

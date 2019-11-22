@@ -69,7 +69,7 @@ class MemberNameSyncing(commands.Cog):
                 guild = self.bot.get_guild(int(mapping_feed_channel_id[0]))
 
                 guild_notices_channel = db.query(["SELECT channel_id FROM channels "
-                                                  "WHERE setting = ? AND guild_id",
+                                                  "WHERE setting = ? AND guild_id = ?",
                                                   ["notices", str(guild.id)]])
 
                 notices_channel = self.bot.get_channel(int(guild_notices_channel[0][0]))

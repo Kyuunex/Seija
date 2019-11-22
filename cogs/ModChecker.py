@@ -4,7 +4,6 @@ import discord
 from discord.ext import commands
 from modules import db
 from modules import permissions
-from modules import reputation
 import osuembed
 
 from modules.connections import osuweb as osuweb
@@ -75,7 +74,7 @@ class ModChecker(commands.Cog):
 
             await ctx.send("Tracked", embed=embed)
             try:
-                await reputation.unarchive_channel(self.bot, ctx, "mapset")
+                await self.unarchive_channel(ctx, "mapset")
             except:
                 pass
         except:
@@ -519,6 +518,23 @@ class ModChecker(commands.Cog):
                 "text": mod["message_type"],
                 "color": 0xbd3661,
             }
+
+    async def unarchive_channel(self, ctx, setting):
+        if int(ctx.channel.category_id) == int(await self.get_category_object(ctx.guild, "archive", id_only=True)):
+            await ctx.channel.edit(reason=None, category=await self.get_category_object(ctx.guild, setting))
+            await ctx.send("Unarchived")
+
+    async def get_category_object(self, guild, setting, id_only=None):
+        category_id = db.query(["SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
+                                [setting, str(guild.id)]])
+        if category_id:
+            category = self.bot.get_channel(int(category_id[0][0]))
+            if id_only:
+                return category.id
+            else:
+                return category
+        else:
+            return False
 
 
 def setup(bot):

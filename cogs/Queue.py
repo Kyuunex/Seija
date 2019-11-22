@@ -1,7 +1,6 @@
 from modules import db
 from cogs.Docs import Docs
 from modules import permissions
-from modules import reputation
 import discord
 from discord.ext import commands
 
@@ -59,7 +58,7 @@ class Queue(commands.Cog):
                 }
                 channel_name = "%s-%s-queue" % (
                     ctx.author.display_name.replace(" ", "_").lower(), queue_type)
-                category = await reputation.get_queue_category(self.bot, ctx.author)
+                category = await self.get_queue_category(ctx.author)
                 channel = await guild.create_text_channel(channel_name,
                                                           overwrites=channel_overwrites, category=category)
                 db.query(["INSERT INTO queues VALUES (?, ?, ?)",
@@ -81,7 +80,7 @@ class Queue(commands.Cog):
                                      [str(ctx.channel.id)]])
         if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
             await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=None, send_messages=True)
-            await reputation.unarchive_queue(self.bot, ctx, ctx.author)
+            await self.unarchive_queue(ctx, ctx.author)
             await ctx.send("queue open!")
 
     @commands.command(name="close", brief="Close the queue", description="")
@@ -134,7 +133,7 @@ class Queue(commands.Cog):
                                      "WHERE channel_id = ?",
                                      [str(ctx.channel.id)]])
         if queue_owner_check and is_queue_channel:
-            await ctx.channel.edit(reason=None, category=await reputation.get_queue_category(self.bot, ctx.author))
+            await ctx.channel.edit(reason=None, category=await self.get_queue_category(ctx.author))
 
     @commands.command(name="archive", brief="Archive the queue", description="")
     @commands.guild_only()
@@ -190,6 +189,48 @@ class Queue(commands.Cog):
                                                         read_messages=False,
                                                         send_messages=False)
                     await queue_channel.send("queue archived!")
+
+    async def get_category_object(self, guild, setting, id_only=None):
+        category_id = db.query(["SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
+                                [setting, str(guild.id)]])
+        if category_id:
+            category = self.bot.get_channel(int(category_id[0][0]))
+            if id_only:
+                return category.id
+            else:
+                return category
+        else:
+            return False
+
+    async def get_role_object(self, guild, setting, id_only=None):
+        role_id = db.query(["SELECT role_id FROM roles WHERE setting = ? AND guild_id = ?", [setting, str(guild.id)]])
+        if role_id:
+            role = discord.utils.get(guild.roles, id=int(role_id[0][0]))
+            if id_only:
+                return role.id
+            else:
+                return role
+        else:
+            return False
+
+    async def unarchive_queue(self, ctx, member):
+        if int(ctx.channel.category_id) == int(await self.get_category_object(ctx.guild, "archive", id_only=True)):
+            await ctx.channel.edit(reason=None, category=await self.get_queue_category(member))
+            await ctx.send("Unarchived")
+
+    async def get_queue_category(self, member):
+        if (await self.get_role_object(member.guild, "nat")) in member.roles:
+            return await self.get_category_object(member.guild, "bn_nat_queue")
+        elif (await self.get_role_object(member.guild, "bn")) in member.roles:
+            return await self.get_category_object(member.guild, "bn_nat_queue")
+        elif (await self.get_role_object(member.guild, "experienced_mapper")) in member.roles:
+            return await self.get_category_object(member.guild, "ranked_mapper_queue")
+        elif (await self.get_role_object(member.guild, "ranked_mapper")) in member.roles:
+            return await self.get_category_object(member.guild, "ranked_mapper_queue")
+        elif (await self.get_role_object(member.guild, "mapper")) in member.roles:
+            return await self.get_category_object(member.guild, "mapper_queue")
+        else:
+            return None
 
 
 def setup(bot):

@@ -41,6 +41,7 @@ class ModChecker(commands.Cog):
         if db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]]):
             db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]])
             db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.channel.id)]])
+            db.query(["DELETE FROM mapset_events WHERE channel_id = ?", [str(ctx.channel.id)]])
             await ctx.send("Deleted all previously existing tracking records in this channel")
             await asyncio.sleep(1)
 
@@ -65,6 +66,8 @@ class ModChecker(commands.Cog):
 
         if tracking_mode == "timeline":
             await self.insert_mod_history_in_db(discussions, str(ctx.channel.id))
+
+        await self.insert_nomination_history_in_db(discussions, str(ctx.channel.id))
 
         db.query(["INSERT INTO mod_tracking VALUES (?,?,?)",
                   [str(mapset_id[0][0]), str(ctx.channel.id), tracking_mode]])
@@ -91,6 +94,7 @@ class ModChecker(commands.Cog):
 
         db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]])
         db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.channel.id)]])
+        db.query(["DELETE FROM mapset_events WHERE channel_id = ?", [str(ctx.channel.id)]])
         await ctx.send("Untracked everything in this channel")
 
     @commands.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="")
@@ -119,6 +123,7 @@ class ModChecker(commands.Cog):
             return None
 
         await self.insert_mod_history_in_db(discussions, str(ctx.channel.id))
+        await self.insert_nomination_history_in_db(discussions, str(ctx.channel.id))
         db.query(["INSERT INTO mod_tracking VALUES (?,?,?)",
                   [str(mapset_id), str(ctx.channel.id), "veto"]])
         try:
@@ -143,6 +148,9 @@ class ModChecker(commands.Cog):
                   "WHERE mapset_id = ? AND channel_id = ?",
                   [str(mapset_id), str(ctx.channel.id)]])
         db.query(["DELETE FROM mod_posts "
+                  "WHERE mapset_id = ? AND channel_id = ?",
+                  [str(mapset_id), str(ctx.channel.id)]])
+        db.query(["DELETE FROM mapset_events "
                   "WHERE mapset_id = ? AND channel_id = ?",
                   [str(mapset_id), str(ctx.channel.id)]])
         try:
@@ -177,6 +185,7 @@ class ModChecker(commands.Cog):
                     db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(track_entry[1])]])
                     db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(track_entry[1])]])
                     db.query(["DELETE FROM mapset_channels  WHERE channel_id = ?", [str(track_entry[1])]])
+                    db.query(["DELETE FROM mapset_events  WHERE channel_id = ?", [str(track_entry[1])]])
                     continue
 
                 mapset_id = str(track_entry[0])
@@ -219,6 +228,19 @@ class ModChecker(commands.Cog):
                                                [str(post["id"]), str(mod["beatmapset_id"]), str(channel_id)]])
         db.mass_query(mass_query)
 
+    async def insert_nomination_history_in_db(self, discussions, channel_id):
+        mass_query = []
+        mapset_id = discussions["beatmapset"]["id"]
+        history = db.query(["SELECT event_id FROM mapset_events WHERE channel_id = ? AND mapset_id = ?",
+                            [str(channel_id), str(mapset_id)]])
+        for event in discussions["beatmapset"]["events"]:
+            if event:
+                if self.get_icon(event["type"]):
+                    if not ((str(event["id"]),) in history):
+                        mass_query.append(["INSERT INTO mapset_events VALUES (?,?,?)",
+                                          [str(event["id"]), str(mapset_id), str(channel_id)]])
+        db.mass_query(mass_query)
+
     async def check_status(self, channel, mapset_id, discussions):
         status = discussions["beatmapset"]["status"]
         if (status == "wip") or (status == "qualified") or (status == "pending"):
@@ -227,6 +249,8 @@ class ModChecker(commands.Cog):
             db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
                       [str(mapset_id), str(channel.id)]])
             db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
+                      [str(mapset_id), str(channel.id)]])
+            db.query(["DELETE FROM mapset_events WHERE mapset_id = ? AND channel_id = ?",
                       [str(mapset_id), str(channel.id)]])
             await channel.send(content="This mapset is graveyarded, so I am untracking it. "
                                        "I don't wanna track dead sets. "
@@ -237,6 +261,8 @@ class ModChecker(commands.Cog):
             db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
                       [str(mapset_id), str(channel.id)]])
             db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
+                      [str(mapset_id), str(channel.id)]])
+            db.query(["DELETE FROM mapset_events WHERE mapset_id = ? AND channel_id = ?",
                       [str(mapset_id), str(channel.id)]])
             await channel.send(content="This mapset is deleted, so I am untracking it. "
                                        "why tho????????????? channel archived and will be nuked in a week "
@@ -253,6 +279,8 @@ class ModChecker(commands.Cog):
             db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
                       [str(mapset_id), str(channel.id)]])
             db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
+                      [str(mapset_id), str(channel.id)]])
+            db.query(["DELETE FROM mapset_events WHERE mapset_id = ? AND channel_id = ?",
                       [str(mapset_id), str(channel.id)]])
             await channel.send(content="This mapset is ranked, so I am untracking it. "
                                        "There is no point in continuing to do so. "

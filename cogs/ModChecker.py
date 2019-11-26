@@ -417,7 +417,7 @@ class ModChecker(commands.Cog):
         mapset_diff_name = str(self.get_diff_name(discussions["beatmapset"]["beatmaps"], mod["beatmap_id"]))
         if tracking_mode == "veto":
             mapset_title = str(discussions["beatmapset"]["title"])
-            title = "%s / %s" % (mapset_title, mapset_diff_name)
+            title = f"{mapset_title} [{mapset_diff_name}]"
             if mod["message_type"] == "hype":
                 return None
             elif mod["message_type"] == "praise":

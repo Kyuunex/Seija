@@ -57,7 +57,7 @@ class MemberManagement(commands.Cog):
 
     async def check_ranked_amount_by_role(self, ctx, amount, old_role_setting, new_role_setting):
         old_role_id = db.query(["SELECT role_id FROM roles "
-                                "WHERE role_id = ? AND guild_id = ?",
+                                "WHERE setting = ? AND guild_id = ?",
                                 [old_role_setting, str(ctx.guild.id)]])
         new_role_id = db.query(["SELECT role_id FROM roles "
                                 "WHERE setting = ? AND guild_id = ?",

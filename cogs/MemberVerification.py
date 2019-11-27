@@ -270,19 +270,20 @@ class MemberVerification(commands.Cog):
                 name = user_db_lookup[0][1]
                 embed = None
             await member.edit(nick=name)
-            await channel.send("Welcome aboard %s! Since we know who you are, I have automatically verified you. "
-                               "Enjoy your stay!" % member.mention,
-                               embed=embed)
+            await channel.send(f"Welcome aboard {member.mention}! Since we know who you are, "
+                               "I have automatically gave you appropriate roles. Enjoy your stay!", embed=embed)
         else:
-            await channel.send("Welcome %s! We have a verification system in this server "
-                               "so we can give you appropriate roles and keep raids/spam out." % member.mention)
             osu_profile = await self.get_osu_profile(member.name)
             if osu_profile:
-                await channel.send(content="Is this your osu! profile? "
+                await channel.send(content=f"Welcome {member.mention}! We have a verification system in this server "
+                                           "so we can give you appropriate roles and keep raids/spam out. \n"
+                                           "Is this your osu! profile? "
                                            "If yes, type `yes`, if not, post a link to your profile.",
                                    embed=await osuembed.user(osu_profile))
             else:
-                await channel.send("Please post a link to your osu! profile and I will verify you instantly.")
+                await channel.send(f"Welcome {member.mention}! We have a verification system in this server "
+                                   "so we can give you appropriate roles and keep raids/spam out. \n"
+                                   "Please post a link to your osu! profile and I will verify you instantly.")
 
     async def get_osu_profile(self, name):
         try:

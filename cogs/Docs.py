@@ -72,9 +72,9 @@ class Docs(commands.Cog):
                 "If no argument is supplied, `std` will be automatically filled. Please follow our naming standards."
         text += "\n"
         text += "\n**__Examples:__**"
-        text += "\n`'request_queue` - This example will create `#%s-std-queue`" % channel_friendly_author
-        text += "\n`'request_queue mania` - This example will create `#%s-mania-queue`" % channel_friendly_author
-        text += "\n`'request_queue taiko-bn` - This example will create `#%s-taiko-bn-queue`" % channel_friendly_author
+        text += f"\n`'request_queue` - This example will create `#{channel_friendly_author}-std-queue`"
+        text += f"\n`'request_queue mania` - This example will create `#{channel_friendly_author}-mania-queue`"
+        text += f"\n`'request_queue taiko-bn` - This example will create `#{channel_friendly_author}-taiko-bn-queue`"
         text += "\n"
         text += "\nFor queue management commands, type `'docs queue_management`"
         text += "\n"

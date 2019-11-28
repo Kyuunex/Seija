@@ -89,8 +89,8 @@ class MemberNameSyncing(commands.Cog):
                                 await self.check_events(feed_channel, osu_profile)
                                 if (str(guild.id), str(db_user[1])) in restricted_user_list:
                                     await notices_channel.send(
-                                        "%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | unrestricted lol" %
-                                        (member.mention, str(db_user[2]), str(db_user[1]), str(db_user[1])))
+                                        f"{member.mention} | `{db_user[2]}` | `{db_user[1]}` | "
+                                        f"<https://osu.ppy.sh/users/{db_user[1]}> | unrestricted lol")
                                     db.query(["DELETE FROM restricted_users "
                                               "WHERE guild_id = ? AND osu_id = ?",
                                               [str(guild.id), str(db_user[1])]])
@@ -98,8 +98,8 @@ class MemberNameSyncing(commands.Cog):
                                 # at this point we are sure that the user is restricted.
                                 if not (str(guild.id), str(db_user[1])) in restricted_user_list:
                                     await notices_channel.send(
-                                        "%s | `%s` | `%s` | <https://osu.ppy.sh/users/%s> | restricted" %
-                                        (member.mention, str(db_user[2]), str(db_user[1]), str(db_user[1])))
+                                        f"{member.mention} | `{db_user[2]}` | `{db_user[1]}` | "
+                                        f"<https://osu.ppy.sh/users/{db_user[1]}> | restricted")
                                     db.query(["INSERT INTO restricted_users VALUES (?,?)",
                                               [str(guild.id), str(db_user[1])]])
                             await asyncio.sleep(1)
@@ -111,8 +111,7 @@ class MemberNameSyncing(commands.Cog):
         if "04-01T" in str(now.isoformat()):
             return None
         if str(db_user[2]) != osu_profile.name:
-            await notices_channel.send("`%s` namechanged to `%s`. osu_id = `%s`" %
-                                       (str(db_user[2]), osu_profile.name, str(db_user[1])))
+            await notices_channel.send(f"`{db_user[2]}` namechanged to `{osu_profile.name}`. osu_id = `{db_user[1]}`")
             if str(db_user[1]) == str(4116573):
                 await notices_channel.send("btw, this is bor. yes, i actually added this specific message for bor.")
 
@@ -121,11 +120,11 @@ class MemberNameSyncing(commands.Cog):
                 old_nickname = member.display_name
                 try:
                     await member.edit(nick=osu_profile.name)
-                    await notices_channel.send("%s | `%s` | `%s` | nickname updated, old nickname `%s`" %
-                                               (member.mention, osu_profile.name, str(db_user[1]), old_nickname))
+                    await notices_channel.send(f"{member.mention} | `{osu_profile.name}` | `{db_user[1]}` | "
+                                               f"nickname updated, old nickname `{old_nickname}`")
                 except:
-                    await notices_channel.send("%s | `%s` | `%s` | no perms to update" %
-                                               (member.mention, osu_profile.name, str(db_user[1])))
+                    await notices_channel.send(f"{member.mention} | `{osu_profile.name}` | `{db_user[1]}` | "
+                                               f"no perms to update")
         db.query(["UPDATE users SET country = ?, pp = ?, "
                   "osu_join_date = ?, osu_username = ? WHERE user_id = ?;",
                   [str(osu_profile.country), str(osu_profile.pp_raw),

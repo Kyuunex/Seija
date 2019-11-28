@@ -181,7 +181,7 @@ class ModChecker(commands.Cog):
                 channel = self.bot.get_channel(int(track_entry[1]))
 
                 if not channel:
-                    print("channel %s is deleted for mapset %s" % (track_entry[1], track_entry[0]))
+                    print(f"channel {track_entry[1]} is deleted for mapset {track_entry[0]}")
                     db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(track_entry[1])]])
                     db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(track_entry[1])]])
                     db.query(["DELETE FROM mapset_channels  WHERE channel_id = ?", [str(track_entry[1])]])
@@ -254,8 +254,8 @@ class ModChecker(commands.Cog):
                       [str(mapset_id), str(channel.id)]])
             await channel.send(content="This mapset is graveyarded, so I am untracking it. "
                                        "I don't wanna track dead sets. "
-                                       "You can track again after it's ungraveyarded"
-                                       "https://osu.ppy.sh/beatmapsets/%s" % mapset_id)
+                                       "You can track again after it's ungraveyarded "
+                                       f"https://osu.ppy.sh/beatmapsets/{mapset_id}")
             return None
         elif status == "deleted":
             db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
@@ -266,8 +266,8 @@ class ModChecker(commands.Cog):
                       [str(mapset_id), str(channel.id)]])
             await channel.send(content="This mapset is deleted, so I am untracking it. "
                                        "why tho????????????? channel archived and will be nuked in a week "
-                                       "along with it's role."
-                                       "https://osu.ppy.sh/beatmapsets/%s" % mapset_id)
+                                       "along with it's role. "
+                                       f"https://osu.ppy.sh/beatmapsets/{mapset_id}")
             guild_archive_category_id = db.query(["SELECT category_id FROM categories "
                                                   "WHERE setting = ? AND guild_id = ?",
                                                   ["archive", str(channel.guild.id)]])
@@ -284,8 +284,8 @@ class ModChecker(commands.Cog):
                       [str(mapset_id), str(channel.id)]])
             await channel.send(content="This mapset is ranked, so I am untracking it. "
                                        "There is no point in continuing to do so. "
-                                       "Channel archived!"
-                                       "https://osu.ppy.sh/beatmapsets/%s" % mapset_id)
+                                       "Channel archived! "
+                                       f"https://osu.ppy.sh/beatmapsets/{mapset_id}")
             guild_archive_category_id = db.query(["SELECT category_id FROM categories "
                                                   "WHERE setting = ? AND guild_id = ?",
                                                   ["archive", str(channel.guild.id)]])
@@ -295,7 +295,7 @@ class ModChecker(commands.Cog):
             return None
         else:
             await channel.send(content="<@155976140073205761> something went wrong, please check the console output.")
-            print("%s / %s" % (status, mapset_id))
+            print(f"{status} / {mapset_id}")
             return None
 
     async def timeline_mode_tracking(self, discussions, channel, mapset_id, tracking_mode):
@@ -337,7 +337,7 @@ class ModChecker(commands.Cog):
                 unresolved_diffs = await self.get_unresolved_diffs(discussions)
                 return_message = "new mods on: "
                 for diff in unresolved_diffs:
-                    return_message += "\n> %s" % self.get_diff_name(discussions["beatmapset"]["beatmaps"], diff)
+                    return_message += f"\n> {self.get_diff_name(discussions['beatmapset']['beatmaps'], diff)}"
                 return_message += "\nno further notifications until all mods are resolved"
                 await channel.send(return_message.replace("@", ""))
         return None
@@ -412,7 +412,7 @@ class ModChecker(commands.Cog):
 
         if tracking_mode == "veto":
             mapset_title = str(discussions["beatmapset"]["title"])
-            title = "%s" % mapset_title
+            title = mapset_title
         else:
             title = ""
 
@@ -420,18 +420,18 @@ class ModChecker(commands.Cog):
 
         embed = discord.Embed(
             title=title,
-            url="https://osu.ppy.sh/beatmapsets/%s/discussion" % str(discussions["beatmapset"]["id"]),
+            url=f"https://osu.ppy.sh/beatmapsets/{discussions['beatmapset']['id']}/discussion",
             description=str(icon["text"]),
             color=icon["color"]
         )
         if event["user_id"]:
             embed.set_author(
                 name=str(self.get_username_with_group(discussions["beatmapset"]["related_users"], event["user_id"])),
-                url="https://osu.ppy.sh/users/%s" % (str(event["user_id"])),
-                icon_url="https://a.ppy.sh/%s" % (str(event["user_id"]))
+                url=f"https://osu.ppy.sh/users/{event['user_id']}",
+                icon_url=f"https://a.ppy.sh/{event['user_id']}"
             )
         embed.set_thumbnail(
-            url="https://b.ppy.sh/thumb/%sl.jpg" % (str(discussions["beatmapset"]["id"]))
+            url=f"https://b.ppy.sh/thumb/{discussions['beatmapset']['id']}l.jpg"
         )
         embed.set_footer(
             text=str(event["created_at"]),
@@ -457,18 +457,17 @@ class ModChecker(commands.Cog):
 
         embed = discord.Embed(
             title=title,
-            url="https://osu.ppy.sh/beatmapsets/%s/discussion#/%s" %
-                (str(discussions["beatmapset"]["id"]), str(mod["id"])),
+            url=f"https://osu.ppy.sh/beatmapsets/{discussions['beatmapset']['id']}/discussion#/{mod['id']}",
             description=str(post["message"]),
             color=footer["color"]
         )
         embed.set_author(
             name=str(self.get_username_with_group(discussions["beatmapset"]["related_users"], str(post["user_id"]))),
-            url="https://osu.ppy.sh/users/%s" % (str(post["user_id"])),
-            icon_url="https://a.ppy.sh/%s" % (str(post["user_id"]))
+            url=f"https://osu.ppy.sh/users/{post['user_id']}",
+            icon_url=f"https://a.ppy.sh/{post['user_id']}"
         )
         embed.set_thumbnail(
-            url="https://b.ppy.sh/thumb/%sl.jpg" % (str(discussions["beatmapset"]["id"]))
+            url=f"https://b.ppy.sh/thumb/{discussions['beatmapset']['id']}l.jpg"
         )
         embed.set_footer(
             text=str(footer["text"]),

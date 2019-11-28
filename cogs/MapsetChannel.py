@@ -46,7 +46,7 @@ class MapsetChannel(commands.Cog):
                 if member:
                     role = discord.utils.get(ctx.guild.roles, id=int(role_id_list[0][0]))
                     await member.add_roles(role, reason="added to mapset")
-                    await ctx.send("added %s in this channel" % member.mention)
+                    await ctx.send(f"added {member.mention} in this channel")
                 else:
                     await ctx.send("No member found with what you specified. "
                                    "If you are specifying a name, names are case sensitive.")
@@ -67,7 +67,7 @@ class MapsetChannel(commands.Cog):
                 if member:
                     role = discord.utils.get(ctx.guild.roles, id=int(role_id_list[0][0]))
                     await member.remove_roles(role, reason="removed from mapset")
-                    await ctx.send("removed %s from this channel" % member.mention)
+                    await ctx.send(f"removed {member.mention} from this channel")
                 else:
                     await ctx.send("No member found with what you specified. "
                                    "If you are specifying a name, names are case sensitive.")
@@ -124,7 +124,7 @@ class MapsetChannel(commands.Cog):
             except Exception as e:
                 await ctx.send(e)
         else:
-            await ctx.send("%s this is not your mapset channel" % ctx.author.mention)
+            await ctx.send(f"{ctx.author.mention} this is not your mapset channel")
 
     @commands.command(name="set_id", brief="Set a mapset id for this channel",
                       description="Useful if you created this channel without setting an id")
@@ -284,8 +284,9 @@ class MapsetChannel(commands.Cog):
                                                   category=category,
                                                   topic=channel_topic)
         await ctx.author.add_roles(mapset_role)
-        await channel.send(content="%s done! Please keep in mind I don't automatically start tracking. "
-                                   "You can use the `'track` command bellow to start tracking." % ctx.author.mention,
+        await channel.send(content=f"{ctx.author.mention} done! Please keep in mind that "
+                                   f"I don't automatically start tracking. "
+                                   "You can use the `'track` command bellow to start tracking.",
                            embed=await self.docs.mapset_channel_management())
         db.query(["INSERT INTO mapset_channels "
                   "VALUES (?, ?, ?, ?, ?)",
@@ -298,7 +299,7 @@ class MapsetChannel(commands.Cog):
             db.query(["DELETE FROM mapset_channels WHERE channel_id = ?", [str(deleted_channel.id)]])
             db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(deleted_channel.id)]])
             db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(deleted_channel.id)]])
-            print("channel %s is deleted" % deleted_channel.name)
+            print(f"channel {deleted_channel.name} is deleted")
         except Exception as e:
             print(e)
 

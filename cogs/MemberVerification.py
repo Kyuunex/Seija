@@ -36,7 +36,7 @@ class MemberVerification(commands.Cog):
                 db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
                           [str(member.id), str(osu_profile.id), str(osu_profile.name), str(osu_profile.join_date),
                            str(osu_profile.pp_raw), str(osu_profile.country), str(ranked_amount), "0"]])
-                await ctx.send(content="Manually Verified: %s" % member.name, embed=embed)
+                await ctx.send(content=f"Manually Verified: {member.name}", embed=embed)
 
     @commands.command(name="verify_restricted", brief="Manually verify a restricted member", description="")
     @commands.check(permissions.is_admin)
@@ -67,7 +67,7 @@ class MemberVerification(commands.Cog):
                 if not member.bot:
                     await self.member_verification(channel, member)
                 else:
-                    await channel.send("beep boop boop beep, %s has joined our army of bots" % member.mention)
+                    await channel.send(f"beep boop boop beep, {member.mention} has joined our army of bots")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -98,7 +98,7 @@ class MemberVerification(commands.Cog):
                     goodbye_message = random.choice(self.member_goodbye_messages)
                     await channel.send(goodbye_message[0] % member_name, embed=embed)
                 else:
-                    await channel.send("beep boop boop beep, %s has left our army of bots" % member.mention)
+                    await channel.send(f"beep boop boop beep, {member.mention} has left our army of bots")
 
     async def get_role_from_db(self, setting, guild):
         role_id = db.query(["SELECT role_id FROM roles WHERE setting = ? AND guild_id = ?", [setting, str(guild.id)]])
@@ -162,17 +162,16 @@ class MemberVerification(commands.Cog):
                                                  [str(mapset.creator_id)]])
         if check_if_new_discord_account:
             if str(check_if_new_discord_account[0][0]) != str(member.id):
-                await channel.send("this osu account is already linked to <@%s> in my database. "
-                                   "if there's a problem, for example, you got a new discord account, ping kyuunex." %
-                                   (check_if_new_discord_account[0][0]))
+                old_user_id = check_if_new_discord_account[0][0]
+                await channel.send(f"this osu account is already linked to <@{old_user_id}> in my database. "
+                                   "if there's a problem, for example, you got a new discord account, ping kyuunex.")
                 return None
 
         already_linked_to = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
         if already_linked_to:
             if str(mapset.creator_id) != already_linked_to[0][0]:
-                await channel.send("%s it seems like your discord account is already in my database and "
-                                   "is linked to <https://osu.ppy.sh/users/%s>" %
-                                   (member.mention, already_linked_to[0][0]))
+                await channel.send(f"{member.mention} it seems like your discord account is already in my database "
+                                   f"and is linked to <https://osu.ppy.sh/users/{already_linked_to[0][0]}>")
                 return None
             else:
                 try:
@@ -180,7 +179,7 @@ class MemberVerification(commands.Cog):
                     await member.edit(nick=mapset.creator)
                 except:
                     pass
-                await channel.send(content="%s i already know lol. here, have some roles" % member.mention)
+                await channel.send(content=f"{member.mention} i already know lol. here, have some roles")
                 return None
 
         try:
@@ -192,7 +191,7 @@ class MemberVerification(commands.Cog):
         db.query(["DELETE FROM users WHERE user_id = ?", [str(member.id)]])
         db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
                   [str(member.id), str(mapset.creator_id), str(mapset.creator), "", "", "", str(ranked_amount), "0"]])
-        await channel.send(content="`Verified through mapset: %s`" % member.name, embed=embed)
+        await channel.send(content=f"`Verified through mapset: {member.name}`", embed=embed)
 
     async def profile_id_verification(self, message, osu_id):
         channel = message.channel
@@ -223,9 +222,8 @@ class MemberVerification(commands.Cog):
         already_linked_to = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
         if already_linked_to:
             if str(osu_profile.id) != already_linked_to[0][0]:
-                await channel.send("%s it seems like your discord account is already in my database and "
-                                   "is linked to <https://osu.ppy.sh/users/%s>" %
-                                   (member.mention, already_linked_to[0][0]))
+                await channel.send(f"{member.mention} it seems like your discord account is already in my database and "
+                                   f"is linked to <https://osu.ppy.sh/users/{already_linked_to[0][0]}>")
                 return None
             else:
                 try:
@@ -233,15 +231,15 @@ class MemberVerification(commands.Cog):
                     await member.edit(nick=osu_profile.name)
                 except:
                     pass
-                await channel.send(content="%s i already know lol. here, have some roles" % member.mention)
+                await channel.send(content=f"{member.mention} i already know lol. here, have some roles")
                 return None
 
         check_if_new_discord_account = db.query(["SELECT user_id FROM users WHERE osu_id = ?", [str(osu_profile.id)]])
         if check_if_new_discord_account:
             if str(check_if_new_discord_account[0][0]) != str(member.id):
-                await channel.send("this osu account is already linked to <@%s> in my database. "
-                                   "if there's a problem, for example, you got a new discord account, ping kyuunex." %
-                                   (check_if_new_discord_account[0][0]))
+                old_user_id = check_if_new_discord_account[0][0]
+                await channel.send(f"this osu account is already linked to <@{old_user_id}> in my database. "
+                                   "if there's a problem, for example, you got a new discord account, ping kyuunex.")
                 return None
 
         try:
@@ -254,7 +252,7 @@ class MemberVerification(commands.Cog):
         db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
                   [str(member.id), str(osu_profile.id), str(osu_profile.name), str(osu_profile.join_date),
                    str(osu_profile.pp_raw), str(osu_profile.country), str(ranked_amount), "0"]])
-        await channel.send(content="`Verified: %s`" % member.name, embed=embed)
+        await channel.send(content=f"`Verified: {member.name}`", embed=embed)
 
     async def member_verification(self, channel, member):
         user_db_lookup = db.query(["SELECT osu_id, osu_username FROM users WHERE user_id = ?", [str(member.id)]])

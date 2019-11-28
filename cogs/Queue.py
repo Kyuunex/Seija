@@ -41,7 +41,7 @@ class Queue(commands.Cog):
             if member_already_has_a_queue:
                 already_existing_queue = self.bot.get_channel(int(member_already_has_a_queue[0][0]))
                 if already_existing_queue:
-                    await ctx.send("you already have one <#%s>" % str(already_existing_queue.id))
+                    await ctx.send(f"you already have one <#{already_existing_queue.id}>")
                     return
                 else:
                     db.query(["DELETE FROM queues WHERE channel_id = ?", [str(member_already_has_a_queue[0][0])]])
@@ -56,14 +56,14 @@ class Queue(commands.Cog):
                     ctx.message.author: self.queue_owner_default_permissions,
                     guild.me: self.queue_bot_default_permissions
                 }
-                channel_name = "%s-%s-queue" % (
-                    ctx.author.display_name.replace(" ", "_").lower(), queue_type)
+                underscored_name = ctx.author.display_name.replace(" ", "_").lower()
+                channel_name = f"{underscored_name}-{queue_type}-queue"
                 category = await self.get_queue_category(ctx.author)
                 channel = await guild.create_text_channel(channel_name,
                                                           overwrites=channel_overwrites, category=category)
                 db.query(["INSERT INTO queues VALUES (?, ?, ?)",
                           [str(channel.id), str(ctx.author.id), str(ctx.guild.id)]])
-                await channel.send("%s done!" % ctx.author.mention, embed=await self.docs.queue_management())
+                await channel.send(f"{ctx.author.mention} done!", embed=await self.docs.queue_management())
             except Exception as e:
                 await ctx.send(e)
         else:
@@ -158,7 +158,7 @@ class Queue(commands.Cog):
     async def on_guild_channel_delete(self, deleted_channel):
         try:
             db.query(["DELETE FROM queues WHERE channel_id = ?", [str(deleted_channel.id)]])
-            print("channel %s is deleted. maybe not a queue" % deleted_channel.name)
+            print(f"channel {deleted_channel.name} is deleted. maybe not a queue")
         except Exception as e:
             print(e)
 

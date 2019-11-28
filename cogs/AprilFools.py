@@ -64,7 +64,7 @@ class AprilFools(commands.Cog):
                     await channel.edit(name=upsidedown.transform(channel.name))
                 except Exception as e:
                     print(e)
-                    print("in apply_channels / %s" % channel.name)
+                    print(f"in apply_channels / {channel.name}")
                     await asyncio.sleep(10)
 
     async def restore_channels(self, ctx):
@@ -78,7 +78,7 @@ class AprilFools(commands.Cog):
                     db.query(["DELETE FROM name_backups WHERE id = ?", [str(channel.id)]])
                 except Exception as e:
                     print(e)
-                    print("in restore_channels / %s" % (results[0][0]))
+                    print(f"in restore_channels / {results[0][0]}")
                     await asyncio.sleep(10)
 
     async def apply_roles(self, ctx):
@@ -92,7 +92,7 @@ class AprilFools(commands.Cog):
                     await role.edit(name=upsidedown.transform(role.name))
                 except Exception as e:
                     print(e)
-                    print("in apply_roles / %s" % role.name)
+                    print(f"in apply_roles / {role.name}")
                     await asyncio.sleep(10)
 
     async def restore_roles(self, ctx):
@@ -105,7 +105,7 @@ class AprilFools(commands.Cog):
                     await role.edit(name=str(results[0][0]))
                 except Exception as e:
                     print(e)
-                    print("in restore_roles / %s" % (results[0][0]))
+                    print(f"in restore_roles / {results[0][0]}")
                     await asyncio.sleep(10)
                 db.query(["DELETE FROM name_backups WHERE id = ?", [str(role.id)]])
 

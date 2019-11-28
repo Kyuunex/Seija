@@ -9,9 +9,9 @@ from modules.connections import database_file as database_file
 from modules.connections import bot_token as bot_token
 
 command_prefix = "\'"
-app_version = "t20191127"
+app_version = "t20191128"
 client = commands.Bot(command_prefix=command_prefix,
-                      description="Seija %s" % app_version)
+                      description=f"Seija {app_version}")
 
 if not os.path.exists(database_file):
     db.query("CREATE TABLE users "
@@ -69,7 +69,7 @@ async def on_ready():
     if not db.query("SELECT * FROM admins"):
         app_info = await client.application_info()
         db.query(["INSERT INTO admins VALUES (?, ?)", [str(app_info.owner.id), "1"]])
-        print("Added %s to admin list" % app_info.owner.name)
+        print(f"Added {app_info.owner.name} to admin list")
 
 
 client.run(bot_token)

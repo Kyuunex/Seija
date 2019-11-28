@@ -41,7 +41,7 @@ class Osu(commands.Cog):
             timestamp_link = string.strip().replace(" ", "_")
             timestamp_desc = ""
         embed = discord.Embed(
-            description=str("<osu://edit/%s> %s" % (timestamp_link, timestamp_desc)),
+            description=f"<osu://edit/{timestamp_link}> {timestamp_desc}",
             color=ctx.author.colour
         )
         embed.set_author(

@@ -32,7 +32,7 @@ class MemberManagement(commands.Cog):
                     query = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
                     if query:
                         await ctx.send("person above is in my database "
-                                       "and linked to <https://osu.ppy.sh/users/%s>" % (query[0][0]))
+                                       f"and linked to <https://osu.ppy.sh/users/{query[0][0]}>")
 
     @commands.command(name="get_member_osu_profile",
                       brief="Check which osu account is a discord account linked to", description="")
@@ -46,7 +46,7 @@ class MemberManagement(commands.Cog):
                 embed = await osuembed.user(result)
                 await ctx.send(result.url, embed=embed)
             else:
-                await ctx.send("<https://osu.ppy.sh/users/%s>" % osu_id[0][0])
+                await ctx.send(f"<https://osu.ppy.sh/users/{osu_id[0][0]}>")
 
     @commands.command(name="check_ranked", brief="Update member roles based on their ranking amount", description="")
     @commands.check(permissions.is_admin)
@@ -80,13 +80,13 @@ class MemberManagement(commands.Cog):
                             if ranked_amount >= amount:
                                 await member.add_roles(new_role, reason="reputation updated")
                                 await member.remove_roles(old_role, reason="removed old reputation")
-                                updated_members += "%s\n" % member.mention
+                                updated_members += f"{member.mention}\n"
                     await asyncio.sleep(0.5)
             if len(updated_members) > 0:
-                output = "I gave %s to the following members:\n" % new_role_setting
+                output = f"I gave {new_role_setting} to the following members:\n"
                 await ctx.send(output+updated_members)
             else:
-                await ctx.send("no new member updated with %s" % new_role_setting)
+                await ctx.send(f"no new member updated with {new_role_setting}")
 
     async def count_ranked_beatmapsets(self, mapsets):
         try:

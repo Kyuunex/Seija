@@ -36,12 +36,11 @@ class MemberStatistics(commands.Cog):
                 try:
                     country_object = pycountry.countries.get(alpha_2=stat[0])
                     country_name = country_object.name
-                    country_flag = ":flag_%s:" % (stat[0].lower())
+                    country_flag = f":flag_{stat[0].lower()}:"
                 except:
                     country_flag = ":gay_pride_flag:"
                     country_name = "??"+stat[0]
-                contents += "**[%s]** : %s **%s** : %s : %s %% \n" % (
-                    rank, country_flag, country_name, amount, percentage)
+                contents += f"**[{rank}]** : {country_flag} **{country_name}** : {amount} : {percentage} % \n"
                 if len(contents) > 1800:
                     embed = discord.Embed(description=contents, color=0xbd3661)
                     embed.set_author(name="Server Demographics")
@@ -67,7 +66,7 @@ class MemberStatistics(commands.Cog):
                 else:
                     country_object = pycountry.countries.get(name=country_code)
                 country_name = country_object.name
-                country_flag = ":flag_%s:" % (country_object.alpha_2.lower())
+                country_flag = f":flag_{country_object.alpha_2.lower()}:"
             except:
                 await ctx.send("Country not found. "
                                "Keep in mind that full country names are case-sensitive. "
@@ -86,10 +85,10 @@ class MemberStatistics(commands.Cog):
 
             member_amount = len(master_list)
             master_list.sort()
-            contents = "%s members from %s %s\n" % (str(member_amount), country_flag, country_name)
+            contents = f"{member_amount} members from {country_flag} {country_name}\n"
 
             for one_member in master_list:
-                contents += "[%s](https://osu.ppy.sh/users/%s)\n" % (one_member[0], one_member[1])
+                contents += f"[{one_member[0]}](https://osu.ppy.sh/users/{one_member[1]})\n"
                 if len(contents) > 1800:
                     embed = discord.Embed(description=contents, color=0xbd3661)
                     embed.set_author(name="Country Demographics")

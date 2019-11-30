@@ -170,7 +170,22 @@ class ModChecker(commands.Cog):
             except:
                 await ctx.send("Connection issues?")
                 embed = None
-            await ctx.send(content="mapset_id %s | channel <#%s> | tracking_mode %s" % mapset, embed=embed)
+            await ctx.send(content="mapset_id `%s` | channel <#%s> | tracking_mode `%s`" % mapset, embed=embed)
+
+    @commands.command(name="veto_list", brief="List all vetoed mapsets everywhere", description="")
+    async def veto_list(self, ctx):
+        vetoed_sets = db.query(["SELECT * FROM mod_tracking WHERE mode = ?", ["veto"]])
+        if len(vetoed_sets) == 0:
+            await ctx.send("Nothing is tracked in veto mode at this moment")
+            return None
+        for mapset in vetoed_sets:
+            try:
+                result = await osu.get_beatmapset(s=str(mapset[0]))
+                embed = await osuembed.beatmapset(result)
+            except:
+                await ctx.send("Connection issues?")
+                embed = None
+            await ctx.send(content="mapset_id `%s` | channel <#%s> | tracking_mode `%s`" % mapset, embed=embed)
 
     async def mod_checker_background_loop(self):
         print("Mod checking Background Loop launched!")

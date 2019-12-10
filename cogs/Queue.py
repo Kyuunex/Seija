@@ -147,7 +147,7 @@ class Queue(commands.Cog):
         if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
             guild_archive_category_id = db.query(["SELECT category_id FROM categories "
                                                   "WHERE setting = ? AND guild_id = ?",
-                                                  ["archive", str(ctx.guild.id)]])
+                                                  ["queue_archive", str(ctx.guild.id)]])
             if guild_archive_category_id:
                 archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                 await ctx.channel.edit(reason=None, category=archive_category)
@@ -181,7 +181,7 @@ class Queue(commands.Cog):
                 await queue_channel.send("the queue owner has left")
                 guild_archive_category_id = db.query(["SELECT category_id FROM categories "
                                                       "WHERE setting = ? AND guild_id = ?",
-                                                      ["archive", str(queue_channel.guild.id)]])
+                                                      ["queue_archive", str(queue_channel.guild.id)]])
                 if guild_archive_category_id:
                     archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                     await queue_channel.edit(reason=None, category=archive_category)
@@ -214,7 +214,7 @@ class Queue(commands.Cog):
             return False
 
     async def unarchive_queue(self, ctx, member):
-        if int(ctx.channel.category_id) == int(await self.get_category_object(ctx.guild, "archive", id_only=True)):
+        if int(ctx.channel.category_id) == int(await self.get_category_object(ctx.guild, "queue_archive", id_only=True)):
             await ctx.channel.edit(reason=None, category=await self.get_queue_category(member))
             await ctx.send("Unarchived")
 

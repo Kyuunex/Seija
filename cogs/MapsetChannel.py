@@ -97,7 +97,7 @@ class MapsetChannel(commands.Cog):
     async def abandon(self, ctx):
         guild_archive_category_id = db.query(["SELECT category_id FROM categories "
                                               "WHERE setting = ? AND guild_id = ?",
-                                              ["archive", str(ctx.guild.id)]])
+                                              ["mapset_archive", str(ctx.guild.id)]])
         if not guild_archive_category_id:
             await ctx.send("no archive category set for this server")
             return None
@@ -334,7 +334,7 @@ class MapsetChannel(commands.Cog):
                     await channel.send("untracked everything in this channel")
                     guild_archive_category_id = db.query(["SELECT category_id FROM categories "
                                                           "WHERE setting = ? AND guild_id = ?",
-                                                          ["archive", str(channel.guild.id)]])
+                                                          ["mapset_archive", str(channel.guild.id)]])
                     if guild_archive_category_id:
                         archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                         await channel.edit(reason=None, category=archive_category)

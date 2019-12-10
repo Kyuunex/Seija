@@ -285,7 +285,7 @@ class ModChecker(commands.Cog):
                                        f"https://osu.ppy.sh/beatmapsets/{mapset_id}")
             guild_archive_category_id = db.query(["SELECT category_id FROM categories "
                                                   "WHERE setting = ? AND guild_id = ?",
-                                                  ["archive", str(channel.guild.id)]])
+                                                  ["mapset_archive", str(channel.guild.id)]])
             if guild_archive_category_id:
                 archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                 await channel.edit(reason="mapset deleted!", category=archive_category)
@@ -303,7 +303,7 @@ class ModChecker(commands.Cog):
                                        f"https://osu.ppy.sh/beatmapsets/{mapset_id}")
             guild_archive_category_id = db.query(["SELECT category_id FROM categories "
                                                   "WHERE setting = ? AND guild_id = ?",
-                                                  ["archive", str(channel.guild.id)]])
+                                                  ["mapset_archive", str(channel.guild.id)]])
             if guild_archive_category_id:
                 archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                 await channel.edit(reason="mapset ranked!", category=archive_category)
@@ -562,7 +562,7 @@ class ModChecker(commands.Cog):
             }
 
     async def unarchive_channel(self, ctx, setting):
-        if int(ctx.channel.category_id) == int(await self.get_category_object(ctx.guild, "archive", id_only=True)):
+        if int(ctx.channel.category_id) == int(await self.get_category_object(ctx.guild, "mapset_archive", id_only=True)):
             await ctx.channel.edit(reason=None, category=await self.get_category_object(ctx.guild, setting))
             await ctx.send("Unarchived")
 

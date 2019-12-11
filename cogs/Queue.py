@@ -31,43 +31,43 @@ class Queue(commands.Cog):
     @commands.command(name="request_queue", brief="Request a queue", description="")
     @commands.guild_only()
     async def make_queue_channel(self, ctx, queue_type=None):
-        guild_queue_category = db.query(["SELECT category_id FROM categories "
-                                         "WHERE setting = ? AND guild_id = ?",
-                                         ["mapper_queue", str(ctx.guild.id)]])
-        if guild_queue_category:
-            member_already_has_a_queue = db.query(["SELECT channel_id FROM queues "
-                                                   "WHERE user_id = ? AND guild_id = ?",
-                                                   [str(ctx.author.id), str(ctx.guild.id)]])
-            if member_already_has_a_queue:
-                already_existing_queue = self.bot.get_channel(int(member_already_has_a_queue[0][0]))
-                if already_existing_queue:
-                    await ctx.send(f"you already have one <#{already_existing_queue.id}>")
-                    return
-                else:
-                    db.query(["DELETE FROM queues WHERE channel_id = ?", [str(member_already_has_a_queue[0][0])]])
-
-            try:
-                await ctx.send("sure, gimme a moment")
-                if not queue_type:
-                    queue_type = "std"
-                guild = ctx.guild
-                channel_overwrites = {
-                    guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                    ctx.message.author: self.queue_owner_default_permissions,
-                    guild.me: self.queue_bot_default_permissions
-                }
-                underscored_name = ctx.author.display_name.replace(" ", "_").lower()
-                channel_name = f"{underscored_name}-{queue_type}-queue"
-                category = await self.get_queue_category(ctx.author)
-                channel = await guild.create_text_channel(channel_name,
-                                                          overwrites=channel_overwrites, category=category)
-                db.query(["INSERT INTO queues VALUES (?, ?, ?)",
-                          [str(channel.id), str(ctx.author.id), str(ctx.guild.id)]])
-                await channel.send(f"{ctx.author.mention} done!", embed=await self.docs.queue_management())
-            except Exception as e:
-                await ctx.send(e)
-        else:
+        if not db.query(["SELECT category_id FROM categories "
+                         "WHERE setting = ? AND guild_id = ?",
+                         ["beginner_queue", str(ctx.guild.id)]]):
             await ctx.send("Not enabled in this server yet.")
+            return None
+
+        member_already_has_a_queue = db.query(["SELECT channel_id FROM queues "
+                                               "WHERE user_id = ? AND guild_id = ?",
+                                               [str(ctx.author.id), str(ctx.guild.id)]])
+        if member_already_has_a_queue:
+            already_existing_queue = self.bot.get_channel(int(member_already_has_a_queue[0][0]))
+            if already_existing_queue:
+                await ctx.send(f"you already have one <#{already_existing_queue.id}>")
+                return None
+            else:
+                db.query(["DELETE FROM queues WHERE channel_id = ?", [str(member_already_has_a_queue[0][0])]])
+
+        try:
+            await ctx.send("sure, gimme a moment")
+            if not queue_type:
+                queue_type = "std"
+            guild = ctx.guild
+            channel_overwrites = {
+                guild.default_role: discord.PermissionOverwrite(read_messages=False),
+                ctx.message.author: self.queue_owner_default_permissions,
+                guild.me: self.queue_bot_default_permissions
+            }
+            underscored_name = ctx.author.display_name.replace(" ", "_").lower()
+            channel_name = f"{underscored_name}-{queue_type}-queue"
+            category = await self.get_queue_category(ctx.author)
+            channel = await guild.create_text_channel(channel_name,
+                                                      overwrites=channel_overwrites, category=category)
+            db.query(["INSERT INTO queues VALUES (?, ?, ?)",
+                      [str(channel.id), str(ctx.author.id), str(ctx.guild.id)]])
+            await channel.send(f"{ctx.author.mention} done!", embed=await self.docs.queue_management())
+        except Exception as e:
+            await ctx.send(e)
 
     @commands.command(name="open", brief="Open the queue", description="")
     @commands.guild_only()
@@ -214,7 +214,8 @@ class Queue(commands.Cog):
             return False
 
     async def unarchive_queue(self, ctx, member):
-        if int(ctx.channel.category_id) == int(await self.get_category_object(ctx.guild, "queue_archive", id_only=True)):
+        if int(ctx.channel.category_id) == int(
+                await self.get_category_object(ctx.guild, "queue_archive", id_only=True)):
             await ctx.channel.edit(reason=None, category=await self.get_queue_category(member))
             await ctx.send("Unarchived")
 

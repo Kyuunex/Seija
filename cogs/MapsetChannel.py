@@ -42,7 +42,7 @@ class MapsetChannel(commands.Cog):
                                  [str(ctx.author.id), str(ctx.channel.id)]])
         if role_id_list:
             try:
-                member = await self.get_member_by_name_or_id(ctx, user_id)
+                member = self.get_member_guaranteed(ctx, user_id)
                 if member:
                     role = discord.utils.get(ctx.guild.roles, id=int(role_id_list[0][0]))
                     await member.add_roles(role, reason="added to mapset")
@@ -63,7 +63,7 @@ class MapsetChannel(commands.Cog):
                                  [str(ctx.author.id), str(ctx.channel.id)]])
         if role_id_list:
             try:
-                member = await self.get_member_by_name_or_id(ctx, user_id)
+                member = self.get_member_guaranteed(ctx, user_id)
                 if member:
                     role = discord.utils.get(ctx.guild.roles, id=int(role_id_list[0][0]))
                     await member.remove_roles(role, reason="removed from mapset")
@@ -76,15 +76,24 @@ class MapsetChannel(commands.Cog):
         else:
             await ctx.send("not your mapset channel")
 
-    async def get_member_by_name_or_id(self, ctx, user_id):
-        try:
-            if user_id.isdigit():
-                return ctx.guild.get_member(int(user_id))
-            else:
-                return ctx.guild.get_member_named(user_id)
-        except Exception as e:
-            print(e)
-            return None
+    def get_member_guaranteed(self, ctx, lookup):
+        if len(ctx.message.mentions) > 0:
+            return ctx.message.mentions[0]
+
+        if lookup.isdigit():
+            result = ctx.guild.get_member(int(lookup))
+            if result:
+                return result
+
+        if "#" in lookup:
+            result = ctx.guild.get_member_named(lookup)
+            if result:
+                return result
+
+        for member in ctx.guild.members:
+            if member.display_name.lower() == lookup.lower():
+                return member
+        return None
 
     @commands.command(name="claim_diff", brief="Claim a difficulty", description="")
     @commands.guild_only()

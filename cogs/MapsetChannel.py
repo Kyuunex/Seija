@@ -36,13 +36,13 @@ class MapsetChannel(commands.Cog):
 
     @commands.command(name="add", brief="Add a user in the current mapset channel")
     @commands.guild_only()
-    async def add(self, ctx, user_id: str):
+    async def add(self, ctx, *, user_name: str):
         role_id_list = db.query(["SELECT role_id FROM mapset_channels "
                                  "WHERE user_id = ? AND channel_id = ?",
                                  [str(ctx.author.id), str(ctx.channel.id)]])
         if role_id_list:
             try:
-                member = self.get_member_guaranteed(ctx, user_id)
+                member = self.get_member_guaranteed(ctx, user_name)
                 if member:
                     role = discord.utils.get(ctx.guild.roles, id=int(role_id_list[0][0]))
                     await member.add_roles(role, reason="added to mapset")
@@ -57,13 +57,13 @@ class MapsetChannel(commands.Cog):
 
     @commands.command(name="remove", brief="Remove a user from the current mapset channel")
     @commands.guild_only()
-    async def remove(self, ctx, user_id: str):
+    async def remove(self, ctx, *, user_name: str):
         role_id_list = db.query(["SELECT role_id FROM mapset_channels "
                                  "WHERE user_id = ? AND channel_id = ?",
                                  [str(ctx.author.id), str(ctx.channel.id)]])
         if role_id_list:
             try:
-                member = self.get_member_guaranteed(ctx, user_id)
+                member = self.get_member_guaranteed(ctx, user_name)
                 if member:
                     role = discord.utils.get(ctx.guild.roles, id=int(role_id_list[0][0]))
                     await member.remove_roles(role, reason="removed from mapset")
@@ -98,7 +98,7 @@ class MapsetChannel(commands.Cog):
     @commands.command(name="claim_diff", brief="Claim a difficulty", description="")
     @commands.guild_only()
     @commands.check(permissions.is_admin)
-    async def claim_diff(self, ctx, map_id):
+    async def claim_diff(self, ctx, *, map_id):
         db.query(["INSERT INTO map_owners VALUES (?, ?)", [str(map_id), str(ctx.author.id)]])
 
     @commands.command(name="abandon", brief="Abandon the mapset and untrack", description="")

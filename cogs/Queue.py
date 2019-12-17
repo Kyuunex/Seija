@@ -164,7 +164,8 @@ class Queue(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        queue_id = db.query(["SELECT channel_id FROM queues WHERE user_id = ?", [str(member.id)]])
+        queue_id = db.query(["SELECT channel_id FROM queues WHERE user_id = ? AND guild_id = ?",
+                             [str(member.id), str(member.guild.id)]])
         if queue_id:
             queue_channel = self.bot.get_channel(int(queue_id[0][0]))
             if queue_channel:
@@ -174,7 +175,8 @@ class Queue(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        queue_id = db.query(["SELECT channel_id FROM queues WHERE user_id = ?", [str(member.id)]])
+        queue_id = db.query(["SELECT channel_id FROM queues WHERE user_id = ? AND guild_id = ?",
+                             [str(member.id), str(member.guild.id)]])
         if queue_id:
             queue_channel = self.bot.get_channel(int(queue_id[0][0]))
             if queue_channel:

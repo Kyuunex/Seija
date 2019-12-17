@@ -315,8 +315,8 @@ class MapsetChannel(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         mapsets_user_is_in = db.query(["SELECT channel_id, role_id FROM mapset_channels "
-                                       "WHERE user_id = ?",
-                                       [str(member.id)]])
+                                       "WHERE user_id = ? AND guild_id = ?",
+                                       [str(member.id), str(member.guild.id)]])
         if mapsets_user_is_in:
             for mapset in mapsets_user_is_in:
                 channel = self.bot.get_channel(int(mapset[0]))
@@ -331,8 +331,8 @@ class MapsetChannel(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         mapsets_user_is_in = db.query(["SELECT channel_id FROM mapset_channels "
-                                       "WHERE user_id = ?",
-                                       [str(member.id)]])
+                                       "WHERE user_id = ? AND guild_id = ?",
+                                       [str(member.id), str(member.guild.id)]])
         if mapsets_user_is_in:
             for mapset in mapsets_user_is_in:
                 channel = self.bot.get_channel(int(mapset[0]))

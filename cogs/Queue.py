@@ -30,7 +30,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="request_queue", brief="Request a queue", description="")
     @commands.guild_only()
-    async def make_queue_channel(self, ctx, queue_type=None):
+    async def make_queue_channel(self, ctx, *, queue_type="std"):
         if not db.query(["SELECT category_id FROM categories "
                          "WHERE setting = ? AND guild_id = ?",
                          ["beginner_queue", str(ctx.guild.id)]]):
@@ -50,8 +50,6 @@ class Queue(commands.Cog):
 
         try:
             await ctx.send("sure, gimme a moment")
-            if not queue_type:
-                queue_type = "std"
             guild = ctx.guild
             channel_overwrites = {
                 guild.default_role: discord.PermissionOverwrite(read_messages=False),

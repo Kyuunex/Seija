@@ -191,7 +191,8 @@ class MemberVerification(commands.Cog):
         db.query(["DELETE FROM users WHERE user_id = ?", [str(member.id)]])
         db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
                   [str(member.id), str(mapset.creator_id), str(mapset.creator), "", "", "", str(ranked_amount), "0"]])
-        await channel.send(content=f"`Verified through mapset: {member.name}`", embed=embed)
+        await channel.send(content=f"`Verified through mapset: {member.name}` \n"
+                                   f"You should also read the rules if you haven't already.", embed=embed)
 
     async def profile_id_verification(self, message, osu_id):
         channel = message.channel
@@ -252,7 +253,8 @@ class MemberVerification(commands.Cog):
         db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
                   [str(member.id), str(osu_profile.id), str(osu_profile.name), str(osu_profile.join_date),
                    str(osu_profile.pp_raw), str(osu_profile.country), str(ranked_amount), "0"]])
-        await channel.send(content=f"`Verified: {member.name}`", embed=embed)
+        await channel.send(content=f"`Verified: {member.name}` \n"
+                                   f"You should also read the rules if you haven't already.", embed=embed)
 
     async def member_verification(self, channel, member):
         user_db_lookup = db.query(["SELECT osu_id, osu_username FROM users WHERE user_id = ?", [str(member.id)]])

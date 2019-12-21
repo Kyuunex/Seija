@@ -102,7 +102,7 @@ class Docs(commands.Cog):
         text += "\nFor mapset channel management commands, type `'docs mapset_channel_management`"
         text += "\n"
         text += "\n**Remember:**"
-        text += "\n**__Do not__ create a mapset channel for single person sets. "
+        text += "\n**__Do not__ create a mapset channel for single person sets. **"
         text += "\n**__Do not__ create a channel if you don't have GDers/collaborators ready.**"
         embed = discord.Embed(title="With this command you can create a mapset channel for collaborative purposes.",
                               description=text, color=0xbd3661)

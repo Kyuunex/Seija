@@ -9,7 +9,7 @@ from modules.connections import database_file as database_file
 from modules.connections import bot_token as bot_token
 
 command_prefix = "\'"
-app_version = "t20191220"
+app_version = "t20191227"
 client = commands.Bot(command_prefix=command_prefix,
                       description=f"Seija {app_version}")
 

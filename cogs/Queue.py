@@ -69,7 +69,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="open", brief="Open the queue", description="")
     @commands.guild_only()
-    async def open(self, ctx):
+    async def open(self, ctx, embed_title, embed_description):
         queue_owner_check = db.query(["SELECT user_id FROM queues "
                                       "WHERE user_id = ? AND channel_id = ?",
                                       [str(ctx.author.id), str(ctx.channel.id)]])
@@ -77,13 +77,17 @@ class Queue(commands.Cog):
                                      "WHERE channel_id = ?",
                                      [str(ctx.channel.id)]])
         if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
+            embed = discord.Embed(title=embed_title, description=embed_description, color=0xbd3661)
+            embed.set_author(name=ctx.author.display_name,
+                             icon_url=ctx.author.avatar_url_as(static_format="jpg", size=128))
+
             await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=None, send_messages=True)
             await self.unarchive_queue(ctx, ctx.author)
-            await ctx.send("queue open!")
+            await ctx.send(content="queue open!", embed=embed)
 
     @commands.command(name="close", brief="Close the queue", description="")
     @commands.guild_only()
-    async def close(self, ctx):
+    async def close(self, ctx, embed_title, embed_description):
         queue_owner_check = db.query(["SELECT user_id FROM queues "
                                       "WHERE user_id = ? AND channel_id = ?",
                                       [str(ctx.author.id), str(ctx.channel.id)]])
@@ -91,12 +95,16 @@ class Queue(commands.Cog):
                                      "WHERE channel_id = ?",
                                      [str(ctx.channel.id)]])
         if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
+            embed = discord.Embed(title=embed_title, description=embed_description, color=0xbd3661)
+            embed.set_author(name=ctx.author.display_name,
+                             icon_url=ctx.author.avatar_url_as(static_format="jpg", size=128))
+
             await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=None, send_messages=False)
-            await ctx.send("queue closed!")
+            await ctx.send(content="queue closed!", embed=embed)
 
     @commands.command(name="show", brief="Show the queue", description="")
     @commands.guild_only()
-    async def show(self, ctx):
+    async def show(self, ctx, embed_title, embed_description):
         queue_owner_check = db.query(["SELECT user_id FROM queues "
                                       "WHERE user_id = ? AND channel_id = ?",
                                       [str(ctx.author.id), str(ctx.channel.id)]])
@@ -104,13 +112,17 @@ class Queue(commands.Cog):
                                      "WHERE channel_id = ?",
                                      [str(ctx.channel.id)]])
         if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
+            embed = discord.Embed(title=embed_title, description=embed_description, color=0xbd3661)
+            embed.set_author(name=ctx.author.display_name,
+                             icon_url=ctx.author.avatar_url_as(static_format="jpg", size=128))
+
             await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=None, send_messages=False)
-            await ctx.send("queue is visible to everyone, but it's still closed. "
-                           "use `'open` command if you want people to post in it.")
+            await ctx.send(content="queue is visible to everyone, but it's still closed. "
+                           "use `'open` command if you want people to post in it.", embed=embed)
 
     @commands.command(name="hide", brief="Hide the queue", description="")
     @commands.guild_only()
-    async def hide(self, ctx):
+    async def hide(self, ctx, embed_title, embed_description):
         queue_owner_check = db.query(["SELECT user_id FROM queues "
                                       "WHERE user_id = ? AND channel_id = ?",
                                       [str(ctx.author.id), str(ctx.channel.id)]])
@@ -118,8 +130,12 @@ class Queue(commands.Cog):
                                      "WHERE channel_id = ?",
                                      [str(ctx.channel.id)]])
         if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
+            embed = discord.Embed(title=embed_title, description=embed_description, color=0xbd3661)
+            embed.set_author(name=ctx.author.display_name,
+                             icon_url=ctx.author.avatar_url_as(static_format="jpg", size=128))
+
             await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False)
-            await ctx.send("queue hidden!")
+            await ctx.send(content="queue hidden!", embed=embed)
 
     @commands.command(name="recategorize", brief="Recategorize the queue (bn/nat only)", description="")
     @commands.guild_only()

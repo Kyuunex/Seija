@@ -144,7 +144,7 @@ class Queue(commands.Cog):
             await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False)
             await ctx.send(content="queue hidden!", embed=embed)
 
-    @commands.command(name="recategorize", brief="Recategorize the queue (bn/nat only)", description="")
+    @commands.command(name="recategorize", brief="Recategorize the queue (works bn/nat only for now)", description="")
     @commands.guild_only()
     async def recategorize(self, ctx):
         queue_owner_check = db.query(["SELECT user_id FROM queues "

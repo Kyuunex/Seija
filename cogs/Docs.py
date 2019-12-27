@@ -132,7 +132,8 @@ class Docs(commands.Cog):
                         inline=False)
         embed.add_field(name="'recategorize",
                         value="Move the queue to the correct category "
-                              "if you became a BN or reached one or ten ranked maps.",
+                              "if you became a BN or have gotten enough kudosu to earn a spot in a higher category. "
+                              "For now command only works if you became/left BN/NAT, will add kudosu checks when I can.",
                         inline=False)
         embed.set_author(name=self.author_text, icon_url=self.author_icon)
         embed.set_footer(text=self.footer_text, icon_url=self.footer_icon)

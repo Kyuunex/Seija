@@ -15,7 +15,9 @@ class ModChecker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.veto_channel_list = db.query(["SELECT channel_id FROM channels WHERE setting = ?", ["veto"]])
-        self.bot.loop.create_task(self.mod_checker_background_loop())
+        self.bot.background_tasks.append(
+            self.bot.loop.create_task(self.mod_checker_background_loop())
+        )
 
     @commands.command(name="track", brief="Track the mapset in this channel", description="")
     @commands.guild_only()

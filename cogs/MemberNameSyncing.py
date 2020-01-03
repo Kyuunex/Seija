@@ -17,8 +17,13 @@ class MemberNameSyncing(commands.Cog):
                                               "WHERE setting = ?",
                                               ["notices"]])
         if self.member_mapping_feed_list:
-            self.bot.loop.create_task(self.member_name_syncing_loop())
-        self.bot.loop.create_task(self.event_history_cleanup_loop())
+            self.bot.background_tasks.append(
+                self.bot.loop.create_task(self.member_name_syncing_loop())
+            )
+        
+        self.bot.background_tasks.append(
+            self.bot.loop.create_task(self.event_history_cleanup_loop())
+        )
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):

@@ -9,7 +9,7 @@ from modules.connections import database_file as database_file
 from modules.connections import bot_token as bot_token
 
 command_prefix = "\'"
-app_version = "t20191227"
+app_version = "t20200104"
 
 if not os.path.exists(database_file):
     db.query("CREATE TABLE users "
@@ -50,6 +50,7 @@ initial_extensions = [
     "cogs.Queue",
 ]
 
+
 class Seija(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -79,7 +80,8 @@ class Seija(commands.Bot):
             app_info = await self.application_info()
             db.query(["INSERT INTO admins VALUES (?, ?)", [str(app_info.owner.id), "1"]])
             print(f"Added {app_info.owner.name} to admin list")
-        
+
+
 client = Seija(command_prefix=command_prefix,
                description=f"Seija {app_version}")
 client.run(bot_token)

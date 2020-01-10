@@ -9,7 +9,7 @@ from modules.connections import database_file as database_file
 from modules.connections import bot_token as bot_token
 
 command_prefix = "\'"
-app_version = "t20200104"
+app_version = "20200110"
 
 if not os.path.exists(database_file):
     db.query("CREATE TABLE users "

@@ -46,7 +46,12 @@ class Docs(commands.Cog):
                         value="Retrieve a list of server members who are from the specified country. "
                               "Takes Alpha-2, Alpha-3 codes and full country names.",
                         inline=True)
-        embed.add_field(name="'ts (mod)", value="Send a clickable timestamp for the osu! editor. The message must start with a timestamp.",
+        embed.add_field(name="'demographics",
+                        value="Show server demographics. "
+                              "Shows how many members are from which country and the percentage of them.",
+                        inline=True)
+        embed.add_field(name="'ts (mod)", value="Send a clickable timestamp for the osu! editor. "
+                                                "The message must start with a timestamp.",
                         inline=True)
         embed.set_thumbnail(url=self.help_thumbnail)
         embed.set_author(name=self.author_text, icon_url=self.author_icon)
@@ -133,7 +138,7 @@ class Docs(commands.Cog):
         embed.add_field(name="'recategorize",
                         value="Move the queue to the correct category "
                               "if you became a BN or have gotten enough kudosu to earn a spot in a higher category. "
-                              "For now command only works if you became/left BN/NAT, will add kudosu checks when I can.",
+                              "At the moment, command only works if you became/left BN/NAT.",
                         inline=False)
         embed.set_author(name=self.author_text, icon_url=self.author_icon)
         embed.set_footer(text=self.footer_text, icon_url=self.footer_icon)
@@ -142,7 +147,8 @@ class Docs(commands.Cog):
     async def mapset_channel_management(self):
         embed = discord.Embed(title="Mapset channel management commands",
                               description="`(user)` can either be the name of the user or a discord account user ID. "
-                                          "To get the user ID, you need to enable the developer mode in your discord settings, "
+                                          "To get the user ID, "
+                                          "you need to enable the developer mode in your discord settings, "
                                           "right click on the user and click \"Copy ID\". "
                                           "Using IDs is recommended rather than names.",
                               color=0xbd3661)

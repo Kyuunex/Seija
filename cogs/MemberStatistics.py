@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from modules import permissions
 from modules import db
+from modules import cooldown
 from collections import Counter
 import operator
 import pycountry
@@ -12,9 +13,13 @@ class MemberStatistics(commands.Cog):
         self.bot = bot
 
     @commands.command(name="demographics", brief="Send server demographics stats", description="")
-    @commands.check(permissions.is_admin)
     @commands.guild_only()
     async def demographics(self, ctx):
+        if not await cooldown.check(str(ctx.guild.id), "last_demographics_time", 40):
+            if not await permissions.is_admin(ctx):
+                await ctx.send("slow down bruh")
+                return None
+
         async with ctx.channel.typing():
             master_list = []
             query = db.query("SELECT country, user_id FROM users")
@@ -57,6 +62,11 @@ class MemberStatistics(commands.Cog):
                       description="Takes Alpha-2, Alpha-3 codes and full country names")
     @commands.guild_only()
     async def users_from(self, ctx, *, country_code="US"):
+        if not await cooldown.check(str(ctx.author.id), "last_from_time", 10):
+            if not await permissions.is_admin(ctx):
+                await ctx.send("slow down bruh")
+                return None
+
         async with ctx.channel.typing():
             try:
                 if len(country_code) == 2:

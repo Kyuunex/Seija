@@ -9,7 +9,6 @@ from modules.connections import database_file as database_file
 from modules.connections import bot_token as bot_token
 
 command_prefix = "\'"
-app_version = "20200110"
 
 if not os.path.exists(database_file):
     db.query("CREATE TABLE users "
@@ -55,6 +54,8 @@ class Seija(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.background_tasks = []
+        self.app_version = (open(".version", "r+").read()).rstrip()
+        self.description = f"Seija {self.app_version}"
 
         for extension in initial_extensions:
             try:
@@ -82,6 +83,5 @@ class Seija(commands.Bot):
             print(f"Added {app_info.owner.name} to admin list")
 
 
-client = Seija(command_prefix=command_prefix,
-               description=f"Seija {app_version}")
+client = Seija(command_prefix=command_prefix)
 client.run(bot_token)

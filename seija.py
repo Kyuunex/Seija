@@ -77,8 +77,13 @@ class Seija(commands.Bot):
         print("------")
         if not db.query("SELECT * FROM admins"):
             app_info = await self.application_info()
-            db.query(["INSERT INTO admins VALUES (?, ?)", [str(app_info.owner.id), "1"]])
-            print(f"Added {app_info.owner.name} to admin list")
+            if app_info.team:
+                for team_member in app_info.team.members:
+                    db.query(["INSERT INTO admins VALUES (?, ?)", [str(team_member.id), "1"]])
+                    print(f"Added {team_member.name} to admin list")
+            else:
+                db.query(["INSERT INTO admins VALUES (?, ?)", [str(app_info.owner.id), "1"]])
+                print(f"Added {app_info.owner.name} to admin list")
 
 
 client = Seija(command_prefix="\'")

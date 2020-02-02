@@ -4,6 +4,7 @@ from modules import permissions
 import discord
 from discord.ext import commands
 
+from modules.connections import osuweb as osuweb
 
 class Queue(commands.Cog):
     def __init__(self, bot):
@@ -85,6 +86,7 @@ class Queue(commands.Cog):
     @commands.command(name="open", brief="Open the queue", description="")
     @commands.guild_only()
     async def open(self, ctx, *args):
+        # TODO: fix if a manager opens a queue of someone, use that someone's kds
         queue_owner_check = db.query(["SELECT user_id FROM queues "
                                       "WHERE user_id = ? AND channel_id = ?",
                                       [str(ctx.author.id), str(ctx.channel.id)]])
@@ -144,7 +146,7 @@ class Queue(commands.Cog):
             await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False)
             await ctx.send(content="queue hidden!", embed=embed)
 
-    @commands.command(name="recategorize", brief="Recategorize the queue (works bn/nat only for now)", description="")
+    @commands.command(name="recategorize", brief="Recategorize the queue", description="")
     @commands.guild_only()
     async def recategorize(self, ctx):
         queue_owner_check = db.query(["SELECT user_id FROM queues "
@@ -243,24 +245,34 @@ class Queue(commands.Cog):
             await ctx.send("Unarchived")
 
     async def get_queue_category(self, member):
-        # TODO:
-        # beginner_queue 0 - 199
-        # intermediate_queue 200 - 499
-        # advanced_queue 500 - 999
-        # experienced_queue 1000+
-
         if (await self.get_role_object(member.guild, "nat")) in member.roles:
             return await self.get_category_object(member.guild, "bn_nat_queue")
         elif (await self.get_role_object(member.guild, "bn")) in member.roles:
             return await self.get_category_object(member.guild, "bn_nat_queue")
-        elif (await self.get_role_object(member.guild, "experienced_mapper")) in member.roles:
-            return await self.get_category_object(member.guild, "beginner_queue")
-        elif (await self.get_role_object(member.guild, "ranked_mapper")) in member.roles:
-            return await self.get_category_object(member.guild, "beginner_queue")
-        elif (await self.get_role_object(member.guild, "mapper")) in member.roles:
-            return await self.get_category_object(member.guild, "beginner_queue")
+
+        osu_id = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
+        if osu_id:
+            kudosu = await self.get_kudosu_int(osu_id[0][0])
         else:
-            return None
+            kudosu = 0
+
+        if kudosu <= 199:
+            return await self.get_category_object(member.guild, "beginner_queue")
+        elif 200 <= kudosu <= 499:
+            return await self.get_category_object(member.guild, "intermediate_queue")
+        elif 500 <= kudosu <= 999:
+            return await self.get_category_object(member.guild, "advanced_queue")
+        elif kudosu >= 1000:
+            return await self.get_category_object(member.guild, "experienced_queue")
+
+        return await self.get_category_object(member.guild, "beginner_queue")
+
+    async def get_kudosu_int(self, osu_id):
+        try:
+            user = await osuweb.get_user(str(osu_id))
+            return user["kudosu"]["total"]
+        except:
+            return 0
 
 
 def setup(bot):

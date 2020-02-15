@@ -32,10 +32,11 @@ class Queue(commands.Cog):
     @commands.command(name="debug_get_kudosu")
     @commands.check(permissions.is_admin)
     @commands.guild_only()
-    async def debug_get_kudosu(self, ctx, user_id, osu_id=0):
+    async def debug_get_kudosu(self, ctx, user_id, osu_id="0"):
         if user_id:
             osu_id = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]])
-            osu_id = osu_id[0][0]
+            if osu_id:
+                osu_id = osu_id[0][0]
         if osu_id:
             await ctx.send(await self.get_kudosu_int(osu_id))
 

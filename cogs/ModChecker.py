@@ -2,7 +2,7 @@ import time
 import asyncio
 import discord
 from discord.ext import commands
-from modules import db
+from modules import wrappers
 from modules import permissions
 import osuembed
 
@@ -14,7 +14,6 @@ class ModChecker(commands.Cog):
     # TODO: add event inserts in db upon track
     def __init__(self, bot):
         self.bot = bot
-        self.veto_channel_list = db.query(["SELECT channel_id FROM channels WHERE setting = ?", ["veto"]])
         self.bot.background_tasks.append(
             self.bot.loop.create_task(self.mod_checker_background_loop())
         )
@@ -22,9 +21,9 @@ class ModChecker(commands.Cog):
     @commands.command(name="track", brief="Track the mapset in this channel", description="")
     @commands.guild_only()
     async def track(self, ctx, tracking_mode="timeline"):
-        mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
-                                       "WHERE user_id = ? AND channel_id = ?",
-                                       [str(ctx.author.id), str(ctx.channel.id)]])
+        async with self.bot.db.execute("SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
+                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+            mapset_owner_check = await cursor.fetchall()
         if not (mapset_owner_check or await permissions.is_admin(ctx)):
             return None
 
@@ -40,16 +39,19 @@ class ModChecker(commands.Cog):
                 await ctx.send("you are using the command incorrectly")
                 return None
 
-        if db.query(["SELECT mapset_id FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]]):
-            db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]])
-            db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.channel.id)]])
-            db.query(["DELETE FROM mapset_events WHERE channel_id = ?", [str(ctx.channel.id)]])
+        async with self.bot.db.execute("SELECT mapset_id FROM mod_tracking WHERE channel_id = ?",
+                                       [str(ctx.channel.id)]) as cursor:
+            is_tracked = await cursor.fetchall()
+        if is_tracked:
+            await self.bot.db.execute("DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)])
+            await self.bot.db.execute("DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.channel.id)])
+            await self.bot.db.execute("DELETE FROM mapset_events WHERE channel_id = ?", [str(ctx.channel.id)])
             await ctx.send("Deleted all previously existing tracking records in this channel")
             await asyncio.sleep(1)
 
-        mapset_id = db.query(["SELECT mapset_id FROM mapset_channels "
-                              "WHERE channel_id = ?",
-                              [str(ctx.channel.id)]])
+        async with self.bot.db.execute("SELECT mapset_id FROM mapset_channels WHERE channel_id = ?",
+                                       [str(ctx.channel.id)]) as cursor:
+            mapset_id = await cursor.fetchall()
         if not mapset_id:
             await ctx.send("Set a mapset id for this channel first, using the `'set_id (mapset_id)` command.")
             return None
@@ -71,8 +73,8 @@ class ModChecker(commands.Cog):
 
         await self.insert_nomination_history_in_db(discussions, str(ctx.channel.id))
 
-        db.query(["INSERT INTO mod_tracking VALUES (?,?,?)",
-                  [str(mapset_id[0][0]), str(ctx.channel.id), tracking_mode]])
+        await self.bot.db.execute("INSERT INTO mod_tracking VALUES (?,?,?)",
+                                  [str(mapset_id[0][0]), str(ctx.channel.id), tracking_mode])
         try:
             beatmap_object = await osu.get_beatmapset(s=str(mapset_id[0][0]))
             embed = await osuembed.beatmapset(beatmap_object)
@@ -84,34 +86,42 @@ class ModChecker(commands.Cog):
                 pass
         except:
             await ctx.send("Connection issues? try again")
+        await self.bot.db.commit()
 
     @commands.command(name="untrack", brief="Untrack everything in this channel", description="")
     @commands.guild_only()
     async def untrack(self, ctx):
-        mapset_owner_check = db.query(["SELECT * FROM mapset_channels "
-                                       "WHERE user_id = ? AND channel_id = ?",
-                                       [str(ctx.author.id), str(ctx.channel.id)]])
+        async with self.bot.db.execute("SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
+                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+            mapset_owner_check = await cursor.fetchall()
         if not (mapset_owner_check or await permissions.is_admin(ctx)):
             return None
 
-        db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)]])
-        db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.channel.id)]])
-        db.query(["DELETE FROM mapset_events WHERE channel_id = ?", [str(ctx.channel.id)]])
+        await self.bot.db.execute("DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)])
+        await self.bot.db.execute("DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.channel.id)])
+        await self.bot.db.execute("DELETE FROM mapset_events WHERE channel_id = ?", [str(ctx.channel.id)])
         await ctx.send("Untracked everything in this channel")
+        await self.bot.db.commit()
 
     @commands.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="")
     @commands.guild_only()
     async def veto(self, ctx, mapset_id):
-        if not ((str(ctx.channel.id),) in self.veto_channel_list):
+        async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND channel_id = ?",
+                                       ["veto", str(ctx.channel.id)]) as cursor:
+            is_veto_channel = await cursor.fetchall()
+
+        if is_veto_channel:
             return None
 
         if not mapset_id.isdigit():
             await ctx.send("a mapset_id is supposed to be all numbers")
             return None
 
-        if db.query(["SELECT mapset_id FROM mod_tracking "
-                     "WHERE mapset_id = ? AND channel_id = ?",
-                     [str(mapset_id), str(ctx.channel.id)]]):
+        async with self.bot.db.execute("SELECT mapset_id FROM mod_tracking "
+                                       "WHERE mapset_id = ? AND channel_id = ?",
+                                       [str(mapset_id), str(ctx.channel.id)]) as cursor:
+            mapset_is_already_tracked = await cursor.fetchall()
+        if mapset_is_already_tracked:
             await ctx.send("This mapset is already tracked in this channel")
             return None
 
@@ -126,8 +136,8 @@ class ModChecker(commands.Cog):
 
         await self.insert_mod_history_in_db(discussions, str(ctx.channel.id))
         await self.insert_nomination_history_in_db(discussions, str(ctx.channel.id))
-        db.query(["INSERT INTO mod_tracking VALUES (?,?,?)",
-                  [str(mapset_id), str(ctx.channel.id), "veto"]])
+        await self.bot.db.execute("INSERT INTO mod_tracking VALUES (?,?,?)",
+                                  [str(mapset_id), str(ctx.channel.id), "veto"])
         try:
             result = await osu.get_beatmapset(s=mapset_id)
             embed = await osuembed.beatmapset(result)
@@ -135,37 +145,42 @@ class ModChecker(commands.Cog):
             await ctx.send("Tracked in veto mode", embed=embed)
         except:
             await ctx.send("tracked")
+        await self.bot.db.commit()
 
     @commands.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode", description="")
     @commands.guild_only()
     async def unveto(self, ctx, mapset_id):
-        if not ((str(ctx.channel.id),) in self.veto_channel_list):
+        async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND channel_id = ?",
+                                       ["veto", str(ctx.channel.id)]) as cursor:
+            is_veto_channel = await cursor.fetchall()
+
+        if is_veto_channel:
             return None
 
         if not mapset_id.isdigit():
             await ctx.send("a mapset_id is supposed to be all numbers")
             return None
 
-        db.query(["DELETE FROM mod_tracking "
-                  "WHERE mapset_id = ? AND channel_id = ?",
-                  [str(mapset_id), str(ctx.channel.id)]])
-        db.query(["DELETE FROM mod_posts "
-                  "WHERE mapset_id = ? AND channel_id = ?",
-                  [str(mapset_id), str(ctx.channel.id)]])
-        db.query(["DELETE FROM mapset_events "
-                  "WHERE mapset_id = ? AND channel_id = ?",
-                  [str(mapset_id), str(ctx.channel.id)]])
+        await self.bot.db.execute("DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
+                                  [str(mapset_id), str(ctx.channel.id)])
+        await self.bot.db.execute("DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
+                                  [str(mapset_id), str(ctx.channel.id)])
+        await self.bot.db.execute("DELETE FROM mapset_events WHERE mapset_id = ? AND channel_id = ?",
+                                  [str(mapset_id), str(ctx.channel.id)])
         try:
             result = await osu.get_beatmapset(s=mapset_id)
             embed = await osuembed.beatmapset(result)
             await ctx.send("I untracked this mapset in this channel", embed=embed)
         except:
             await ctx.send("done")
+        await self.bot.db.commit()
 
     @commands.command(name="sublist", brief="List all tracked mapsets everywhere", description="")
     @commands.check(permissions.is_admin)
     async def sublist(self, ctx):
-        for mapset in db.query("SELECT * FROM mod_tracking"):
+        async with self.bot.db.execute("SELECT * FROM mod_tracking") as cursor:
+            track_list = await cursor.fetchall()
+        for mapset in track_list:
             try:
                 result = await osu.get_beatmapset(s=str(mapset[0]))
                 embed = await osuembed.beatmapset(result)
@@ -176,7 +191,8 @@ class ModChecker(commands.Cog):
 
     @commands.command(name="veto_list", brief="List all vetoed mapsets everywhere", description="")
     async def veto_list(self, ctx):
-        vetoed_sets = db.query(["SELECT * FROM mod_tracking WHERE mode = ?", ["veto"]])
+        async with self.bot.db.execute("SELECT * FROM mod_tracking WHERE mode = ?", ["veto"]) as cursor:
+            vetoed_sets = await cursor.fetchall()
         if len(vetoed_sets) == 0:
             await ctx.send("Nothing is tracked in veto mode at this moment")
             return None
@@ -193,24 +209,30 @@ class ModChecker(commands.Cog):
         print("Mod checking Background Loop launched!")
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
-            for track_entry in db.query("SELECT * FROM mod_tracking"):
+            await asyncio.sleep(10)
+            async with self.bot.db.execute("SELECT * FROM mod_tracking") as cursor:
+                track_list = await cursor.fetchall()
+            for track_entry in track_list:
                 print(time.strftime("%X %x %Z") + " | " + track_entry[0])
                 channel = self.bot.get_channel(int(track_entry[1]))
 
                 if not channel:
                     print(f"channel {track_entry[1]} is deleted for mapset {track_entry[0]}")
-                    db.query(["DELETE FROM mod_tracking WHERE channel_id = ?", [str(track_entry[1])]])
-                    db.query(["DELETE FROM mod_posts WHERE channel_id = ?", [str(track_entry[1])]])
-                    db.query(["DELETE FROM mapset_channels  WHERE channel_id = ?", [str(track_entry[1])]])
-                    db.query(["DELETE FROM mapset_events  WHERE channel_id = ?", [str(track_entry[1])]])
+                    await self.bot.db.execute("DELETE FROM mod_tracking WHERE channel_id = ?", [str(track_entry[1])])
+                    await self.bot.db.execute("DELETE FROM mod_posts WHERE channel_id = ?", [str(track_entry[1])])
+                    await self.bot.db.execute("DELETE FROM mapset_channels WHERE channel_id = ?", [str(track_entry[1])])
+                    await self.bot.db.execute("DELETE FROM mapset_events WHERE channel_id = ?", [str(track_entry[1])])
+                    await self.bot.db.commit()
                     continue
 
                 mapset_id = str(track_entry[0])
                 tracking_mode = str(track_entry[2])
 
-                if not db.query(["SELECT * FROM mod_tracking "
-                                 "WHERE mapset_id = ? AND channel_id = ? AND mode = ?",
-                                 [str(mapset_id), str(channel.id), str(tracking_mode)]]):
+                async with self.bot.db.execute("SELECT * FROM mod_tracking "
+                                               "WHERE mapset_id = ? AND channel_id = ? AND mode = ?",
+                                               [str(mapset_id), str(channel.id), str(tracking_mode)]) as cursor:
+                    is_no_longer_tracked = await cursor.fetchall()
+                if not is_no_longer_tracked:
                     continue
 
                 try:
@@ -235,77 +257,80 @@ class ModChecker(commands.Cog):
             await asyncio.sleep(1800)
 
     async def insert_mod_history_in_db(self, discussions, channel_id):
-        mass_query = []
         for mod in discussions["beatmapset"]["discussions"]:
             if mod:
                 if "posts" in mod:
                     for post in mod["posts"]:
                         if post:
-                            mass_query.append(["INSERT INTO mod_posts VALUES (?,?,?)",
-                                               [str(post["id"]), str(mod["beatmapset_id"]), str(channel_id)]])
-        db.mass_query(mass_query)
+                            await self.bot.db.execute("INSERT INTO mod_posts VALUES (?,?,?)",
+                                                      [str(post["id"]), str(mod["beatmapset_id"]), str(channel_id)])
+        await self.bot.db.commit()
 
     async def insert_nomination_history_in_db(self, discussions, channel_id):
-        mass_query = []
         mapset_id = discussions["beatmapset"]["id"]
-        history = db.query(["SELECT event_id FROM mapset_events WHERE channel_id = ? AND mapset_id = ?",
-                            [str(channel_id), str(mapset_id)]])
+        async with self.bot.db.execute("SELECT event_id FROM mapset_events WHERE channel_id = ? AND mapset_id = ?",
+                                       [str(channel_id), str(mapset_id)]) as cursor:
+            history = await cursor.fetchall()
         for event in discussions["beatmapset"]["events"]:
             if event:
                 if self.get_icon(event["type"]):
-                    if not ((str(event["id"]),) in history):
-                        mass_query.append(["INSERT INTO mapset_events VALUES (?,?,?)",
-                                          [str(event["id"]), str(mapset_id), str(channel_id)]])
-        db.mass_query(mass_query)
+                    if not wrappers.in_db_list(history, str(event["id"])):
+                        await self.bot.db.execute("INSERT INTO mapset_events VALUES (?,?,?)",
+                                                  [str(event["id"]), str(mapset_id), str(channel_id)])
+        await self.bot.db.commit()
 
     async def check_status(self, channel, mapset_id, discussions):
         status = discussions["beatmapset"]["status"]
         if (status == "wip") or (status == "qualified") or (status == "pending"):
             return True
         elif status == "graveyard":
-            db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
-                      [str(mapset_id), str(channel.id)]])
-            db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
-                      [str(mapset_id), str(channel.id)]])
-            db.query(["DELETE FROM mapset_events WHERE mapset_id = ? AND channel_id = ?",
-                      [str(mapset_id), str(channel.id)]])
+            await self.bot.db.execute("DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
+                                      [str(mapset_id), str(channel.id)])
+            await self.bot.db.execute("DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
+                                      [str(mapset_id), str(channel.id)])
+            await self.bot.db.execute("DELETE FROM mapset_events WHERE mapset_id = ? AND channel_id = ?",
+                                      [str(mapset_id), str(channel.id)])
+            await self.bot.db.commit()
             await channel.send(content="This mapset is graveyarded, so I am untracking it. "
                                        "I don't wanna track dead sets. "
                                        "You can track again after it's ungraveyarded "
                                        f"https://osu.ppy.sh/beatmapsets/{mapset_id}")
             return None
         elif status == "deleted":
-            db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
-                      [str(mapset_id), str(channel.id)]])
-            db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
-                      [str(mapset_id), str(channel.id)]])
-            db.query(["DELETE FROM mapset_events WHERE mapset_id = ? AND channel_id = ?",
-                      [str(mapset_id), str(channel.id)]])
+            await self.bot.db.execute("DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
+                                      [str(mapset_id), str(channel.id)])
+            await self.bot.db.execute("DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
+                                      [str(mapset_id), str(channel.id)])
+            await self.bot.db.execute("DELETE FROM mapset_events WHERE mapset_id = ? AND channel_id = ?",
+                                      [str(mapset_id), str(channel.id)])
+            await self.bot.db.commit()
             await channel.send(content="This mapset is deleted, so I am untracking it. "
                                        "why tho????????????? channel archived and will be nuked in a week "
                                        "along with it's role. "
                                        f"https://osu.ppy.sh/beatmapsets/{mapset_id}")
-            guild_archive_category_id = db.query(["SELECT category_id FROM categories "
-                                                  "WHERE setting = ? AND guild_id = ?",
-                                                  ["mapset_archive", str(channel.guild.id)]])
+            async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
+                                           ["mapset_archive", str(channel.guild.id)]) as cursor:
+                guild_archive_category_id = await cursor.fetchall()
             if guild_archive_category_id:
                 archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                 await channel.edit(reason="mapset deleted!", category=archive_category)
             return None
         elif status == "ranked":
-            db.query(["DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
-                      [str(mapset_id), str(channel.id)]])
-            db.query(["DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
-                      [str(mapset_id), str(channel.id)]])
-            db.query(["DELETE FROM mapset_events WHERE mapset_id = ? AND channel_id = ?",
-                      [str(mapset_id), str(channel.id)]])
+            await self.bot.db.execute("DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
+                                      [str(mapset_id), str(channel.id)])
+            await self.bot.db.execute("DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
+                                      [str(mapset_id), str(channel.id)])
+            await self.bot.db.execute("DELETE FROM mapset_events WHERE mapset_id = ? AND channel_id = ?",
+                                      [str(mapset_id), str(channel.id)])
+            await self.bot.db.commit()
             await channel.send(content="This mapset is ranked, so I am untracking it. "
                                        "There is no point in continuing to do so. "
                                        "Channel archived! "
                                        f"https://osu.ppy.sh/beatmapsets/{mapset_id}")
-            guild_archive_category_id = db.query(["SELECT category_id FROM categories "
-                                                  "WHERE setting = ? AND guild_id = ?",
-                                                  ["mapset_archive", str(channel.guild.id)]])
+            async with self.bot.db.execute("SELECT category_id FROM categories "
+                                           "WHERE setting = ? AND guild_id = ?",
+                                           ["mapset_archive", str(channel.guild.id)]) as cursor:
+                guild_archive_category_id = await cursor.fetchall()
             if guild_archive_category_id:
                 archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                 await channel.edit(reason="mapset ranked!", category=archive_category)
@@ -316,15 +341,18 @@ class ModChecker(commands.Cog):
             return None
 
     async def timeline_mode_tracking(self, discussions, channel, mapset_id, tracking_mode):
-        history = db.query(["SELECT post_id FROM mod_posts WHERE channel_id = ?", [str(channel.id)]])
+        async with self.bot.db.execute("SELECT post_id FROM mod_posts WHERE channel_id = ?",
+                                       [str(channel.id)]) as cursor:
+            history = await cursor.fetchall()
         for mod in discussions["beatmapset"]["discussions"]:
             if mod:
                 if "posts" in mod:
                     for post in mod["posts"]:
                         if post:
-                            if not ((str(post["id"]),) in history):
-                                db.query(["INSERT INTO mod_posts VALUES (?,?,?)",
-                                          [str(post["id"]), str(mapset_id), str(channel.id)]])
+                            if not wrappers.in_db_list(history, str(post["id"])):
+                                await self.bot.db.execute("INSERT INTO mod_posts VALUES (?,?,?)",
+                                                          [str(post["id"]), str(mapset_id), str(channel.id)])
+                                await self.bot.db.commit()
                                 if ((not post["system"]) and
                                         (not post["message"] == "r") and
                                         (not post["message"] == "res") and
@@ -338,18 +366,22 @@ class ModChecker(commands.Cog):
 
     async def notification_mode_tracking(self, discussions, channel, mapset_id):
         current_status = await self.check_if_resolved(discussions)  # 1 - we have new mods, 0 - no new mods
-        cached_status = db.query(["SELECT status FROM mapset_notification_status "
-                                  "WHERE mapset_id = ? AND channel_id = ?",
-                                  [str(mapset_id), str(channel.id)]])
+        async with self.bot.db.execute("SELECT status FROM mapset_notification_status "
+                                       "WHERE mapset_id = ? AND channel_id = ?",
+                                       [str(mapset_id), str(channel.id)]) as cursor:
+            cached_status = await cursor.fetchall()
         if not cached_status:
-            db.query(["INSERT INTO mapset_notification_status VALUES (?, ?, ?, ?)",
-                      [str(mapset_id), str(0), str(channel.id), str(current_status)]])
+            await self.bot.db.execute("INSERT INTO mapset_notification_status VALUES (?, ?, ?, ?)",
+                                      [str(mapset_id), str(0), str(channel.id), str(current_status)])
+            await self.bot.db.commit()
             return None
 
         cached_status = cached_status[0][0]
         if cached_status != current_status:
-            db.query(["UPDATE mapset_notification_status SET status = ? WHERE mapset_id = ? AND channel_id = ?",
-                      [str(current_status), str(mapset_id), str(channel.id)]])
+            await self.bot.db.execute("UPDATE mapset_notification_status SET status = ? "
+                                      "WHERE mapset_id = ? AND channel_id = ?",
+                                      [str(current_status), str(mapset_id), str(channel.id)])
+            await self.bot.db.commit()
             if current_status == "1":
                 unresolved_diffs = await self.get_unresolved_diffs(discussions)
                 return_message = "new mods on: "
@@ -360,13 +392,16 @@ class ModChecker(commands.Cog):
         return None
 
     async def check_nomination_status(self, discussions, channel, mapset_id, tracking_mode):
-        history = db.query(["SELECT event_id FROM mapset_events WHERE channel_id = ?", [str(channel.id)]])
+        async with self.bot.db.execute("SELECT event_id FROM mapset_events WHERE channel_id = ?",
+                                       [str(channel.id)]) as cursor:
+            history = await cursor.fetchall()
         for event in discussions["beatmapset"]["events"]:
             if event:
                 if self.get_icon(event["type"]):
-                    if not ((str(event["id"]),) in history):
-                        db.query(["INSERT INTO mapset_events VALUES (?,?,?)",
-                                  [str(event["id"]), str(mapset_id), str(channel.id)]])
+                    if not wrappers.in_db_list(history, str(event["id"])):
+                        await self.bot.db.execute("INSERT INTO mapset_events VALUES (?,?,?)",
+                                                  [str(event["id"]), str(mapset_id), str(channel.id)])
+                        await self.bot.db.commit()
                         event_to_post = await self.nomnom_embed(event, discussions, tracking_mode)
                         if event_to_post:
                             try:
@@ -564,13 +599,15 @@ class ModChecker(commands.Cog):
             }
 
     async def unarchive_channel(self, ctx, setting):
-        if int(ctx.channel.category_id) == int(await self.get_category_object(ctx.guild, "mapset_archive", id_only=True)):
+        if int(ctx.channel.category_id) == int(
+                await self.get_category_object(ctx.guild, "mapset_archive", id_only=True)):
             await ctx.channel.edit(reason=None, category=await self.get_category_object(ctx.guild, setting))
             await ctx.send("Unarchived")
 
     async def get_category_object(self, guild, setting, id_only=None):
-        category_id = db.query(["SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
-                                [setting, str(guild.id)]])
+        async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
+                                [setting, str(guild.id)]) as cursor:
+            category_id = await cursor.fetchall()
         if category_id:
             category = self.bot.get_channel(int(category_id[0][0]))
             if id_only:

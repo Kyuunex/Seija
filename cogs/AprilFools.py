@@ -1,4 +1,3 @@
-from modules import db
 from modules import permissions
 import upsidedown
 import aiohttp
@@ -57,10 +56,13 @@ class AprilFools(commands.Cog):
         guild = ctx.guild
         for channel in guild.channels:
             await asyncio.sleep(1)
-            results = db.query(["SELECT name FROM name_backups WHERE id = ?", [str(channel.id)]])
+            async with self.bot.db.execute("SELECT name FROM name_backups WHERE id = ?", [str(channel.id)]) as cursor:
+                results = await cursor.fetchall()
             if not results:
                 try:
-                    db.query(["INSERT INTO name_backups VALUES (?, ?)", [str(channel.id), str(channel.name)]])
+                    await self.bot.db.execute("INSERT INTO name_backups VALUES (?, ?)",
+                                              [str(channel.id), str(channel.name)])
+                    await self.bot.db.commit()
                     await channel.edit(name=upsidedown.transform(channel.name))
                 except Exception as e:
                     print(e)
@@ -71,11 +73,13 @@ class AprilFools(commands.Cog):
         guild = ctx.guild
         for channel in guild.channels:
             await asyncio.sleep(1)
-            results = db.query(["SELECT name FROM name_backups WHERE id = ?", [str(channel.id)]])
+            async with self.bot.db.execute("SELECT name FROM name_backups WHERE id = ?", [str(channel.id)]) as cursor:
+                results = await cursor.fetchall()
             if results:
                 try:
                     await channel.edit(name=str(results[0][0]))
-                    db.query(["DELETE FROM name_backups WHERE id = ?", [str(channel.id)]])
+                    await self.bot.db.execute("DELETE FROM name_backups WHERE id = ?", [str(channel.id)])
+                    await self.bot.db.commit()
                 except Exception as e:
                     print(e)
                     print(f"in restore_channels / {results[0][0]}")
@@ -85,9 +89,11 @@ class AprilFools(commands.Cog):
         guild = ctx.guild
         for role in guild.roles:
             await asyncio.sleep(1)
-            results = db.query(["SELECT name FROM name_backups WHERE id = ?", [str(role.id)]])
+            async with self.bot.db.execute("SELECT name FROM name_backups WHERE id = ?", [str(role.id)]) as cursor:
+                results = await cursor.fetchall()
             if not results:
-                db.query(["INSERT INTO name_backups VALUES (?, ?)", [str(role.id), str(role.name)]])
+                await self.bot.db.execute("INSERT INTO name_backups VALUES (?, ?)", [str(role.id), str(role.name)])
+                await self.bot.db.commit()
                 try:
                     await role.edit(name=upsidedown.transform(role.name))
                 except Exception as e:
@@ -99,7 +105,8 @@ class AprilFools(commands.Cog):
         guild = ctx.guild
         for role in guild.roles:
             await asyncio.sleep(1)
-            results = db.query(["SELECT name FROM name_backups WHERE id = ?", [str(role.id)]])
+            async with self.bot.db.execute("SELECT name FROM name_backups WHERE id = ?", [str(role.id)]) as cursor:
+                results = await cursor.fetchall()
             if results:
                 try:
                     await role.edit(name=str(results[0][0]))
@@ -107,13 +114,16 @@ class AprilFools(commands.Cog):
                     print(e)
                     print(f"in restore_roles / {results[0][0]}")
                     await asyncio.sleep(10)
-                db.query(["DELETE FROM name_backups WHERE id = ?", [str(role.id)]])
+                await self.bot.db.execute("DELETE FROM name_backups WHERE id = ?", [str(role.id)])
+                await self.bot.db.commit()
 
     async def apply_guild(self, ctx):
         guild = ctx.guild
-        results = db.query(["SELECT name FROM name_backups WHERE id = ?", [str(guild.id)]])
+        async with self.bot.db.execute("SELECT name FROM name_backups WHERE id = ?", [str(guild.id)]) as cursor:
+            results = await cursor.fetchall()
         if not results:
-            db.query(["INSERT INTO name_backups VALUES (?, ?)", [str(guild.id), str(guild.name)]])
+            await self.bot.db.execute("INSERT INTO name_backups VALUES (?, ?)", [str(guild.id), str(guild.name)])
+            await self.bot.db.commit()
             try:
                 await guild.edit(name=upsidedown.transform(guild.name))
             except Exception as e:
@@ -123,7 +133,8 @@ class AprilFools(commands.Cog):
 
     async def restore_guild(self, ctx):
         guild = ctx.guild
-        results = db.query(["SELECT name FROM name_backups WHERE id = ?", [str(guild.id)]])
+        async with self.bot.db.execute("SELECT name FROM name_backups WHERE id = ?", [str(guild.id)]) as cursor:
+            results = await cursor.fetchall()
         if results:
             try:
                 await guild.edit(name=str(results[0][0]))
@@ -131,7 +142,8 @@ class AprilFools(commands.Cog):
                 print(e)
                 print("in restore_guild")
                 await asyncio.sleep(10)
-            db.query(["DELETE FROM name_backups WHERE id = ?", [str(guild.id)]])
+            await self.bot.db.execute("DELETE FROM name_backups WHERE id = ?", [str(guild.id)])
+            await self.bot.db.commit()
 
     async def rotate_logo(self, ctx):
         guild = ctx.guild

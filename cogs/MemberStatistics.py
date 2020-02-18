@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from modules import permissions
-from modules import db
+from modules import wrappers
 from modules import cooldown
 from collections import Counter
 import operator
@@ -22,7 +22,8 @@ class MemberStatistics(commands.Cog):
 
         async with ctx.channel.typing():
             master_list = []
-            query = db.query("SELECT country, user_id FROM users")
+            async with self.bot.db.execute("SELECT country, user_id FROM users") as cursor:
+                query = await cursor.fetchall()
             for member in ctx.guild.members:
                 if not member.bot:
                     for user_in_db in query:
@@ -44,19 +45,12 @@ class MemberStatistics(commands.Cog):
                     country_flag = f":flag_{stat[0].lower()}:"
                 except:
                     country_flag = ":gay_pride_flag:"
-                    country_name = "??"+stat[0]
+                    country_name = "??" + stat[0]
                 contents += f"**[{rank}]** : {country_flag} **{country_name}** : {amount} : {percentage} % \n"
-                if len(contents) > 1800:
-                    embed = discord.Embed(description=contents, color=0xbd3661)
-                    embed.set_author(name="Server Demographics")
-                    await ctx.send(embed=embed)
-                    contents = ""
 
-            if contents == "":
-                contents = "\n"
             embed = discord.Embed(description=contents, color=0xbd3661)
             embed.set_author(name="Server Demographics")
-        await ctx.send(embed=embed)
+        await wrappers.send_large_embed(ctx.channel, embed, contents)
 
     @commands.command(name="from", brief="Get a list of members from specified country",
                       description="Takes Alpha-2, Alpha-3 codes and full country names")
@@ -84,9 +78,9 @@ class MemberStatistics(commands.Cog):
                 return None
 
             master_list = []
-            query = db.query(["SELECT osu_username, osu_id, user_id FROM users "
-                              "WHERE country = ? ",
-                              [str(country_object.alpha_2.upper())]])
+            async with self.bot.db.execute("SELECT osu_username, osu_id, user_id FROM users WHERE country = ? ",
+                                           [str(country_object.alpha_2.upper())]) as cursor:
+                query = await cursor.fetchall()
             for member in ctx.guild.members:
                 if not member.bot:
                     for db_user in query:
@@ -99,18 +93,10 @@ class MemberStatistics(commands.Cog):
 
             for one_member in master_list:
                 contents += f"[{one_member[0]}](https://osu.ppy.sh/users/{one_member[1]})\n"
-                if len(contents) > 1800:
-                    embed = discord.Embed(description=contents, color=0xbd3661)
-                    embed.set_author(name="Country Demographics")
-                    await ctx.send(embed=embed)
-                    contents = ""
 
-            if contents == "":
-                contents = "\n"
             embed = discord.Embed(description=contents, color=0xbd3661)
             embed.set_author(name="Country Demographics")
-        await ctx.send(embed=embed)
-        # TODO: add a send_professionally command to avoid implementing a way around 2000 char limit every time
+        await wrappers.send_large_embed(ctx.channel, embed, contents)
 
     async def stats_calc(self, data):
         results = dict(Counter(data))

@@ -1,10 +1,10 @@
-from modules import db
 from cogs.Docs import Docs
 from modules import permissions
 import discord
 from discord.ext import commands
 
 from modules.connections import osuweb as osuweb
+
 
 class Queue(commands.Cog):
     def __init__(self, bot):
@@ -34,7 +34,8 @@ class Queue(commands.Cog):
     @commands.guild_only()
     async def debug_get_kudosu(self, ctx, user_id, osu_id="0"):
         if user_id:
-            osu_id = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]])
+            async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]) as cursor:
+                osu_id = await cursor.fetchall()
             if osu_id:
                 osu_id = osu_id[0][0]
         if osu_id:
@@ -43,22 +44,25 @@ class Queue(commands.Cog):
     @commands.command(name="request_queue", brief="Request a queue", description="")
     @commands.guild_only()
     async def make_queue_channel(self, ctx, *, queue_type="std"):
-        if not db.query(["SELECT category_id FROM categories "
-                         "WHERE setting = ? AND guild_id = ?",
-                         ["beginner_queue", str(ctx.guild.id)]]):
+        async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
+                                       ["beginner_queue", str(ctx.guild.id)]) as cursor:
+            is_enabled_in_server = await cursor.fetchall()
+        if not is_enabled_in_server:
             await ctx.send("Not enabled in this server yet.")
             return None
 
-        member_already_has_a_queue = db.query(["SELECT channel_id FROM queues "
-                                               "WHERE user_id = ? AND guild_id = ?",
-                                               [str(ctx.author.id), str(ctx.guild.id)]])
+        async with self.bot.db.execute("SELECT channel_id FROM queues WHERE user_id = ? AND guild_id = ?",
+                                       [str(ctx.author.id), str(ctx.guild.id)]) as cursor:
+            member_already_has_a_queue = await cursor.fetchall()
         if member_already_has_a_queue:
             already_existing_queue = self.bot.get_channel(int(member_already_has_a_queue[0][0]))
             if already_existing_queue:
                 await ctx.send(f"you already have one <#{already_existing_queue.id}>")
                 return None
             else:
-                db.query(["DELETE FROM queues WHERE channel_id = ?", [str(member_already_has_a_queue[0][0])]])
+                await self.bot.db.execute("DELETE FROM queues WHERE channel_id = ?",
+                                          [str(member_already_has_a_queue[0][0])])
+                await self.bot.db.commit()
 
         try:
             await ctx.send("sure, gimme a moment")
@@ -73,8 +77,9 @@ class Queue(commands.Cog):
             category = await self.get_queue_category(ctx.author)
             channel = await guild.create_text_channel(channel_name,
                                                       overwrites=channel_overwrites, category=category)
-            db.query(["INSERT INTO queues VALUES (?, ?, ?)",
-                      [str(channel.id), str(ctx.author.id), str(ctx.guild.id)]])
+            await self.bot.db.execute("INSERT INTO queues VALUES (?, ?, ?)",
+                                      [str(channel.id), str(ctx.author.id), str(ctx.guild.id)])
+            await self.bot.db.commit()
             await channel.send(f"{ctx.author.mention} done!", embed=await self.docs.queue_management())
         except Exception as e:
             await ctx.send(e)
@@ -98,12 +103,12 @@ class Queue(commands.Cog):
     @commands.guild_only()
     async def open(self, ctx, *args):
         # TODO: fix if a manager opens a queue of someone, use that someone's kds
-        queue_owner_check = db.query(["SELECT user_id FROM queues "
-                                      "WHERE user_id = ? AND channel_id = ?",
-                                      [str(ctx.author.id), str(ctx.channel.id)]])
-        is_queue_channel = db.query(["SELECT user_id FROM queues "
-                                     "WHERE channel_id = ?",
-                                     [str(ctx.channel.id)]])
+        async with self.bot.db.execute("SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?",
+                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+            queue_owner_check = await cursor.fetchall()
+        async with self.bot.db.execute("SELECT user_id FROM queues WHERE channel_id = ?",
+                                       [str(ctx.channel.id)]) as cursor:
+            is_queue_channel = await cursor.fetchall()
         if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
             embed = await self.generate_queue_event_embed(ctx, args)
 
@@ -114,12 +119,12 @@ class Queue(commands.Cog):
     @commands.command(name="close", brief="Close the queue", description="")
     @commands.guild_only()
     async def close(self, ctx, *args):
-        queue_owner_check = db.query(["SELECT user_id FROM queues "
-                                      "WHERE user_id = ? AND channel_id = ?",
-                                      [str(ctx.author.id), str(ctx.channel.id)]])
-        is_queue_channel = db.query(["SELECT user_id FROM queues "
-                                     "WHERE channel_id = ?",
-                                     [str(ctx.channel.id)]])
+        async with self.bot.db.execute("SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?",
+                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+            queue_owner_check = await cursor.fetchall()
+        async with self.bot.db.execute("SELECT user_id FROM queues WHERE channel_id = ?",
+                                       [str(ctx.channel.id)]) as cursor:
+            is_queue_channel = await cursor.fetchall()
         if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
             embed = await self.generate_queue_event_embed(ctx, args)
 
@@ -129,28 +134,28 @@ class Queue(commands.Cog):
     @commands.command(name="show", brief="Show the queue", description="")
     @commands.guild_only()
     async def show(self, ctx, *args):
-        queue_owner_check = db.query(["SELECT user_id FROM queues "
-                                      "WHERE user_id = ? AND channel_id = ?",
-                                      [str(ctx.author.id), str(ctx.channel.id)]])
-        is_queue_channel = db.query(["SELECT user_id FROM queues "
-                                     "WHERE channel_id = ?",
-                                     [str(ctx.channel.id)]])
+        async with self.bot.db.execute("SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?",
+                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+            queue_owner_check = await cursor.fetchall()
+        async with self.bot.db.execute("SELECT user_id FROM queues WHERE channel_id = ?",
+                                       [str(ctx.channel.id)]) as cursor:
+            is_queue_channel = await cursor.fetchall()
         if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
             embed = await self.generate_queue_event_embed(ctx, args)
 
             await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=None, send_messages=False)
             await ctx.send(content="queue is visible to everyone, but it's still closed. "
-                           "use `'open` command if you want people to post in it.", embed=embed)
+                                   "use `'open` command if you want people to post in it.", embed=embed)
 
     @commands.command(name="hide", brief="Hide the queue", description="")
     @commands.guild_only()
     async def hide(self, ctx, *args):
-        queue_owner_check = db.query(["SELECT user_id FROM queues "
-                                      "WHERE user_id = ? AND channel_id = ?",
-                                      [str(ctx.author.id), str(ctx.channel.id)]])
-        is_queue_channel = db.query(["SELECT user_id FROM queues "
-                                     "WHERE channel_id = ?",
-                                     [str(ctx.channel.id)]])
+        async with self.bot.db.execute("SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?",
+                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+            queue_owner_check = await cursor.fetchall()
+        async with self.bot.db.execute("SELECT user_id FROM queues WHERE channel_id = ?",
+                                       [str(ctx.channel.id)]) as cursor:
+            is_queue_channel = await cursor.fetchall()
         if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
             embed = await self.generate_queue_event_embed(ctx, args)
 
@@ -160,28 +165,28 @@ class Queue(commands.Cog):
     @commands.command(name="recategorize", brief="Recategorize the queue", description="")
     @commands.guild_only()
     async def recategorize(self, ctx):
-        queue_owner_check = db.query(["SELECT user_id FROM queues "
-                                      "WHERE user_id = ? AND channel_id = ?",
-                                      [str(ctx.author.id), str(ctx.channel.id)]])
-        is_queue_channel = db.query(["SELECT user_id FROM queues "
-                                     "WHERE channel_id = ?",
-                                     [str(ctx.channel.id)]])
+        async with self.bot.db.execute("SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?",
+                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+            queue_owner_check = await cursor.fetchall()
+        async with self.bot.db.execute("SELECT user_id FROM queues WHERE channel_id = ?",
+                                       [str(ctx.channel.id)]) as cursor:
+            is_queue_channel = await cursor.fetchall()
         if queue_owner_check and is_queue_channel:
             await ctx.channel.edit(reason=None, category=await self.get_queue_category(ctx.author))
 
     @commands.command(name="archive", brief="Archive the queue", description="")
     @commands.guild_only()
     async def archive(self, ctx):
-        queue_owner_check = db.query(["SELECT user_id FROM queues "
-                                      "WHERE user_id = ? AND channel_id = ?",
-                                      [str(ctx.author.id), str(ctx.channel.id)]])
-        is_queue_channel = db.query(["SELECT user_id FROM queues "
-                                     "WHERE channel_id = ?",
-                                     [str(ctx.channel.id)]])
+        async with self.bot.db.execute("SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?",
+                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+            queue_owner_check = await cursor.fetchall()
+        async with self.bot.db.execute("SELECT user_id FROM queues WHERE channel_id = ?",
+                                       [str(ctx.channel.id)]) as cursor:
+            is_queue_channel = await cursor.fetchall()
         if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
-            guild_archive_category_id = db.query(["SELECT category_id FROM categories "
-                                                  "WHERE setting = ? AND guild_id = ?",
-                                                  ["queue_archive", str(ctx.guild.id)]])
+            async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
+                                           ["queue_archive", str(ctx.guild.id)]) as cursor:
+                guild_archive_category_id = await cursor.fetchall()
             if guild_archive_category_id:
                 archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                 await ctx.channel.edit(reason=None, category=archive_category)
@@ -191,15 +196,17 @@ class Queue(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, deleted_channel):
         try:
-            db.query(["DELETE FROM queues WHERE channel_id = ?", [str(deleted_channel.id)]])
+            await self.bot.db.execute("DELETE FROM queues WHERE channel_id = ?", [str(deleted_channel.id)])
+            await self.bot.db.commit()
             print(f"channel {deleted_channel.name} is deleted. maybe not a queue")
         except Exception as e:
             print(e)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        queue_id = db.query(["SELECT channel_id FROM queues WHERE user_id = ? AND guild_id = ?",
-                             [str(member.id), str(member.guild.id)]])
+        async with self.bot.db.execute("SELECT channel_id FROM queues WHERE user_id = ? AND guild_id = ?",
+                                       [str(member.id), str(member.guild.id)]) as cursor:
+            queue_id = await cursor.fetchall()
         if queue_id:
             queue_channel = self.bot.get_channel(int(queue_id[0][0]))
             if queue_channel:
@@ -209,15 +216,16 @@ class Queue(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        queue_id = db.query(["SELECT channel_id FROM queues WHERE user_id = ? AND guild_id = ?",
-                             [str(member.id), str(member.guild.id)]])
+        async with self.bot.db.execute("SELECT channel_id FROM queues WHERE user_id = ? AND guild_id = ?",
+                                       [str(member.id), str(member.guild.id)]) as cursor:
+            queue_id = await cursor.fetchall()
         if queue_id:
             queue_channel = self.bot.get_channel(int(queue_id[0][0]))
             if queue_channel:
                 await queue_channel.send("the queue owner has left")
-                guild_archive_category_id = db.query(["SELECT category_id FROM categories "
-                                                      "WHERE setting = ? AND guild_id = ?",
-                                                      ["queue_archive", str(queue_channel.guild.id)]])
+                async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
+                                               ["queue_archive", str(queue_channel.guild.id)]) as cursor:
+                    guild_archive_category_id = await cursor.fetchall()
                 if guild_archive_category_id:
                     archive_category = self.bot.get_channel(int(guild_archive_category_id[0][0]))
                     await queue_channel.edit(reason=None, category=archive_category)
@@ -227,8 +235,9 @@ class Queue(commands.Cog):
                     await queue_channel.send("queue archived!")
 
     async def get_category_object(self, guild, setting, id_only=None):
-        category_id = db.query(["SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
-                                [setting, str(guild.id)]])
+        async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
+                                [setting, str(guild.id)]) as cursor:
+            category_id = await cursor.fetchall()
         if category_id:
             category = self.bot.get_channel(int(category_id[0][0]))
             if id_only:
@@ -239,7 +248,9 @@ class Queue(commands.Cog):
             return False
 
     async def get_role_object(self, guild, setting, id_only=None):
-        role_id = db.query(["SELECT role_id FROM roles WHERE setting = ? AND guild_id = ?", [setting, str(guild.id)]])
+        async with self.bot.db.execute("SELECT role_id FROM roles WHERE setting = ? AND guild_id = ?",
+                                       [setting, str(guild.id)]) as cursor:
+            role_id = await cursor.fetchall()
         if role_id:
             role = discord.utils.get(guild.roles, id=int(role_id[0][0]))
             if id_only:
@@ -261,7 +272,8 @@ class Queue(commands.Cog):
         elif (await self.get_role_object(member.guild, "bn")) in member.roles:
             return await self.get_category_object(member.guild, "bn_nat_queue")
 
-        osu_id = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
+        async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]) as cursor:
+            osu_id = await cursor.fetchall()
         if osu_id:
             kudosu = await self.get_kudosu_int(osu_id[0][0])
         else:

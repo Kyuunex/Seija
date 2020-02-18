@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from modules import db
 
 
 class Docs(commands.Cog):
@@ -11,12 +10,14 @@ class Docs(commands.Cog):
         self.author_text = "Seija"
         self.footer_icon = "https://avatars0.githubusercontent.com/u/5400432"
         self.footer_text = "Made by Kyuunex"
-        self.veto_channel_id_list = db.query(["SELECT channel_id FROM channels WHERE setting = ?", ["veto"]])
 
     @commands.command(name="docs", brief="Pretty help command", description="")
     async def docs(self, ctx, sub_help=None):
         if sub_help == "veto":
-            if (str(ctx.channel.id),) in self.veto_channel_id_list:
+            async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND channel_id = ?",
+                                           ["veto", str(ctx.channel.id)]) as cursor:
+                is_veto_channel = await cursor.fetchall()
+            if is_veto_channel:
                 await ctx.send(embed=await self.veto())
         elif sub_help == "mapset_channel":
             await ctx.send(embed=await self.mapset_channel())
@@ -40,7 +41,10 @@ class Docs(commands.Cog):
                         inline=True)
         embed.add_field(name="'docs queue_management", value="Show queue channel management commands.",
                         inline=True)
-        if (str(ctx.channel.id),) in self.veto_channel_id_list:
+        async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND channel_id = ?",
+                                       ["veto", str(ctx.channel.id)]) as cursor:
+            is_veto_channel = await cursor.fetchall()
+        if is_veto_channel:
             embed.add_field(name="'docs veto", value="Commands for tracking a mapset in veto mode.", inline=True)
         embed.add_field(name="'from (country_name)",
                         value="Retrieve a list of server members who are from the specified country. "
@@ -95,7 +99,8 @@ class Docs(commands.Cog):
 
     async def mapset_channel(self):
         text = "**__Mapset channel creation command:__**: "
-        text += "\n`'request_mapset_channel (mapset id) (song name)` - This is the general command to create a mapset channel."
+        text += "\n`'request_mapset_channel (mapset id) (song name)` - " \
+                "This is the general command to create a mapset channel."
         text += "\n`(song name)` is an optional argument that is not required. "
         text += "\nIf the mapset is not uploaded yet, `(mapset id)` can be set to `0` " \
                 "but in that case, the `(song name)` argument is required."

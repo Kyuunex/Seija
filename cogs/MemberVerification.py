@@ -1,8 +1,8 @@
 import random
 
 import discord
+import sqlite3
 from discord.ext import commands
-from modules import db
 from modules import permissions
 from modules.connections import osu as osu
 import osuembed
@@ -11,10 +11,11 @@ import osuembed
 class MemberVerification(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.verify_channel_list = db.query(["SELECT channel_id, guild_id FROM channels "
-                                             "WHERE setting = ?",
-                                             ["verify"]])
-        self.member_goodbye_messages = db.query("SELECT message FROM member_goodbye_messages")
+        conn = sqlite3.connect(self.bot.database_file)
+        c = conn.cursor()
+        self.verify_channel_list = tuple(c.execute("SELECT channel_id, guild_id FROM channels WHERE setting = ?",
+                                                   ["verify"]))
+        conn.close()
 
     @commands.command(name="verify", brief="Manually verify a member", description="")
     @commands.check(permissions.is_admin)
@@ -32,24 +33,28 @@ class MemberVerification(commands.Cog):
                 except:
                     pass
                 embed = await osuembed.user(osu_profile)
-                db.query(["DELETE FROM users WHERE user_id = ?", [str(member.id)]])
-                db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
-                          [str(member.id), str(osu_profile.id), str(osu_profile.name), str(osu_profile.join_date),
-                           str(osu_profile.pp_raw), str(osu_profile.country), str(ranked_amount), "0"]])
+                await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [str(member.id)])
+                await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
+                                          [str(member.id), str(osu_profile.id), str(osu_profile.name),
+                                           str(osu_profile.join_date),
+                                           str(osu_profile.pp_raw), str(osu_profile.country), str(ranked_amount), "0"])
+                await self.bot.db.commit()
                 await ctx.send(content=f"Manually Verified: {member.name}", embed=embed)
 
     @commands.command(name="verify_restricted", brief="Manually verify a restricted member", description="")
     @commands.check(permissions.is_admin)
     async def verify_restricted(self, ctx, user_id, osu_id, username=""):
-        db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
-                  [str(user_id), str(osu_id), username, "", "", "", "", ""]])
+        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
+                                  [str(user_id), str(osu_id), username, "", "", "", "", ""])
+        await self.bot.db.commit()
         await ctx.send("lol ok")
 
     @commands.command(name="unverify", brief="Unverify a member and delete it from db", description="")
     @commands.check(permissions.is_admin)
     @commands.guild_only()
     async def unverify(self, ctx, user_id):
-        db.query(["DELETE FROM users WHERE user_id = ?", [str(user_id)]])
+        await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [str(user_id)])
+        await self.bot.db.commit()
         member = ctx.guild.get_member(int(user_id))
         if member:
             try:
@@ -82,7 +87,9 @@ class MemberVerification(commands.Cog):
             if member.guild.id == int(verify_channel_id[1]):
                 channel = self.bot.get_channel(int(verify_channel_id[0]))
                 if not member.bot:
-                    osu_id = db.query(["SELECT osu_id, osu_username FROM users WHERE user_id = ?", [str(member.id)]])
+                    async with self.bot.db.execute("SELECT osu_id, osu_username FROM users WHERE user_id = ?",
+                                                   [str(member.id)]) as cursor:
+                        osu_id = await cursor.fetchall()
                     if osu_id:
                         try:
                             osu_profile = await osu.get_user(u=osu_id[0][0])
@@ -95,13 +102,17 @@ class MemberVerification(commands.Cog):
                     else:
                         embed = None
                         member_name = member.name
-                    goodbye_message = random.choice(self.member_goodbye_messages)
+                    async with self.bot.db.execute("SELECT message FROM member_goodbye_messages") as cursor:
+                        member_goodbye_messages = await cursor.fetchall()
+                    goodbye_message = random.choice(member_goodbye_messages)
                     await channel.send(goodbye_message[0] % member_name, embed=embed)
                 else:
                     await channel.send(f"beep boop boop beep, {member.mention} has left our army of bots")
 
     async def get_role_from_db(self, setting, guild):
-        role_id = db.query(["SELECT role_id FROM roles WHERE setting = ? AND guild_id = ?", [setting, str(guild.id)]])
+        async with self.bot.db.execute("SELECT role_id FROM roles WHERE setting = ? AND guild_id = ?",
+                                       [setting, str(guild.id)]) as cursor:
+            role_id = await cursor.fetchall()
         return discord.utils.get(guild.roles, id=int(role_id[0][0]))
 
     async def get_role_based_on_reputation(self, guild, ranked_amount):
@@ -157,9 +168,9 @@ class MemberVerification(commands.Cog):
         ranked_amount = await self.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(mapset.creator_id)))
         role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
 
-        check_if_new_discord_account = db.query(["SELECT user_id FROM users "
-                                                 "WHERE osu_id = ?",
-                                                 [str(mapset.creator_id)]])
+        async with self.bot.db.execute("SELECT user_id FROM users WHERE osu_id = ?",
+                                       [str(mapset.creator_id)]) as cursor:
+            check_if_new_discord_account = await cursor.fetchall()
         if check_if_new_discord_account:
             if str(check_if_new_discord_account[0][0]) != str(member.id):
                 old_user_id = check_if_new_discord_account[0][0]
@@ -167,7 +178,8 @@ class MemberVerification(commands.Cog):
                                    "if there's a problem, for example, you got a new discord account, ping kyuunex.")
                 return None
 
-        already_linked_to = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
+        async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]) as cursor:
+            already_linked_to = await cursor.fetchall()
         if already_linked_to:
             if str(mapset.creator_id) != already_linked_to[0][0]:
                 await channel.send(f"{member.mention} it seems like your discord account is already in my database "
@@ -188,9 +200,11 @@ class MemberVerification(commands.Cog):
         except:
             pass
         embed = await osuembed.beatmapset(mapset)
-        db.query(["DELETE FROM users WHERE user_id = ?", [str(member.id)]])
-        db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
-                  [str(member.id), str(mapset.creator_id), str(mapset.creator), "", "", "", str(ranked_amount), "0"]])
+        await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [str(member.id)])
+        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
+                                  [str(member.id), str(mapset.creator_id), str(mapset.creator), "", "", "",
+                                   str(ranked_amount), "0"])
+        await self.bot.db.commit()
         await channel.send(content=f"`Verified through mapset: {member.name}` \n"
                                    f"You should also read the rules if you haven't already.", embed=embed)
 
@@ -220,7 +234,8 @@ class MemberVerification(commands.Cog):
         ranked_amount = await self.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(osu_profile.id)))
         role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
 
-        already_linked_to = db.query(["SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]])
+        async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]) as cursor:
+            already_linked_to = await cursor.fetchall()
         if already_linked_to:
             if str(osu_profile.id) != already_linked_to[0][0]:
                 await channel.send(f"{member.mention} it seems like your discord account is already in my database and "
@@ -235,7 +250,8 @@ class MemberVerification(commands.Cog):
                 await channel.send(content=f"{member.mention} i already know lol. here, have some roles")
                 return None
 
-        check_if_new_discord_account = db.query(["SELECT user_id FROM users WHERE osu_id = ?", [str(osu_profile.id)]])
+        async with self.bot.db.execute("SELECT user_id FROM users WHERE osu_id = ?", [str(osu_profile.id)]) as cursor:
+            check_if_new_discord_account = await cursor.fetchall()
         if check_if_new_discord_account:
             if str(check_if_new_discord_account[0][0]) != str(member.id):
                 old_user_id = check_if_new_discord_account[0][0]
@@ -249,15 +265,19 @@ class MemberVerification(commands.Cog):
         except:
             pass
         embed = await osuembed.user(osu_profile)
-        db.query(["DELETE FROM users WHERE user_id = ?", [str(member.id)]])
-        db.query(["INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
-                  [str(member.id), str(osu_profile.id), str(osu_profile.name), str(osu_profile.join_date),
-                   str(osu_profile.pp_raw), str(osu_profile.country), str(ranked_amount), "0"]])
+        await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [str(member.id)])
+        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
+                                  [str(member.id), str(osu_profile.id), str(osu_profile.name),
+                                   str(osu_profile.join_date),
+                                   str(osu_profile.pp_raw), str(osu_profile.country), str(ranked_amount), "0"])
+        await self.bot.db.commit()
         await channel.send(content=f"`Verified: {member.name}` \n"
                                    f"You should also read the rules if you haven't already.", embed=embed)
 
     async def member_verification(self, channel, member):
-        user_db_lookup = db.query(["SELECT osu_id, osu_username FROM users WHERE user_id = ?", [str(member.id)]])
+        async with self.bot.db.execute("SELECT osu_id, osu_username FROM users WHERE user_id = ?",
+                                       [str(member.id)]) as cursor:
+            user_db_lookup = await cursor.fetchall()
         if user_db_lookup:
             ranked_amount = await self.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(user_db_lookup[0][0])))
             role = await self.get_role_based_on_reputation(member.guild, ranked_amount)

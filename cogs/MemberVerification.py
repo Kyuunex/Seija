@@ -4,7 +4,6 @@ import discord
 import sqlite3
 from discord.ext import commands
 from modules import permissions
-from modules.connections import osu as osu
 import osuembed
 
 
@@ -23,9 +22,10 @@ class MemberVerification(commands.Cog):
     async def verify(self, ctx, user_id, osu_id):
         member = ctx.guild.get_member(int(user_id))
         if member:
-            osu_profile = await osu.get_user(u=osu_id)
+            osu_profile = await self.bot.osu.get_user(u=osu_id)
             if osu_profile:
-                ranked_amount = await self.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(osu_profile.id)))
+                member_mapsets = await self.bot.osu.get_beatmapsets(u=str(osu_profile.id))
+                ranked_amount = await self.count_ranked_beatmapsets(member_mapsets)
                 role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
                 try:
                     await member.add_roles(role)
@@ -92,7 +92,7 @@ class MemberVerification(commands.Cog):
                         osu_id = await cursor.fetchall()
                     if osu_id:
                         try:
-                            osu_profile = await osu.get_user(u=osu_id[0][0])
+                            osu_profile = await self.bot.osu.get_user(u=osu_id[0][0])
                             embed = await osuembed.user(osu_profile, 0xffffff, "User left")
                             member_name = osu_profile.name
                         except:
@@ -146,7 +146,7 @@ class MemberVerification(commands.Cog):
         channel = message.channel
         member = message.author
         try:
-            mapset = await osu.get_beatmapset(s=mapset_id)
+            mapset = await self.bot.osu.get_beatmapset(s=mapset_id)
         except:
             await channel.send("i am having connection issues to osu servers, verifying you. "
                                "<@155976140073205761> should look into this")
@@ -157,7 +157,7 @@ class MemberVerification(commands.Cog):
             return None
 
         try:
-            is_not_restricted = await osu.get_user(u=mapset.creator_id)
+            is_not_restricted = await self.bot.osu.get_user(u=mapset.creator_id)
             if is_not_restricted:
                 await channel.send("verification failure, "
                                    "verification through mapset is reserved for restricted users only")
@@ -165,7 +165,8 @@ class MemberVerification(commands.Cog):
         except:
             pass
 
-        ranked_amount = await self.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(mapset.creator_id)))
+        member_mapsets = await self.bot.osu.get_beatmapsets(u=str(mapset.creator_id))
+        ranked_amount = await self.count_ranked_beatmapsets(member_mapsets)
         role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
 
         async with self.bot.db.execute("SELECT user_id FROM users WHERE osu_id = ?",
@@ -212,7 +213,7 @@ class MemberVerification(commands.Cog):
         channel = message.channel
         member = message.author
         try:
-            osu_profile = await osu.get_user(u=osu_id)
+            osu_profile = await self.bot.osu.get_user(u=osu_id)
         except:
             await channel.send("i am having connection issues to osu servers, verifying you. "
                                "<@155976140073205761> should look into this")
@@ -231,7 +232,7 @@ class MemberVerification(commands.Cog):
                                    "link any of your recently uploaded maps (new site only)")
             return None
 
-        ranked_amount = await self.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(osu_profile.id)))
+        ranked_amount = await self.count_ranked_beatmapsets(await self.bot.osu.get_beatmapsets(u=str(osu_profile.id)))
         role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
 
         async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]) as cursor:
@@ -279,7 +280,8 @@ class MemberVerification(commands.Cog):
                                        [str(member.id)]) as cursor:
             user_db_lookup = await cursor.fetchall()
         if user_db_lookup:
-            ranked_amount = await self.count_ranked_beatmapsets(await osu.get_beatmapsets(u=str(user_db_lookup[0][0])))
+            member_mapsets = await self.bot.osu.get_beatmapsets(u=str(user_db_lookup[0][0]))
+            ranked_amount = await self.count_ranked_beatmapsets(member_mapsets)
             role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
             await member.add_roles(role)
             osu_profile = await self.get_osu_profile(user_db_lookup[0][0])
@@ -307,7 +309,7 @@ class MemberVerification(commands.Cog):
 
     async def get_osu_profile(self, name):
         try:
-            return await osu.get_user(u=name)
+            return await self.bot.osu.get_user(u=name)
         except:
             return None
 

@@ -6,9 +6,6 @@ from modules import wrappers
 from modules import permissions
 import osuembed
 
-from modules.connections import osuweb as osuweb
-from modules.connections import osu as osu
-
 
 class ModChecker(commands.Cog):
     # TODO: add event inserts in db upon track
@@ -59,7 +56,7 @@ class ModChecker(commands.Cog):
             await ctx.send("Set a mapset id for this channel first, using the `'set_id (mapset_id)` command.")
             return None
 
-        discussions = await osuweb.get_beatmapset_discussions(str(mapset_id[0][0]))
+        discussions = await self.bot.osuweb.get_beatmapset_discussions(str(mapset_id[0][0]))
         if not discussions:
             await ctx.send("I am unable to find a modding v2 page for this mapset")
             return None
@@ -76,7 +73,7 @@ class ModChecker(commands.Cog):
         await self.bot.db.execute("INSERT INTO mod_tracking VALUES (?,?,?)",
                                   [str(mapset_id[0][0]), str(ctx.channel.id), tracking_mode])
         try:
-            beatmap_object = await osu.get_beatmapset(s=str(mapset_id[0][0]))
+            beatmap_object = await self.bot.osu.get_beatmapset(s=str(mapset_id[0][0]))
             embed = await osuembed.beatmapset(beatmap_object)
 
             await ctx.send("Tracked", embed=embed)
@@ -125,7 +122,7 @@ class ModChecker(commands.Cog):
             await ctx.send("This mapset is already tracked in this channel")
             return None
 
-        discussions = await osuweb.get_beatmapset_discussions(str(mapset_id))
+        discussions = await self.bot.osuweb.get_beatmapset_discussions(str(mapset_id))
         if not discussions:
             await ctx.send("I am unable to find a modding v2 page for this mapset")
             return None
@@ -139,7 +136,7 @@ class ModChecker(commands.Cog):
         await self.bot.db.execute("INSERT INTO mod_tracking VALUES (?,?,?)",
                                   [str(mapset_id), str(ctx.channel.id), "veto"])
         try:
-            result = await osu.get_beatmapset(s=mapset_id)
+            result = await self.bot.osu.get_beatmapset(s=mapset_id)
             embed = await osuembed.beatmapset(result)
 
             await ctx.send("Tracked in veto mode", embed=embed)
@@ -168,7 +165,7 @@ class ModChecker(commands.Cog):
         await self.bot.db.execute("DELETE FROM mapset_events WHERE mapset_id = ? AND channel_id = ?",
                                   [str(mapset_id), str(ctx.channel.id)])
         try:
-            result = await osu.get_beatmapset(s=mapset_id)
+            result = await self.bot.osu.get_beatmapset(s=mapset_id)
             embed = await osuembed.beatmapset(result)
             await ctx.send("I untracked this mapset in this channel", embed=embed)
         except:
@@ -182,7 +179,7 @@ class ModChecker(commands.Cog):
             track_list = await cursor.fetchall()
         for mapset in track_list:
             try:
-                result = await osu.get_beatmapset(s=str(mapset[0]))
+                result = await self.bot.osu.get_beatmapset(s=str(mapset[0]))
                 embed = await osuembed.beatmapset(result)
             except:
                 await ctx.send("Connection issues?")
@@ -198,7 +195,7 @@ class ModChecker(commands.Cog):
             return None
         for mapset in vetoed_sets:
             try:
-                result = await osu.get_beatmapset(s=str(mapset[0]))
+                result = await self.bot.osu.get_beatmapset(s=str(mapset[0]))
                 embed = await osuembed.beatmapset(result)
             except:
                 await ctx.send("Connection issues?")
@@ -236,7 +233,7 @@ class ModChecker(commands.Cog):
                     continue
 
                 try:
-                    discussions = await osuweb.get_beatmapset_discussions(mapset_id)
+                    discussions = await self.bot.osuweb.get_beatmapset_discussions(mapset_id)
                     if not discussions:
                         continue
                 except Exception as e:

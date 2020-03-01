@@ -2,7 +2,6 @@ from discord.ext import commands
 import time
 import asyncio
 import datetime
-from modules.connections import osu as osu
 import osuembed
 
 
@@ -28,7 +27,7 @@ class MemberNameSyncing(commands.Cog):
                 async with self.bot.db.execute("SELECT * FROM users WHERE user_id = ?", [str(after.id)]) as cursor:
                     query = await cursor.fetchall()
                 if query:
-                    osu_profile = await osu.get_user(u=query[0][1])
+                    osu_profile = await self.bot.osu.get_user(u=query[0][1])
                     if osu_profile:
                         for this_guild in notices_channel_list:
                             guild = self.bot.get_guild(int(this_guild[0]))
@@ -89,7 +88,7 @@ class MemberNameSyncing(commands.Cog):
                         for db_user in user_list:
                             if str(member.id) == str(db_user[0]):
                                 try:
-                                    osu_profile = await osu.get_user(u=db_user[1], event_days="1")
+                                    osu_profile = await self.bot.osu.get_user(u=db_user[1], event_days="1")
                                 except Exception as e:
                                     print(e)
                                     await asyncio.sleep(120)
@@ -154,7 +153,7 @@ class MemberNameSyncing(commands.Cog):
                 await self.bot.db.commit()
                 event_color = await self.get_event_color(event.display_text)
                 if event_color:
-                    result = await osu.get_beatmapset(s=event.beatmapset_id)
+                    result = await self.bot.osu.get_beatmapset(s=event.beatmapset_id)
                     embed = await osuembed.beatmapset(result, event_color)
                     if embed:
                         display_text = event.display_text.replace("@", "")

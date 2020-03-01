@@ -4,8 +4,6 @@ from discord.ext import commands
 from modules import permissions
 import osuembed
 
-from modules.connections import osu as osu
-
 
 class MemberManagement(commands.Cog):
     def __init__(self, bot):
@@ -46,7 +44,7 @@ class MemberManagement(commands.Cog):
         async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]) as cursor:
             osu_id = await cursor.fetchall()
         if osu_id:
-            result = await osu.get_user(u=osu_id[0][0])
+            result = await self.bot.osu.get_user(u=osu_id[0][0])
             if result:
                 embed = await osuembed.user(result)
                 await ctx.send(result.url, embed=embed)
@@ -78,7 +76,7 @@ class MemberManagement(commands.Cog):
                         osu_id = await cursor.fetchall()
                     if osu_id:
                         try:
-                            mapsets = await osu.get_beatmapsets(u=osu_id[0][0])
+                            mapsets = await self.bot.osu.get_beatmapsets(u=osu_id[0][0])
                         except:
                             # await ctx.send(e)
                             mapsets = None

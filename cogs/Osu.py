@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from modules.connections import osu as osu
 import osuembed
 
 
@@ -10,7 +9,7 @@ class Osu(commands.Cog):
 
     @commands.command(name="mapset", brief="Show mapset info", description="")
     async def mapset(self, ctx, mapset_id: str):
-        result = await osu.get_beatmapset(s=mapset_id)
+        result = await self.bot.osu.get_beatmapset(s=mapset_id)
         embed = await osuembed.beatmapset(result)
         if embed:
             await ctx.send(embed=embed)
@@ -19,7 +18,7 @@ class Osu(commands.Cog):
 
     @commands.command(name="user", brief="Show osu user info", description="")
     async def user(self, ctx, *, username):
-        result = await osu.get_user(u=username)
+        result = await self.bot.osu.get_user(u=username)
         embed = await osuembed.user(result)
         if embed:
             await ctx.send(embed=embed)

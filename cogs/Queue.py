@@ -3,8 +3,6 @@ from modules import permissions
 import discord
 from discord.ext import commands
 
-from modules.connections import osuweb as osuweb
-
 
 class Queue(commands.Cog):
     def __init__(self, bot):
@@ -292,7 +290,7 @@ class Queue(commands.Cog):
 
     async def get_kudosu_int(self, osu_id):
         try:
-            user = await osuweb.get_user(str(osu_id))
+            user = await self.bot.osuweb.get_user(str(osu_id))
             return user["kudosu"]["total"]
         except:
             return 0

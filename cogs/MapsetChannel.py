@@ -6,8 +6,6 @@ from discord.ext import commands
 import random
 import asyncio
 
-from modules.connections import osu as osu
-
 
 class MapsetChannel(commands.Cog):
     def __init__(self, bot):
@@ -149,7 +147,7 @@ class MapsetChannel(commands.Cog):
             return None
 
         try:
-            mapset = await osu.get_beatmapset(s=mapset_id)
+            mapset = await self.bot.osu.get_beatmapset(s=mapset_id)
             if not mapset:
                 await ctx.send("I can't find any mapset with that id")
                 return None
@@ -245,7 +243,7 @@ class MapsetChannel(commands.Cog):
             mapset = None
         else:
             try:
-                mapset = await osu.get_beatmapset(s=mapset_id)
+                mapset = await self.bot.osu.get_beatmapset(s=mapset_id)
                 if not mapset:
                     await ctx.send("you specified incorrect mapset id. "
                                    "you can correct this with `'set_id` command in the mapset channel")

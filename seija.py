@@ -2,10 +2,14 @@
 
 from discord.ext import commands
 import aiosqlite
+from aioosuapi import aioosuapi
+from aioosuwebapi import aioosuwebapi
+
 
 from modules import first_run
 
 from modules.connections import bot_token as bot_token
+from modules.connections import osu_api_key as osu_api_key
 from modules.connections import database_file as database_file
 
 first_run.create_tables()
@@ -31,6 +35,8 @@ class Seija(commands.Bot):
         self.app_version = (open(".version", "r+").read()).rstrip()
         self.description = f"Seija {self.app_version}"
         self.database_file = database_file
+        self.osu = aioosuapi(osu_api_key)
+        self.osuweb = aioosuwebapi()
 
         for extension in initial_extensions:
             try:

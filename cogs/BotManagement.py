@@ -2,6 +2,7 @@ import discord
 import os
 from discord.ext import commands
 from modules import permissions
+from modules import wrappers
 from modules.connections import database_file as database_file
 
 
@@ -39,10 +40,25 @@ class BotManagement(commands.Cog):
     @commands.check(permissions.is_owner)
     async def sql(self, ctx, *, query):
         if len(query) > 0:
-            async with await self.bot.db.execute(query) as cursor:
-                response = await cursor.fetchall()
-            await self.bot.db.commit()
-            await ctx.send(response)
+            try:
+                async with await self.bot.db.execute(query) as cursor:
+                    response = await cursor.fetchall()
+                await self.bot.db.commit()
+                if not response:
+                    embed = discord.Embed(description="query executed successfully", color=0xadff2f)
+                    await ctx.send(embed=embed)
+                else:
+                    buffer = ""
+                    for entry in response:
+                        buffer += f"{str(entry)}\n"
+
+                    embed = discord.Embed(color=0xadff2f)
+                    embed.set_author(name="query results")
+                    await wrappers.send_large_embed(ctx.channel, embed, buffer)
+            except Exception as e:
+                embed = discord.Embed(description=e, color=0xbd3661)
+                embed.set_author(name="error occurred while executing the query")
+                await ctx.send(embed=embed)
 
     @commands.command(name="leave_guild", brief="Leave the current guild", description="")
     @commands.check(permissions.is_owner)
@@ -79,7 +95,7 @@ class BotManagement(commands.Cog):
     @commands.guild_only()
     async def db_dump(self, ctx):
         async with self.bot.db.execute("SELECT * FROM config WHERE setting = ? and value = ?",
-                                       ["db_dump_channel", str(ctx.channel.id)]) as cursor:
+                                     ["db_dump_channel", str(ctx.channel.id)]) as cursor:
             db_dump_channel = await cursor.fetchall()
         if db_dump_channel:
             await ctx.send(file=discord.File(database_file))

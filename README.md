@@ -11,6 +11,9 @@ This bot does many things in our osu! mapping related Discord server, including:
 + Restring permissions when user returns to the server.
 + Automatically putting channels in categories they belong when needed.
 + Validating users' reputation, checking amount of ranked maps they have.
++ Tracking group changes.
++ Posting new ranked maps.
++ Tracking any user's mapping activity.
 + and many more!
 
 This bot is built using discord.py rewrite library and uses sqlite3 database.

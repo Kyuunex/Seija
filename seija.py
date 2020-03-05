@@ -17,6 +17,7 @@ first_run.create_tables()
 initial_extensions = [
     "cogs.BotManagement",
     "cogs.Docs",
+    "cogs.GroupFeed",
     "cogs.MapsetChannel",
     "cogs.MemberManagement",
     "cogs.MemberNameSyncing",
@@ -25,6 +26,8 @@ initial_extensions = [
     "cogs.ModChecker",
     "cogs.Osu",
     "cogs.Queue",
+    "cogs.RankFeed",
+    "cogs.UserEventFeed",
 ]
 
 

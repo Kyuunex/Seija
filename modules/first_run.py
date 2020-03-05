@@ -34,6 +34,17 @@ def create_tables():
         c.execute("CREATE TABLE categories (setting, guild_id, category_id)")
         c.execute("CREATE TABLE roles (setting, guild_id, role_id)")
 
+        c.execute("CREATE TABLE rankfeed_channel_list (channel_id)")
+        c.execute("CREATE TABLE rankfeed_history (mapset_id)")
+
+        c.execute("CREATE TABLE usereventfeed_tracklist (osu_id)")
+        c.execute("CREATE TABLE usereventfeed_channels (osu_id, channel_id)")
+        c.execute("CREATE TABLE usereventfeed_history (osu_id, event_id, timestamp)")
+
+        c.execute("CREATE TABLE groupfeed_channel_list (channel_id)")
+        c.execute("CREATE TABLE groupfeed_group_members (osu_id, group_id)")
+        c.execute("CREATE TABLE groupfeed_member_info (osu_id, username, country)")
+
         c.execute("CREATE TABLE admins (user_id, permissions)")
         c.execute("CREATE TABLE mod_posts (post_id, mapset_id, channel_id)")
         c.execute("CREATE TABLE mapset_events (event_id, mapset_id, channel_id)")

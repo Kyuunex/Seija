@@ -120,7 +120,10 @@ class GroupFeed(commands.Cog):
             description_template = "%s **%s**\n**has gotten restricted lol**\nand has been removed from\nthe **%s**"
             color = 0x9e0000
 
-        flag_sign = f":flag_{user.country.lower()}:"
+        if user.country:
+            flag_sign = f":flag_{user.country.lower()}:"
+        else:
+            flag_sign = f":flag_white:"
         username = user.name
 
         what_group = f"[{group_name}](https://osu.ppy.sh/groups/{group_id})"
@@ -142,9 +145,14 @@ class GroupFeed(commands.Cog):
 
         for fresh_member in fresh_entries:
             if not str(fresh_member["id"]) in cached_info:
+                try:
+                    country_code = fresh_member["country"]["code"]
+                except:
+                    # thanks notbakaneko
+                    country_code = "white"  # :flag_white: is a placeholder flag
                 await self.bot.db.execute("INSERT INTO groupfeed_member_info VALUES (?, ?, ?)",
                                           [str(fresh_member["id"]), str(fresh_member["username"]),
-                                           str(fresh_member["country"]["code"])])
+                                           str(country_code)])
         await self.bot.db.commit()
 
     async def check_group(self, channel_list, group_id):

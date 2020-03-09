@@ -44,7 +44,7 @@ class MemberStatistics(commands.Cog):
                     country_name = country_object.name
                     country_flag = f":flag_{stat[0].lower()}:"
                 except:
-                    country_flag = ":gay_pride_flag:"
+                    country_flag = ":flag_white:"
                     country_name = "??" + stat[0]
                 contents += f"**[{rank}]** : {country_flag} **{country_name}** : {amount} : {percentage} % \n"
 

@@ -34,13 +34,13 @@ class Docs(commands.Cog):
         embed = discord.Embed(title="Seija teaches you how to be a bot master.",
                               description="Any abuse will be dealt with punishment.", color=0xbd3661)
         embed.add_field(name=".docs mapset_channel", value="Show a help menu for requesting a mapset channel.",
-                        inline=True)
+                        inline=False)
         embed.add_field(name=".docs queue", value="Show a help menu for requesting a queue channel.",
-                        inline=True)
+                        inline=False)
         embed.add_field(name=".docs mapset_channel_management", value="Show mapset channel management commands.",
-                        inline=True)
+                        inline=False)
         embed.add_field(name=".docs queue_management", value="Show queue channel management commands.",
-                        inline=True)
+                        inline=False)
         async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND channel_id = ?",
                                        ["veto", str(ctx.channel.id)]) as cursor:
             is_veto_channel = await cursor.fetchall()
@@ -49,14 +49,14 @@ class Docs(commands.Cog):
         embed.add_field(name=".from (country_name)",
                         value="Retrieve a list of server members who are from the specified country. "
                               "Takes Alpha-2, Alpha-3 codes and full country names.",
-                        inline=True)
+                        inline=False)
         embed.add_field(name=".demographics",
                         value="Show server demographics. "
                               "Shows how many members are from which country and the percentage of them.",
-                        inline=True)
+                        inline=False)
         embed.add_field(name=".ts (mod)", value="Send a clickable timestamp for the osu! editor. "
                                                 "The message must start with a timestamp.",
-                        inline=True)
+                        inline=False)
         embed.set_thumbnail(url=self.help_thumbnail)
         embed.set_author(name=self.author_text, icon_url=self.author_icon)
         embed.set_footer(text=self.footer_text, icon_url=self.footer_icon)
@@ -65,8 +65,9 @@ class Docs(commands.Cog):
     async def veto(self):
         embed = discord.Embed(title="~~BNS PLS MUTUAL ME~~", description="**Veto tracking commands:**",
                               color=0xbd3661)
-        embed.add_field(name=".veto <mapset_id>", value="Track a mapset in this channel in veto mode.", inline=True)
-        embed.add_field(name=".unveto <mapset_id>", value="Untrack a mapset in this channel in veto mode.", inline=True)
+        embed.add_field(name=".veto <mapset_id>", value="Track a mapset in this channel in veto mode.", inline=False)
+        embed.add_field(name=".unveto <mapset_id>",
+                        value="Untrack a mapset in this channel in veto mode.", inline=False)
         embed.set_thumbnail(url=self.help_thumbnail)
         embed.set_author(name=self.author_text, icon_url=self.author_icon)
         embed.set_footer(text=self.footer_text, icon_url=self.footer_icon)

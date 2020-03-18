@@ -72,5 +72,5 @@ class Seija(commands.Bot):
         await first_run.add_admins(self)
 
 
-client = Seija(command_prefix="\'")
+client = Seija(command_prefix=".")
 client.run(bot_token)

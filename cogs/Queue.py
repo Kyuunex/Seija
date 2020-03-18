@@ -39,7 +39,7 @@ class Queue(commands.Cog):
         if osu_id:
             await ctx.send(await self.get_kudosu_int(osu_id))
 
-    @commands.command(name="request_queue", brief="Request a queue", description="")
+    @commands.command(name="request_queue", brief="Request a queue", aliases=["create_queue", "make_queue"])
     @commands.guild_only()
     async def make_queue_channel(self, ctx, *, queue_type="std"):
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
@@ -114,7 +114,7 @@ class Queue(commands.Cog):
             await self.unarchive_queue(ctx, ctx.author)
             await ctx.send(content="queue open!", embed=embed)
 
-    @commands.command(name="close", brief="Close the queue", description="")
+    @commands.command(name="close", brief="Close the queue", aliases=["closed"])
     @commands.guild_only()
     async def close(self, ctx, *args):
         async with self.bot.db.execute("SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?",

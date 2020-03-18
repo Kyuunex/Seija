@@ -50,10 +50,10 @@ class ModChecker(commands.Cog):
                                        [str(ctx.channel.id)]) as cursor:
             mapset_id = await cursor.fetchall()
         if not mapset_id:
-            await ctx.send("Set a mapset id for this channel first, using the `'set_id (mapset_id)` command.")
+            await ctx.send("Set a mapset id for this channel first, using the `.set_id (mapset_id)` command.")
             return None
         if str(mapset_id[0][0]) == "0":
-            await ctx.send("Set a mapset id for this channel first, using the `'set_id (mapset_id)` command.")
+            await ctx.send("Set a mapset id for this channel first, using the `.set_id (mapset_id)` command.")
             return None
 
         discussions = await self.bot.osuweb.get_beatmapset_discussions(str(mapset_id[0][0]))

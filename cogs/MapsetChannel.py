@@ -246,13 +246,13 @@ class MapsetChannel(commands.Cog):
                 mapset = await self.bot.osu.get_beatmapset(s=mapset_id)
                 if not mapset:
                     await ctx.send("you specified incorrect mapset id. "
-                                   "you can correct this with `'set_id` command in the mapset channel")
+                                   "you can correct this with `.set_id` command in the mapset channel")
             except Exception as e:
                 mapset = None
                 print(e)
                 await ctx.send("looks like there are connection issues to osu servers, "
                                "so i'll put in a blank value for the mapset_id "
-                               "and later you can update it with `'set_id` command")
+                               "and later you can update it with `.set_id` command")
 
         if mapset:
             mapset_id = str(mapset.id)
@@ -291,7 +291,7 @@ class MapsetChannel(commands.Cog):
         await ctx.author.add_roles(mapset_role)
         await channel.send(content=f"{ctx.author.mention} done! Please keep in mind that "
                                    f"I don't automatically start tracking. "
-                                   "You can use the `'track` command bellow to start tracking.",
+                                   "You can use the `.track` command bellow to start tracking.",
                            embed=await self.docs.mapset_channel_management())
         await self.bot.db.execute("INSERT INTO mapset_channels VALUES (?, ?, ?, ?, ?)",
                                   [str(channel.id), str(mapset_role.id), str(ctx.author.id), str(mapset_id),

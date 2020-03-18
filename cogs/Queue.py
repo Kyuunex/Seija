@@ -143,7 +143,7 @@ class Queue(commands.Cog):
 
             await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=None, send_messages=False)
             await ctx.send(content="queue is visible to everyone, but it's still closed. "
-                                   "use `'open` command if you want people to post in it.", embed=embed)
+                                   "use `.open` command if you want people to post in it.", embed=embed)
 
     @commands.command(name="hide", brief="Hide the queue", description="")
     @commands.guild_only()

@@ -32,6 +32,18 @@ class MapsetChannel(commands.Cog):
             embed_links=True
         )
 
+    @commands.command(name="debug_mapset_force_call_on_member_join")
+    @commands.check(permissions.is_admin)
+    @commands.guild_only()
+    async def debug_mapset_force_call_on_member_join(self, ctx, user_id):
+        member = wrappers.get_member_guaranteed(ctx, user_id)
+        if not member:
+            await ctx.send("no member found with that name")
+            return None
+
+        await self.on_member_join(member)
+        await ctx.send("???")
+
     @commands.command(name="add", brief="Add a user in the current mapset channel")
     @commands.guild_only()
     async def add(self, ctx, *, user_name: str):

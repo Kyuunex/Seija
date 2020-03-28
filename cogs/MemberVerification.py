@@ -49,6 +49,17 @@ class MemberVerification(commands.Cog):
         await self.bot.db.commit()
         await ctx.send("lol ok")
 
+    @commands.command(name="update_user_discord_account", brief="When user switched accounts, apply this")
+    @commands.check(permissions.is_admin)
+    async def update_user_discord_account(self, ctx, old_id, new_id):
+        await self.bot.db.execute("UPDATE users SET user_id = ? WHERE user_id = ?", [str(old_id), str(new_id)])
+        await self.bot.db.execute("UPDATE map_owners SET user_id = ? WHERE user_id = ?", [str(old_id), str(new_id)])
+        await self.bot.db.execute("UPDATE queues SET user_id = ? WHERE user_id = ?", [str(old_id), str(new_id)])
+        await self.bot.db.execute("UPDATE mapset_channels SET user_id = ? WHERE user_id = ?",
+                                  [str(old_id), str(new_id)])
+        await self.bot.db.commit()
+        await ctx.send("lol ok")
+
     @commands.command(name="unverify", brief="Unverify a member and delete it from db", description="")
     @commands.check(permissions.is_admin)
     @commands.guild_only()

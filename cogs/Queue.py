@@ -222,8 +222,8 @@ class Queue(commands.Cog):
             queue_channel = self.bot.get_channel(int(queue_id[0][0]))
             if queue_channel:
                 await queue_channel.set_permissions(target=member, overwrite=self.queue_owner_default_permissions)
-                await queue_channel.send("the queue owner has returned. "
-                                         "next time you open the queue, it will be unarchived.")
+                await queue_channel.send("the queue owner has returned, so i have restored permissions. "
+                                         "next time this queue is open, it will be unarchived.")
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):

@@ -28,7 +28,6 @@ def create_tables():
         c.execute("CREATE TABLE users "
                   "(user_id, osu_id, osu_username, osu_join_date, pp, country, ranked_maps_amount, no_sync)")
         c.execute("CREATE TABLE user_event_history (osu_id, event_id, channel_id, timestamp)")
-        c.execute("CREATE TABLE config (setting, parent, value, flag)")
 
         c.execute("CREATE TABLE channels (setting, guild_id, channel_id)")
         c.execute("CREATE TABLE categories (setting, guild_id, category_id)")
@@ -45,7 +44,6 @@ def create_tables():
         c.execute("CREATE TABLE groupfeed_group_members (osu_id, group_id)")
         c.execute("CREATE TABLE groupfeed_member_info (osu_id, username, country)")
 
-        c.execute("CREATE TABLE admins (user_id, permissions)")
         c.execute("CREATE TABLE mod_posts (post_id, mapset_id, channel_id)")
         c.execute("CREATE TABLE mapset_events (event_id, mapset_id, channel_id)")
         c.execute("CREATE TABLE mod_tracking (mapset_id, channel_id, mode)")

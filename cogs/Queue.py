@@ -1,5 +1,6 @@
 from cogs.Docs import Docs
 from modules import permissions
+from modules import wrappers
 import discord
 from discord.ext import commands
 
@@ -38,6 +39,18 @@ class Queue(commands.Cog):
                 osu_id = osu_id[0][0]
         if osu_id:
             await ctx.send(await self.get_kudosu_int(osu_id))
+
+    @commands.command(name="debug_queue_force_call_on_member_join")
+    @commands.check(permissions.is_admin)
+    @commands.guild_only()
+    async def debug_queue_force_call_on_member_join(self, ctx, user_id):
+        member = wrappers.get_member_guaranteed(ctx, user_id)
+        if not member:
+            await ctx.send("no member found with that name")
+            return None
+
+        await self.on_member_join(member)
+        await ctx.send("???")
 
     @commands.command(name="request_queue", brief="Request a queue", aliases=["create_queue", "make_queue"])
     @commands.guild_only()

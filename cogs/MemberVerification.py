@@ -52,6 +52,14 @@ class MemberVerification(commands.Cog):
     @commands.command(name="update_user_discord_account", brief="When user switched accounts, apply this")
     @commands.check(permissions.is_admin)
     async def update_user_discord_account(self, ctx, old_id, new_id):
+        if not old_id.isdigit():
+            await ctx.send("old_id must be all digits")
+            return None
+
+        if not new_id.isdigit():
+            await ctx.send("new_id must be all digits")
+            return None
+
         await self.bot.db.execute("UPDATE users SET user_id = ? WHERE user_id = ?", [str(new_id), str(old_id)])
         await self.bot.db.execute("UPDATE map_owners SET user_id = ? WHERE user_id = ?", [str(new_id), str(old_id)])
         await self.bot.db.execute("UPDATE queues SET user_id = ? WHERE user_id = ?", [str(new_id), str(old_id)])

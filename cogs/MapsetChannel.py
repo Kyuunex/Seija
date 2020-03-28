@@ -42,7 +42,7 @@ class MapsetChannel(commands.Cog):
             return None
 
         await self.on_member_join(member)
-        await ctx.send("???")
+        await ctx.send("done")
 
     @commands.command(name="add", brief="Add a user in the current mapset channel")
     @commands.guild_only()

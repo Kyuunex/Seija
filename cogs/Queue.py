@@ -50,7 +50,7 @@ class Queue(commands.Cog):
             return None
 
         await self.on_member_join(member)
-        await ctx.send("???")
+        await ctx.send("done")
 
     @commands.command(name="request_queue", brief="Request a queue", aliases=["create_queue", "make_queue"])
     @commands.guild_only()

@@ -56,6 +56,14 @@ class MemberVerification(commands.Cog):
             await ctx.send("old_id must be all digits")
             return None
 
+        try:
+            old_account = ctx.guild.get_member(int(old_id))
+            if old_account:
+                await ctx.send("kicking old account")
+                await old_account.kick()
+        except Exception as e:
+            await ctx.send(e)
+
         if not new_id.isdigit():
             await ctx.send("new_id must be all digits")
             return None

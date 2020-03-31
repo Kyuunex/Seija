@@ -121,6 +121,8 @@ class MemberNameSyncing(commands.Cog):
         now = datetime.datetime.now()
         if "04-01T" in str(now.isoformat()):
             return None
+        if "03-31T" in str(now.isoformat()):
+            return None
         if str(db_user[2]) != osu_profile.name:
             await notices_channel.send(f"`{db_user[2]}` namechanged to `{osu_profile.name}`. osu_id = `{db_user[1]}`")
             if str(db_user[1]) == str(4116573):

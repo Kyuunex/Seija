@@ -15,6 +15,7 @@ from modules.connections import database_file as database_file
 first_run.create_tables()
 
 initial_extensions = [
+    "cogs.AprilFools",
     "cogs.BotManagement",
     "cogs.Docs",
     "cogs.GroupFeed",

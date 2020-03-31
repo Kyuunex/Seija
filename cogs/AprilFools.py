@@ -1,11 +1,11 @@
 from modules import permissions
 import upsidedown
-import aiohttp
-import io
+# import aiohttp
+# import io
 import asyncio
 import discord
 from discord.ext import commands
-from PIL import Image
+# from PIL import Image
 
 
 class AprilFools(commands.Cog):
@@ -23,7 +23,7 @@ class AprilFools(commands.Cog):
         await self.apply_nicknames(ctx)
         await asyncio.sleep(10)
         await self.apply_roles(ctx)
-        await self.rotate_logo(ctx)
+        # await self.rotate_logo(ctx)
         try:
             await ctx.send(file=discord.File("data/sorry.png"))
         except Exception as e:
@@ -39,20 +39,8 @@ class AprilFools(commands.Cog):
         await self.restore_channels(ctx)
         await asyncio.sleep(10)
         await self.restore_roles(ctx)
-        await self.rotate_logo(ctx)
+        # await self.rotate_logo(ctx)
         await ctx.send(":ok_hand:")
-
-    @commands.command(name="af_2020_apply", brief="Apply April fools 2020 commands", description="")
-    @commands.check(permissions.is_owner)
-    @commands.guild_only()
-    async def af_2020_apply(self, ctx):
-        pass
-
-    @commands.command(name="af_2020_restore", brief="Restore from April fools 2020", description="")
-    @commands.check(permissions.is_owner)
-    @commands.guild_only()
-    async def af_2020_apply(self, ctx):
-        pass
 
     async def apply_nicknames(self, ctx):
         for member in ctx.guild.members:
@@ -154,25 +142,25 @@ class AprilFools(commands.Cog):
             await self.bot.db.execute("DELETE FROM name_backups WHERE id = ?", [str(guild.id)])
         await self.bot.db.commit()
 
-    async def rotate_logo(self, ctx):
-        guild = ctx.guild
-        old_icon_url = guild.icon_url
-        if old_icon_url:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(old_icon_url) as image_response:
-                    buffer = (await image_response.read())
-                    im = Image.open(io.BytesIO(buffer))
-                    im = im.rotate(180)
-                    im = im.convert("RGBA")
-                    new_bytes = io.BytesIO()
-                    im.save(new_bytes, format="PNG")
-                    new_bytes = new_bytes.getvalue()
-            try:
-                await guild.edit(icon=new_bytes)
-            except Exception as e:
-                print(e)
-                print("in rotate_logo")
-                await asyncio.sleep(10)
+    # async def rotate_logo(self, ctx):
+    #     guild = ctx.guild
+    #     old_icon_url = guild.icon_url
+    #     if old_icon_url:
+    #         async with aiohttp.ClientSession() as session:
+    #             async with session.get(old_icon_url) as image_response:
+    #                 buffer = (await image_response.read())
+    #                 im = Image.open(io.BytesIO(buffer))
+    #                 im = im.rotate(180)
+    #                 im = im.convert("RGBA")
+    #                 new_bytes = io.BytesIO()
+    #                 im.save(new_bytes, format="PNG")
+    #                 new_bytes = new_bytes.getvalue()
+    #         try:
+    #             await guild.edit(icon=new_bytes)
+    #         except Exception as e:
+    #             print(e)
+    #             print("in rotate_logo")
+    #             await asyncio.sleep(10)
 
 
 def setup(bot):

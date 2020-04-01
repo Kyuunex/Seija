@@ -13,7 +13,7 @@ class AprilFools(commands.Cog):
         self.bot = bot
 
     @commands.command(name="af_2019_apply", brief="Apply April fools 2019 commands", description="")
-    @commands.check(permissions.is_owner)
+    @commands.check(permissions.is_admin)
     @commands.guild_only()
     async def af_2019_apply(self, ctx):
         await ctx.message.delete()
@@ -31,7 +31,7 @@ class AprilFools(commands.Cog):
             await ctx.send(":ok_hand:")
 
     @commands.command(name="af_2019_restore", brief="Restore from April fools 2019", description="")
-    @commands.check(permissions.is_owner)
+    @commands.check(permissions.is_admin)
     @commands.guild_only()
     async def af_2019_restore(self, ctx):
         await ctx.message.delete()

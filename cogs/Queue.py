@@ -29,7 +29,7 @@ class Queue(commands.Cog):
         )
 
     @commands.command(name="queue_cleanup", brief="Queue cleanup",
-                      description="Deletes messages that are not made by the queue owner or has no beatmap link.")
+                      description="Deletes messages that are not made by the queue owner or me or has no beatmap link.")
     @commands.guild_only()
     async def queue_cleanup(self, ctx, amount=100):
         async with self.bot.db.execute("SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?",
@@ -46,6 +46,8 @@ class Queue(commands.Cog):
                         if "https://osu.ppy.sh/beatmapsets/" in m.content:
                             return False
                         if m.author == ctx.author:
+                            return False
+                        if m.author == ctx.guild.me:
                             return False
                         return True
 

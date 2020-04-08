@@ -28,6 +28,32 @@ class Queue(commands.Cog):
             embed_links=True
         )
 
+    @commands.command(name="queue_cleanup", brief="Queue cleanup",
+                      description="Deletes messages that are not made by the queue owner or has no beatmap link.")
+    @commands.guild_only()
+    async def queue_cleanup(self, ctx, amount=100):
+        async with self.bot.db.execute("SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?",
+                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+            queue_owner_check = await cursor.fetchall()
+        async with self.bot.db.execute("SELECT user_id FROM queues WHERE channel_id = ?",
+                                       [str(ctx.channel.id)]) as cursor:
+            is_queue_channel = await cursor.fetchall()
+        if (queue_owner_check or await permissions.is_admin(ctx)) and is_queue_channel:
+            try:
+                await ctx.message.delete()
+                async with ctx.channel.typing():
+                    def the_check(m):
+                        if "https://osu.ppy.sh/beatmapsets/" in m.content:
+                            return False
+                        if m.author == ctx.author:
+                            return False
+                        return True
+
+                    deleted = await ctx.channel.purge(limit=int(amount), check=the_check)
+                await ctx.send(f"Deleted {len(deleted)} message(s)")
+            except Exception as e:
+                await ctx.send(str(e).replace("@", ""))
+
     @commands.command(name="debug_get_kudosu")
     @commands.check(permissions.is_admin)
     @commands.guild_only()

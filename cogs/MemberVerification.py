@@ -15,6 +15,9 @@ class MemberVerification(commands.Cog):
         self.verify_channel_list = tuple(c.execute("SELECT channel_id, guild_id FROM channels WHERE setting = ?",
                                                    ["verify"]))
         conn.close()
+        self.post_verification_emotes = [
+            ["FR", "🥖"],
+        ]
 
     @commands.command(name="verify", brief="Manually verify a member", description="")
     @commands.check(permissions.is_admin)
@@ -302,8 +305,11 @@ class MemberVerification(commands.Cog):
                                    str(osu_profile.join_date),
                                    str(osu_profile.pp_raw), str(osu_profile.country), str(ranked_amount), "0"])
         await self.bot.db.commit()
-        await channel.send(content=f"`Verified: {member.name}` \n"
-                                   f"You should also read the rules if you haven't already.", embed=embed)
+        verified_message = await channel.send(content=f"`Verified: {member.name}` \n"
+                                                      f"You should also read the rules if you haven't already.",
+                                              embed=embed)
+
+        await self.add_obligatory_reaction(verified_message, osu_profile)
 
     async def member_verification(self, channel, member):
         async with self.bot.db.execute("SELECT osu_id, osu_username FROM users WHERE user_id = ?",
@@ -322,8 +328,11 @@ class MemberVerification(commands.Cog):
                 name = user_db_lookup[0][1]
                 embed = None
             await member.edit(nick=name)
-            await channel.send(f"Welcome aboard {member.mention}! Since we know who you are, "
-                               "I have automatically gave you appropriate roles. Enjoy your stay!", embed=embed)
+            verified_message = await channel.send(f"Welcome aboard {member.mention}! Since we know who you are, "
+                                                  "I have automatically gave you appropriate roles. Enjoy your stay!",
+                                                  embed=embed)
+
+            await self.add_obligatory_reaction(verified_message, osu_profile)
         else:
             osu_profile = await self.get_osu_profile(member.name)
             if osu_profile:
@@ -354,6 +363,15 @@ class MemberVerification(commands.Cog):
         except Exception as e:
             print(e)
             return 0
+
+    async def add_obligatory_reaction(self, message, osu_profile):
+        try:
+            if osu_profile.country:
+                for stereotype in self.post_verification_emotes:
+                    if osu_profile.country == stereotype[0]:
+                        await message.add_reaction(stereotype[1])
+        except Exception as e:
+            print(e)
 
 
 def setup(bot):

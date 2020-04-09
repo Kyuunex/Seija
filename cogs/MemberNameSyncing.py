@@ -140,6 +140,11 @@ class MemberNameSyncing(commands.Cog):
             return None
         if "1" in str(db_user[7]):
             return None
+        try:
+            if member.guild_permissions.administrator:
+                return None
+        except:
+            return None
 
         old_nickname = member.display_name
         try:

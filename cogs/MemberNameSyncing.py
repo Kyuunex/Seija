@@ -118,31 +118,37 @@ class MemberNameSyncing(commands.Cog):
             await asyncio.sleep(7200)
 
     async def sync_nickname(self, notices_channel, db_user, member, osu_profile):
-        now = datetime.datetime.now()
-        if "04-01T" in str(now.isoformat()):
-            return None
-        if "03-31T" in str(now.isoformat()):
-            return None
         if str(db_user[2]) != osu_profile.name:
             await notices_channel.send(f"`{db_user[2]}` namechanged to `{osu_profile.name}`. osu_id = `{db_user[1]}`")
             if str(db_user[1]) == str(4116573):
                 await notices_channel.send("btw, this is bor. yes, i actually added this specific message for bor.")
 
         if member.display_name != osu_profile.name:
-            if not ("1" in str(db_user[7])):
-                old_nickname = member.display_name
-                try:
-                    await member.edit(nick=osu_profile.name)
-                    await notices_channel.send(f"{member.mention} | `{osu_profile.name}` | `{db_user[1]}` | "
-                                               f"nickname updated, old nickname `{old_nickname}`")
-                except:
-                    await notices_channel.send(f"{member.mention} | `{osu_profile.name}` | `{db_user[1]}` | "
-                                               f"no perms to update")
+            await self.apply_nickname(db_user, member, notices_channel, osu_profile)
+
         await self.bot.db.execute("UPDATE users SET country = ?, pp = ?, "
                                   "osu_join_date = ?, osu_username = ? WHERE user_id = ?;",
                                   [str(osu_profile.country), str(osu_profile.pp_raw),
                                    str(osu_profile.join_date), str(osu_profile.name), str(member.id)])
         await self.bot.db.commit()
+
+    async def apply_nickname(self, db_user, member, notices_channel, osu_profile):
+        now = datetime.datetime.now()
+        if "04-01T" in str(now.isoformat()):
+            return None
+        if "03-31T" in str(now.isoformat()):
+            return None
+        if "1" in str(db_user[7]):
+            return None
+
+        old_nickname = member.display_name
+        try:
+            await member.edit(nick=osu_profile.name)
+            await notices_channel.send(f"{member.mention} | `{osu_profile.name}` | `{db_user[1]}` | "
+                                       f"nickname updated, old nickname `{old_nickname}`")
+        except:
+            await notices_channel.send(f"{member.mention} | `{osu_profile.name}` | `{db_user[1]}` | "
+                                       f"no perms to update")
 
     async def check_events(self, channel, user):
         for event in user.events:

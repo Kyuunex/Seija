@@ -52,7 +52,7 @@ def create_tables():
         c.execute("CREATE TABLE map_owners (map_id, user_id)")
         c.execute("CREATE TABLE notices (timestamp, notice)")
         c.execute("CREATE TABLE restricted_users (guild_id, osu_id)")
-        c.execute("CREATE TABLE queues (channel_id, user_id, guild_id)")
+        c.execute("CREATE TABLE queues (channel_id, user_id, guild_id, is_owner)")
         c.execute("CREATE TABLE mapset_channels (channel_id, role_id, user_id, mapset_id, guild_id)")
         c.execute("CREATE TABLE name_backups (id, name)")
         c.execute("CREATE TABLE member_goodbye_messages (message)")

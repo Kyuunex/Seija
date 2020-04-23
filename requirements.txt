@@ -4,6 +4,8 @@ pycountry
 Pillow
 aiosqlite
 bs4
+aiohttp
+beautifulsoup4
 git+https://github.com/Kyuunex/aioosuapi.git@v1
 git+https://github.com/Kyuunex/aioosuapi.git@v2-scrape
 git+https://github.com/Kyuunex/osudiscordpyembed.git@v1

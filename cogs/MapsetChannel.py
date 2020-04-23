@@ -10,7 +10,6 @@ import asyncio
 class MapsetChannel(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.docs = Docs(bot)
         self.mapset_owner_default_permissions = discord.PermissionOverwrite(
             create_instant_invite=True,
             manage_channels=True,
@@ -304,7 +303,7 @@ class MapsetChannel(commands.Cog):
         await channel.send(content=f"{ctx.author.mention} done! Please keep in mind that "
                                    f"I don't automatically start tracking. "
                                    "You can use the `.track` command bellow to start tracking.",
-                           embed=await self.docs.mapset_channel_management())
+                           embed=await Docs.mapset_channel_management())
         await self.bot.db.execute("INSERT INTO mapset_channels VALUES (?, ?, ?, ?, ?)",
                                   [str(channel.id), str(mapset_role.id), str(ctx.author.id), str(mapset_id),
                                    str(ctx.guild.id)])

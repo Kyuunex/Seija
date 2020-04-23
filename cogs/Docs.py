@@ -3,13 +3,14 @@ from discord.ext import commands
 
 
 class Docs(commands.Cog):
+    help_thumbnail = "https://i.imgur.com/JhL9PV8.png"
+    author_icon = "https://i.imgur.com/1icHC5a.png"
+    author_text = "Seija"
+    footer_icon = "https://avatars0.githubusercontent.com/u/5400432"
+    footer_text = "Made by Kyuunex"
+
     def __init__(self, bot):
         self.bot = bot
-        self.help_thumbnail = "https://i.imgur.com/JhL9PV8.png"
-        self.author_icon = "https://i.imgur.com/1icHC5a.png"
-        self.author_text = "Seija"
-        self.footer_icon = "https://avatars0.githubusercontent.com/u/5400432"
-        self.footer_text = "Made by Kyuunex"
 
     @commands.command(name="docs", brief="Pretty help command", description="")
     async def docs(self, ctx, sub_help=None):
@@ -24,9 +25,9 @@ class Docs(commands.Cog):
         elif sub_help == "queue":
             await ctx.send(embed=await self.queue(ctx.author))
         elif sub_help == "mapset_channel_management":
-            await ctx.send(embed=await self.mapset_channel_management())
+            await ctx.send(embed=await Docs.mapset_channel_management())
         elif sub_help == "queue_management":
-            await ctx.send(embed=await self.queue_management())
+            await ctx.send(embed=await Docs.queue_management())
         else:
             await ctx.send(embed=await self.main(ctx))
 
@@ -57,9 +58,9 @@ class Docs(commands.Cog):
         embed.add_field(name=".ts (mod)", value="Send a clickable timestamp for the osu! editor. "
                                                 "The message must start with a timestamp.",
                         inline=False)
-        embed.set_thumbnail(url=self.help_thumbnail)
-        embed.set_author(name=self.author_text, icon_url=self.author_icon)
-        embed.set_footer(text=self.footer_text, icon_url=self.footer_icon)
+        embed.set_thumbnail(url=Docs.help_thumbnail)
+        embed.set_author(name=Docs.author_text, icon_url=Docs.author_icon)
+        embed.set_footer(text=Docs.footer_text, icon_url=Docs.footer_icon)
         return embed
 
     async def veto(self):
@@ -68,9 +69,9 @@ class Docs(commands.Cog):
         embed.add_field(name=".veto <mapset_id>", value="Track a mapset in this channel in veto mode.", inline=False)
         embed.add_field(name=".unveto <mapset_id>",
                         value="Untrack a mapset in this channel in veto mode.", inline=False)
-        embed.set_thumbnail(url=self.help_thumbnail)
-        embed.set_author(name=self.author_text, icon_url=self.author_icon)
-        embed.set_footer(text=self.footer_text, icon_url=self.footer_icon)
+        embed.set_thumbnail(url=Docs.help_thumbnail)
+        embed.set_author(name=Docs.author_text, icon_url=Docs.author_icon)
+        embed.set_footer(text=Docs.footer_text, icon_url=Docs.footer_icon)
         return embed
 
     async def queue(self, author):
@@ -94,8 +95,8 @@ class Docs(commands.Cog):
                 "You can be creative and do other things but its primary purpose must be a modding queue.**"
         embed = discord.Embed(title="With this command you can create a queue channel.", description=text,
                               color=0xbd3661)
-        embed.set_author(name=self.author_text, icon_url=self.author_icon)
-        embed.set_footer(text=self.footer_text, icon_url=self.footer_icon)
+        embed.set_author(name=Docs.author_text, icon_url=Docs.author_icon)
+        embed.set_footer(text=Docs.footer_text, icon_url=Docs.footer_icon)
         return embed
 
     async def mapset_channel(self):
@@ -117,11 +118,12 @@ class Docs(commands.Cog):
         text += "\n**__Do not__ create a channel if you don't have GDers/collaborators ready.**"
         embed = discord.Embed(title="With this command you can create a mapset channel for collaborative purposes.",
                               description=text, color=0xbd3661)
-        embed.set_author(name=self.author_text, icon_url=self.author_icon)
-        embed.set_footer(text=self.footer_text, icon_url=self.footer_icon)
+        embed.set_author(name=Docs.author_text, icon_url=Docs.author_icon)
+        embed.set_footer(text=Docs.footer_text, icon_url=Docs.footer_icon)
         return embed
 
-    async def queue_management(self):
+    @staticmethod
+    async def queue_management():
         embed = discord.Embed(title="Queue management commands",
                               description="**Please avoid manually editing channel permissions "
                                           "unless you want to ban a specific person or a role from your queue "
@@ -165,11 +167,12 @@ class Docs(commands.Cog):
                         value="Give your creator permissions of the queue to someone. "
                               "This will clear all co-owners too.",
                         inline=False)
-        embed.set_author(name=self.author_text, icon_url=self.author_icon)
-        embed.set_footer(text=self.footer_text, icon_url=self.footer_icon)
+        embed.set_author(name=Docs.author_text, icon_url=Docs.author_icon)
+        embed.set_footer(text=Docs.footer_text, icon_url=Docs.footer_icon)
         return embed
 
-    async def mapset_channel_management(self):
+    @staticmethod
+    async def mapset_channel_management():
         embed = discord.Embed(title="Mapset channel management commands",
                               description="`(user)` can either be the name of the user or a discord account user ID. "
                                           "To get the user ID, "
@@ -197,8 +200,8 @@ class Docs(commands.Cog):
                               "or `notification` for the notification type.",
                         inline=False)
         embed.add_field(name=".untrack", value="Untrack everything in this channel.", inline=False)
-        embed.set_author(name=self.author_text, icon_url=self.author_icon)
-        embed.set_footer(text=self.footer_text, icon_url=self.footer_icon)
+        embed.set_author(name=Docs.author_text, icon_url=Docs.author_icon)
+        embed.set_footer(text=Docs.footer_text, icon_url=Docs.footer_icon)
         return embed
 
 

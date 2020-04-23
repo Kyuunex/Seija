@@ -9,7 +9,6 @@ from discord.ext import commands
 class Queue(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.docs = Docs(bot)
         self.queue_owner_default_permissions = discord.PermissionOverwrite(
             create_instant_invite=True,
             manage_channels=True,
@@ -156,7 +155,7 @@ class Queue(commands.Cog):
             await self.bot.db.execute("INSERT INTO queues VALUES (?, ?, ?, ?)",
                                       [str(channel.id), str(ctx.author.id), str(ctx.guild.id), "1"])
             await self.bot.db.commit()
-            await channel.send(f"{ctx.author.mention} done!", embed=await self.docs.queue_management())
+            await channel.send(f"{ctx.author.mention} done!", embed=await Docs.queue_management())
         except Exception as e:
             await ctx.send(e)
 
@@ -256,9 +255,12 @@ class Queue(commands.Cog):
         embed = discord.Embed(color=0xff6781)
         await wrappers.send_large_embed(ctx.channel, embed, buffer)
 
-    @commands.command(name="give_queue", brief="Give your creator permissions of the queue to someone")
+    @commands.command(name="give_queue", brief="Give your creator permissions of the queue to someone.")
     @commands.guild_only()
     async def give_queue(self, ctx, user_id):
+        """
+        This will clear all co-owners too.
+        """
         if not await self.is_queue_creator(ctx):
             return None
 

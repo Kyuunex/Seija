@@ -146,6 +146,25 @@ class Docs(commands.Cog):
                               "if you became a BN or have gotten enough kudosu to earn a spot in a higher category. "
                               "At the moment, command only works if you became/left BN/NAT.",
                         inline=False)
+        embed.add_field(name=".queue_cleanup",
+                        value="Deletes messages that are not made by the queue owner or me or has no beatmap link.",
+                        inline=False)
+        embed.add_field(name=".add_co_modder",
+                        value="Turns a modding queue into a joint one. "
+                              "This command allows you to add a co-owner to your queue. "
+                              "They will be able to open/close/hide/archive the queue. "
+                              "For more info type `.help add_co_modder`.",
+                        inline=False)
+        embed.add_field(name=".remove_co_modder",
+                        value="Remove a co-owner from your queue.",
+                        inline=False)
+        embed.add_field(name=".get_queue_owner_list",
+                        value="List all owners of the queue.",
+                        inline=False)
+        embed.add_field(name=".give_queue",
+                        value="Give your creator permissions of the queue to someone. "
+                              "This will clear all co-owners too.",
+                        inline=False)
         embed.set_author(name=self.author_text, icon_url=self.author_icon)
         embed.set_footer(text=self.footer_text, icon_url=self.footer_icon)
         return embed

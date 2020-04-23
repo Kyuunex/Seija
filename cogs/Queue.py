@@ -1,4 +1,3 @@
-import random
 from cogs.Docs import Docs
 from modules import permissions
 from modules import wrappers

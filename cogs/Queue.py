@@ -55,6 +55,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="queue_cleanup", brief="Queue cleanup")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def queue_cleanup(self, ctx, amount=100):
         """
         Deletes messages that are not made by the queue owner or me or has no beatmap link.
@@ -92,6 +93,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="debug_get_kudosu", brief="Print how much kudosu a user has")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
     async def debug_get_kudosu(self, ctx, user_id, osu_id="0"):
         if user_id:
@@ -104,6 +106,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="debug_queue_force_call_on_member_join", brief="Restore queue permissions")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
     async def debug_queue_force_call_on_member_join(self, ctx, user_id):
         member = wrappers.get_member_guaranteed(ctx, user_id)
@@ -116,6 +119,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="request_queue", brief="Request a queue", aliases=["create_queue", "make_queue"])
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def make_queue_channel(self, ctx, *, queue_type="std"):
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
                                        ["beginner_queue", str(ctx.guild.id)]) as cursor:
@@ -175,6 +179,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="add_co_modder", brief="Add a co-modder to your queue")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def add_co_modder(self, ctx, user_id):
         """
         Turns a modding queue into a joint one.
@@ -205,6 +210,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="remove_co_modder", brief="Remove a co-modder from your queue", description="")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def remove_co_modder(self, ctx, user_id):
         if not await self.is_queue_creator(ctx):
             return None
@@ -226,6 +232,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="get_queue_owner_list", brief="List all the owners of this queue", description="")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def get_queue_owner_list(self, ctx):
         if not await self.is_queue_creator(ctx):
             return None
@@ -256,6 +263,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="give_queue", brief="Give your creator permissions of the queue to someone.")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def give_queue(self, ctx, user_id):
         """
         This will clear all co-owners too.
@@ -282,6 +290,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="open", brief="Open the queue", description="")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def open(self, ctx, *args):
         if not await self.can_manage_queue(ctx):
             return None
@@ -304,6 +313,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="close", brief="Close the queue", aliases=["closed", "show"])
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def close(self, ctx, *args):
         if not await self.can_manage_queue(ctx):
             return None
@@ -326,6 +336,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="hide", brief="Hide the queue", description="")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def hide(self, ctx, *args):
         if not await self.can_manage_queue(ctx):
             return None
@@ -340,6 +351,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="recategorize", brief="Recategorize the queue", description="")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def recategorize(self, ctx):
         if not await self.can_manage_queue(ctx):
             return None
@@ -365,6 +377,7 @@ class Queue(commands.Cog):
 
     @commands.command(name="archive", brief="Archive the queue", description="")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def archive(self, ctx):
         if not await self.can_manage_queue(ctx):
             return None

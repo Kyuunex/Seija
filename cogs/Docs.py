@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from modules import permissions
 
 
 class Docs(commands.Cog):
@@ -13,6 +14,7 @@ class Docs(commands.Cog):
         self.bot = bot
 
     @commands.command(name="docs", brief="Pretty help command", description="")
+    @commands.check(permissions.is_not_ignored)
     async def docs(self, ctx, sub_help=None):
         if sub_help == "veto":
             async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND channel_id = ?",

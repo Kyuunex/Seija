@@ -33,6 +33,7 @@ class MapsetChannel(commands.Cog):
 
     @commands.command(name="debug_mapset_force_call_on_member_join")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
     async def debug_mapset_force_call_on_member_join(self, ctx, user_id):
         member = wrappers.get_member_guaranteed(ctx, user_id)
@@ -44,6 +45,7 @@ class MapsetChannel(commands.Cog):
         await ctx.send("done")
 
     @commands.command(name="add", brief="Add a user in the current mapset channel")
+    @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
     async def add(self, ctx, *, user_name: str):
         async with self.bot.db.execute("SELECT role_id FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
@@ -65,6 +67,7 @@ class MapsetChannel(commands.Cog):
             await ctx.send("not your mapset channel")
 
     @commands.command(name="remove", brief="Remove a user from the current mapset channel")
+    @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
     async def remove(self, ctx, *, user_name: str):
         async with self.bot.db.execute("SELECT role_id FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
@@ -107,6 +110,7 @@ class MapsetChannel(commands.Cog):
     @commands.command(name="claim_diff", brief="Claim a difficulty", description="")
     @commands.guild_only()
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     async def claim_diff(self, ctx, *, map_id):
         await self.bot.db.execute("INSERT INTO map_owners VALUES (?, ?)", [str(map_id), str(ctx.author.id)])
         await self.bot.db.commit()
@@ -114,6 +118,7 @@ class MapsetChannel(commands.Cog):
 
     @commands.command(name="abandon", brief="Abandon the mapset and untrack", description="")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def abandon(self, ctx):
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
                                        ["mapset_archive", str(ctx.guild.id)]) as cursor:
@@ -146,6 +151,7 @@ class MapsetChannel(commands.Cog):
     @commands.command(name="set_id", brief="Set a mapset id for this channel",
                       description="Useful if you created this channel without setting an id")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def set_mapset_id(self, ctx, mapset_id: str):
         async with self.bot.db.execute("SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
                                        [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
@@ -175,6 +181,7 @@ class MapsetChannel(commands.Cog):
     @commands.command(name="set_owner", brief="Transfer set ownership to another discord account",
                       description="user_id can only be that discord account's id")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def set_owner_id(self, ctx, user_id: str):
         async with self.bot.db.execute("SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
                                        [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
@@ -196,6 +203,7 @@ class MapsetChannel(commands.Cog):
 
     @commands.command(name="list_mapset_channels", brief="List all mapset channel", description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     async def list_mapset_channels(self, ctx):
         buffer = ""
         async with self.bot.db.execute("SELECT * FROM mapset_channels") as cursor:
@@ -206,6 +214,7 @@ class MapsetChannel(commands.Cog):
 
     @commands.command(name="nuke", brief="Nuke a requested mapset channel", description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
     async def nuke(self, ctx):
         async with self.bot.db.execute("SELECT role_id FROM mapset_channels WHERE channel_id = ?",
@@ -235,6 +244,7 @@ class MapsetChannel(commands.Cog):
                       brief="Request a mapset channel",
                       description="")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def make_mapset_channel(self, ctx, mapset_id="0", *, mapset_title=None):
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
                                        ["mapset", str(ctx.guild.id)]) as cursor:

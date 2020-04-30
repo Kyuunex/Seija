@@ -16,6 +16,7 @@ class UserEventFeed(commands.Cog):
 
     @commands.command(name="uef_track", brief="Track mapping activity of a specified user", description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     async def track(self, ctx, user_id):
         user = await self.bot.osu.get_user(u=user_id)
         if not user:
@@ -52,6 +53,7 @@ class UserEventFeed(commands.Cog):
     @commands.command(name="uef_untrack", brief="Stop tracking the mapping activity of the specified user",
                       description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     async def untrack(self, ctx, user_id):
         user = await self.bot.osu.get_user(u=user_id)
         if user:
@@ -69,6 +71,7 @@ class UserEventFeed(commands.Cog):
                       brief="Show a list of all users' mapping activity being tracked and where",
                       description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     async def tracklist(self, ctx, everywhere=None):
         channel = ctx.channel
         async with await self.bot.db.execute("SELECT * FROM usereventfeed_tracklist") as cursor:

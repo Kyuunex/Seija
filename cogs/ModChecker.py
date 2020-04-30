@@ -17,6 +17,7 @@ class ModChecker(commands.Cog):
 
     @commands.command(name="track", brief="Track the mapset in this channel", description="")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def track(self, ctx, tracking_mode="timeline"):
         async with self.bot.db.execute("SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
                                        [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
@@ -87,6 +88,7 @@ class ModChecker(commands.Cog):
 
     @commands.command(name="untrack", brief="Untrack everything in this channel", description="")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def untrack(self, ctx):
         async with self.bot.db.execute("SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
                                        [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
@@ -102,6 +104,7 @@ class ModChecker(commands.Cog):
 
     @commands.command(name="veto", brief="Track a mapset in the current channel in veto mode", description="")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def veto(self, ctx, mapset_id):
         async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND channel_id = ?",
                                        ["veto", str(ctx.channel.id)]) as cursor:
@@ -146,6 +149,7 @@ class ModChecker(commands.Cog):
 
     @commands.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode", description="")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def unveto(self, ctx, mapset_id):
         async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND channel_id = ?",
                                        ["veto", str(ctx.channel.id)]) as cursor:
@@ -174,6 +178,7 @@ class ModChecker(commands.Cog):
 
     @commands.command(name="sublist", brief="List all tracked mapsets everywhere", description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     async def sublist(self, ctx):
         async with self.bot.db.execute("SELECT * FROM mod_tracking") as cursor:
             track_list = await cursor.fetchall()
@@ -187,6 +192,7 @@ class ModChecker(commands.Cog):
             await ctx.send(content="mapset_id `%s` | channel <#%s> | tracking_mode `%s`" % mapset, embed=embed)
 
     @commands.command(name="veto_list", brief="List all vetoed mapsets everywhere", description="")
+    @commands.check(permissions.is_not_ignored)
     async def veto_list(self, ctx):
         async with self.bot.db.execute("SELECT * FROM mod_tracking WHERE mode = ?", ["veto"]) as cursor:
             vetoed_sets = await cursor.fetchall()
@@ -603,7 +609,7 @@ class ModChecker(commands.Cog):
 
     async def get_category_object(self, guild, setting, id_only=None):
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
-                                [setting, str(guild.id)]) as cursor:
+                                       [setting, str(guild.id)]) as cursor:
             category_id = await cursor.fetchall()
         if category_id:
             category = self.bot.get_channel(int(category_id[0][0]))

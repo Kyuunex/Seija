@@ -17,6 +17,7 @@ class RankFeed(commands.Cog):
 
     @commands.command(name="rankfeed_add", brief="Add a rankfeed in the current channel", description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     async def add(self, ctx):
         fresh_entries = await self.bot.osuweb.get_latest_ranked_beatmapsets()
         if not fresh_entries:
@@ -47,6 +48,7 @@ class RankFeed(commands.Cog):
 
     @commands.command(name="rankfeed_remove", brief="Remove a rankfeed from the current channel", description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     async def remove(self, ctx):
         await self.bot.db.execute("DELETE FROM rankfeed_channel_list WHERE channel_id = ?", [str(ctx.channel.id)])
         await self.bot.db.commit()
@@ -56,6 +58,7 @@ class RankFeed(commands.Cog):
                       brief="Show a list of channels where rankfeed is sent",
                       description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     async def tracklist(self, ctx):
         async with await self.bot.db.execute("SELECT channel_id FROM rankfeed_channel_list") as cursor:
             tracklist = await cursor.fetchall()

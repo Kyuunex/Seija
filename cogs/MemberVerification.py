@@ -21,6 +21,7 @@ class MemberVerification(commands.Cog):
 
     @commands.command(name="verify", brief="Manually verify a member", description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
     async def verify(self, ctx, user_id, osu_id):
         member = ctx.guild.get_member(int(user_id))
@@ -46,6 +47,7 @@ class MemberVerification(commands.Cog):
 
     @commands.command(name="verify_restricted", brief="Manually verify a restricted member", description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     async def verify_restricted(self, ctx, user_id, osu_id, username=""):
         await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
                                   [str(user_id), str(osu_id), username, "", "", "", "", ""])
@@ -54,6 +56,7 @@ class MemberVerification(commands.Cog):
 
     @commands.command(name="update_user_discord_account", brief="When user switched accounts, apply this")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     async def update_user_discord_account(self, ctx, old_id, new_id, osu_id=""):
         if not old_id.isdigit():
             await ctx.send("old_id must be all digits")
@@ -84,6 +87,7 @@ class MemberVerification(commands.Cog):
 
     @commands.command(name="unverify", brief="Unverify a member and delete it from db", description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
     async def unverify(self, ctx, user_id):
         await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [str(user_id)])

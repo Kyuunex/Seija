@@ -11,6 +11,7 @@ class MemberManagement(commands.Cog):
 
     @commands.command(name="get_members_not_in_db", brief="Get a list of users who are not in db", description="")
     @commands.check(permissions.is_owner)
+    @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
     async def get_members_not_in_db(self, ctx):
         for member in ctx.guild.members:
@@ -23,6 +24,7 @@ class MemberManagement(commands.Cog):
 
     @commands.command(name="get_roleless_members", brief="Get a list of members without a role", description="")
     @commands.check(permissions.is_owner)
+    @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
     async def get_roleless_members(self, ctx, lookup_in_db: str = None):
         for member in ctx.guild.members:
@@ -39,6 +41,7 @@ class MemberManagement(commands.Cog):
     @commands.command(name="get_member_osu_profile",
                       brief="Check which osu account is a discord account linked to", description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
     async def get_member_osu_profile(self, ctx, *, user_id):
         async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]) as cursor:
@@ -53,6 +56,7 @@ class MemberManagement(commands.Cog):
 
     @commands.command(name="check_ranked", brief="Update member roles based on their ranking amount", description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
     async def check_ranked(self, ctx):
         await self.check_ranked_amount_by_role(ctx, 10, "ranked_mapper", "experienced_mapper")

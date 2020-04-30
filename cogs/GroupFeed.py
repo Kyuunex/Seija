@@ -36,12 +36,15 @@ class GroupFeed(commands.Cog):
 
     @commands.command(name="groupfeed_add", brief="Add a groupfeed in the current channel", description="")
     @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     async def groupfeed_add(self, ctx):
         await self.bot.db.execute("INSERT INTO groupfeed_channel_list VALUES (?)", [str(ctx.channel.id)])
         await self.bot.db.commit()
         await ctx.send(":ok_hand:")
 
     @commands.command(name="groupfeed_remove", brief="Remove a groupfeed from the current channel", description="")
+    @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
     async def groupfeed_remove(self, ctx):
         await self.bot.db.execute("DELETE FROM groupfeed_channel_list WHERE channel_id = ?", [str(ctx.channel.id)])
         await self.bot.db.commit()

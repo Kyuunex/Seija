@@ -14,6 +14,7 @@ class MemberStatistics(commands.Cog):
 
     @commands.command(name="demographics", brief="Send server demographics stats", description="")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def demographics(self, ctx):
         if not await cooldown.check(str(ctx.guild.id), "last_demographics_time", 40):
             if not await permissions.is_admin(ctx):
@@ -55,6 +56,7 @@ class MemberStatistics(commands.Cog):
     @commands.command(name="from", brief="Get a list of members from specified country",
                       description="Takes Alpha-2, Alpha-3 codes and full country names")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def users_from(self, ctx, *, country_code="US"):
         if not await cooldown.check(str(ctx.author.id), "last_from_time", 10):
             if not await permissions.is_admin(ctx):

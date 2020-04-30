@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import osuembed
+from modules import permissions
 
 
 class Osu(commands.Cog):
@@ -8,6 +9,7 @@ class Osu(commands.Cog):
         self.bot = bot
 
     @commands.command(name="mapset", brief="Show mapset info", description="")
+    @commands.check(permissions.is_not_ignored)
     async def mapset(self, ctx, mapset_id: str):
         result = await self.bot.osu.get_beatmapset(s=mapset_id)
         embed = await osuembed.beatmapset(result)
@@ -17,6 +19,7 @@ class Osu(commands.Cog):
             await ctx.send(content="`No mapset found with that ID`")
 
     @commands.command(name="user", brief="Show osu user info", description="")
+    @commands.check(permissions.is_not_ignored)
     async def user(self, ctx, *, username):
         result = await self.bot.osu.get_user(u=username)
         embed = await osuembed.user(result)
@@ -28,6 +31,7 @@ class Osu(commands.Cog):
     @commands.command(name="ts", brief="Send an osu editor clickable timestamp",
                       description="Must start with a timestamp")
     @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
     async def ts(self, ctx, *, string):
         if "-" in string:
             timestamp_data = string.split("-")

@@ -2,6 +2,7 @@ import time
 import asyncio
 import discord
 from discord.ext import commands
+from discord.utils import escape_markdown
 from modules import permissions
 from modules import wrappers
 
@@ -127,7 +128,7 @@ class GroupFeed(commands.Cog):
             flag_sign = f":flag_{user.country.lower()}:"
         else:
             flag_sign = f":flag_white:"
-        username = user.name
+        username = escape_markdown(user.name)
 
         what_group = f"[{group_name}](https://osu.ppy.sh/groups/{group_id})"
         what_user = f"[{username}](https://osu.ppy.sh/users/{event[1]})"

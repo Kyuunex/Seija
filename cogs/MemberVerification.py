@@ -3,6 +3,7 @@ import random
 import discord
 import sqlite3
 from discord.ext import commands
+from discord.utils import escape_markdown
 from modules import permissions
 import osuembed
 
@@ -43,7 +44,7 @@ class MemberVerification(commands.Cog):
                                            str(osu_profile.join_date),
                                            str(osu_profile.pp_raw), str(osu_profile.country), str(ranked_amount), "0"])
                 await self.bot.db.commit()
-                await ctx.send(content=f"Manually Verified: {member.name}", embed=embed)
+                await ctx.send(content=f"Manually Verified: {escape_markdown(member.name)}", embed=embed)
 
     @commands.command(name="verify_restricted", brief="Manually verify a restricted member", description="")
     @commands.check(permissions.is_admin)
@@ -139,10 +140,11 @@ class MemberVerification(commands.Cog):
                     else:
                         embed = None
                         member_name = member.name
+                    escaped_member_name = escape_markdown(member_name)
                     async with self.bot.db.execute("SELECT message FROM member_goodbye_messages") as cursor:
                         member_goodbye_messages = await cursor.fetchall()
                     goodbye_message = random.choice(member_goodbye_messages)
-                    await channel.send(goodbye_message[0] % member_name, embed=embed)
+                    await channel.send(goodbye_message[0] % escaped_member_name, embed=embed)
                 else:
                     await channel.send(f"beep boop boop beep, {member.mention} has left our army of bots")
 
@@ -243,7 +245,7 @@ class MemberVerification(commands.Cog):
                                   [str(member.id), str(mapset.creator_id), str(mapset.creator), "", "", "",
                                    str(ranked_amount), "0"])
         await self.bot.db.commit()
-        await channel.send(content=f"`Verified through mapset: {member.name}` \n"
+        await channel.send(content=f"`Verified through mapset: {escape_markdown(member.name)}` \n"
                                    f"You should also read the rules if you haven't already.", embed=embed)
 
     async def profile_id_verification(self, message, osu_id):
@@ -309,7 +311,7 @@ class MemberVerification(commands.Cog):
                                    str(osu_profile.join_date),
                                    str(osu_profile.pp_raw), str(osu_profile.country), str(ranked_amount), "0"])
         await self.bot.db.commit()
-        verified_message = await channel.send(content=f"`Verified: {member.name}` \n"
+        verified_message = await channel.send(content=f"`Verified: {escape_markdown(member.name)}` \n"
                                                       f"You should also read the rules if you haven't already.",
                                               embed=embed)
 

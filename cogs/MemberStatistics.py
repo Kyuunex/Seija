@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.utils import escape_markdown
 from modules import permissions
 from modules import wrappers
 from modules import cooldown
@@ -94,7 +95,7 @@ class MemberStatistics(commands.Cog):
             contents = f"{member_amount} members from {country_flag} {country_name}\n"
 
             for one_member in master_list:
-                contents += f"[{one_member[0]}](https://osu.ppy.sh/users/{one_member[1]})\n"
+                contents += f"[{escape_markdown(one_member[0])}](https://osu.ppy.sh/users/{one_member[1]})\n"
 
             embed = discord.Embed(description=contents, color=0xbd3661)
             embed.set_author(name="Country Demographics")

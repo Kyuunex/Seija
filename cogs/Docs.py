@@ -147,8 +147,7 @@ class Docs(commands.Cog):
                         inline=False)
         embed.add_field(name=".recategorize",
                         value="Move the queue to the correct category "
-                              "if you became a BN or have gotten enough kudosu to earn a spot in a higher category. "
-                              "At the moment, command only works if you became/left BN/NAT.",
+                              "if you became a BN or have gotten enough kudosu to earn a spot in a higher category. ",
                         inline=False)
         embed.add_field(name=".queue_cleanup",
                         value="Deletes messages that are not made by the queue owner or me or has no beatmap link.",

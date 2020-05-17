@@ -1,8 +1,10 @@
 from discord.ext import commands
+import discord
 import time
 import asyncio
 import datetime
 import osuembed
+from modules import wrappers
 
 
 class MemberNameSyncing(commands.Cog):
@@ -97,9 +99,18 @@ class MemberNameSyncing(commands.Cog):
                                     await self.sync_nickname(notices_channel, db_user, member, osu_profile)
                                     await self.check_events(feed_channel, osu_profile)
                                     if (str(guild.id), str(db_user[1])) in restricted_user_list:
-                                        await notices_channel.send(
-                                            f"{member.mention} | `{db_user[2]}` | `{db_user[1]}` | "
-                                            f"<https://osu.ppy.sh/users/{db_user[1]}> | unrestricted lol")
+                                        embed = discord.Embed(
+                                            color=0xbd3661,
+                                            description="unrestricted lol",
+                                            title="profile link",
+                                            url=f"https://osu.ppy.sh/users/{db_user[1]}"
+                                        )
+                                        embed.add_field(name="user", value=member.mention)
+                                        embed.add_field(name="osu_username", value=db_user[2])
+                                        embed.add_field(name="osu_id", value=db_user[1])
+                                        embed.set_author(name=member.display_name)
+                                        embed.set_thumbnail(url=member.avatar_url)
+                                        await notices_channel.send(embed=embed)
                                         await self.bot.db.execute("DELETE FROM restricted_users "
                                                                   "WHERE guild_id = ? AND osu_id = ?",
                                                                   [str(guild.id), str(db_user[1])])
@@ -107,9 +118,18 @@ class MemberNameSyncing(commands.Cog):
                                 else:
                                     # at this point we are sure that the user is restricted.
                                     if not (str(guild.id), str(db_user[1])) in restricted_user_list:
-                                        await notices_channel.send(
-                                            f"{member.mention} | `{db_user[2]}` | `{db_user[1]}` | "
-                                            f"<https://osu.ppy.sh/users/{db_user[1]}> | restricted")
+                                        embed = discord.Embed(
+                                            color=0xbd3661,
+                                            description="restricted lmao",
+                                            title="profile link",
+                                            url=f"https://osu.ppy.sh/users/{db_user[1]}"
+                                        )
+                                        embed.add_field(name="user", value=member.mention)
+                                        embed.add_field(name="osu_username", value=db_user[2])
+                                        embed.add_field(name="osu_id", value=db_user[1])
+                                        embed.set_author(name=member.display_name)
+                                        embed.set_thumbnail(url=member.avatar_url)
+                                        await notices_channel.send(embed=embed)
                                         await self.bot.db.execute("INSERT INTO restricted_users VALUES (?,?)",
                                                                   [str(guild.id), str(db_user[1])])
                                         await self.bot.db.commit()
@@ -119,9 +139,21 @@ class MemberNameSyncing(commands.Cog):
 
     async def sync_nickname(self, notices_channel, db_user, member, osu_profile):
         if str(db_user[2]) != osu_profile.name:
-            await notices_channel.send(f"`{db_user[2]}` namechanged to `{osu_profile.name}`. osu_id = `{db_user[1]}`")
+            embed = discord.Embed(
+                color=0xbd3661,
+                description="namechange",
+                title="profile link",
+                url=f"https://osu.ppy.sh/users/{db_user[1]}"
+            )
+            embed.add_field(name="user", value=member.mention)
+            embed.add_field(name="old_osu_username", value=db_user[2])
+            embed.add_field(name="new_osu_username", value=osu_profile.name)
+            embed.add_field(name="osu_id", value=db_user[1])
+            embed.set_author(name=member.display_name)
+            embed.set_thumbnail(url=member.avatar_url)
             if str(db_user[1]) == str(4116573):
-                await notices_channel.send("btw, this is bor. yes, i actually added this specific message for bor.")
+                embed.set_footer(text="btw, this is bor. yes, i actually added this specific message for bor.")
+            await notices_channel.send(embed=embed)
 
         if member.display_name != osu_profile.name:
             await self.apply_nickname(db_user, member, notices_channel, osu_profile)
@@ -149,11 +181,35 @@ class MemberNameSyncing(commands.Cog):
         old_nickname = member.display_name
         try:
             await member.edit(nick=osu_profile.name)
-            await notices_channel.send(f"{member.mention} | `{osu_profile.name}` | `{db_user[1]}` | "
-                                       f"nickname updated, old nickname `{old_nickname}`")
+            embed = discord.Embed(
+                color=0xbd3661,
+                description="nickname updated",
+                title="profile link",
+                url=f"https://osu.ppy.sh/users/{db_user[1]}"
+            )
+            embed.add_field(name="user", value=member.mention)
+            embed.add_field(name="cached_osu_username", value=db_user[2])
+            embed.add_field(name="current_osu_username", value=osu_profile.name)
+            embed.add_field(name="osu_id", value=db_user[1])
+            embed.add_field(name="old_nickname", value=old_nickname)
+            embed.set_author(name=member.display_name)
+            embed.set_thumbnail(url=member.avatar_url)
+            await notices_channel.send(embed=embed)
         except:
-            await notices_channel.send(f"{member.mention} | `{osu_profile.name}` | `{db_user[1]}` | "
-                                       f"no perms to update")
+            embed = discord.Embed(
+                color=0xFF0000,
+                description="no perms to update nickname",
+                title="profile link",
+                url=f"https://osu.ppy.sh/users/{db_user[1]}"
+            )
+            embed.add_field(name="user", value=member.mention)
+            embed.add_field(name="cached_osu_username", value=db_user[2])
+            embed.add_field(name="current_osu_username", value=osu_profile.name)
+            embed.add_field(name="osu_id", value=db_user[1])
+            embed.add_field(name="old_nickname", value=old_nickname)
+            embed.set_author(name=member.display_name)
+            embed.set_thumbnail(url=member.avatar_url)
+            await notices_channel.send(embed=embed)
 
     async def check_events(self, channel, user):
         for event in user.events:

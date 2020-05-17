@@ -2,6 +2,7 @@ import discord
 import asyncio
 from discord.ext import commands
 from modules import permissions
+from modules import wrappers
 import osuembed
 
 
@@ -92,10 +93,13 @@ class MemberManagement(commands.Cog):
                                 updated_members += f"{member.mention}\n"
                     await asyncio.sleep(0.5)
             if len(updated_members) > 0:
-                output = f"I gave {new_role_setting} to the following members:\n"
-                await ctx.send(output + updated_members)
+                embed = discord.Embed(color=0xbd3661)
+                embed.set_author(name=f"I gave {new_role_setting} to the following members:")
+                await wrappers.send_large_embed(ctx.channel, embed, updated_members)
             else:
-                await ctx.send(f"no new member updated with {new_role_setting}")
+                embed = discord.Embed(color=0xbd3661)
+                embed.set_author(name=f"no new member updated with {new_role_setting}")
+                await ctx.send(embed=embed)
 
     async def count_ranked_beatmapsets(self, mapsets):
         try:

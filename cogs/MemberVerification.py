@@ -171,7 +171,7 @@ class MemberVerification(commands.Cog):
             profile_id = split_message[4].split("#")[0].split(" ")[0]
             await self.profile_id_verification(message, profile_id)
             return None
-        elif message.content.lower() == "yes" and self.is_new_user(message.author) is not False:
+        elif message.content.lower() == "yes" and self.is_new_user(message.author) is False:
             profile_id = message.author.name
             await self.profile_id_verification(message, profile_id)
             return None
@@ -342,7 +342,7 @@ class MemberVerification(commands.Cog):
             await self.add_obligatory_reaction(verified_message, osu_profile)
         else:
             osu_profile = await self.get_osu_profile(member.name)
-            if osu_profile and self.is_new_user(member) is not False:
+            if osu_profile and self.is_new_user(member) is False:
                 await channel.send(content=f"Welcome {member.mention}! We have a verification system in this server "
                                            "so we can give you appropriate roles and keep raids/spam out. \n"
                                            "Is this your osu! profile? "

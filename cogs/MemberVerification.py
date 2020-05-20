@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord.utils import escape_markdown
 from modules import permissions
 import osuembed
+import datetime
 
 
 class MemberVerification(commands.Cog):
@@ -170,7 +171,7 @@ class MemberVerification(commands.Cog):
             profile_id = split_message[4].split("#")[0].split(" ")[0]
             await self.profile_id_verification(message, profile_id)
             return None
-        elif message.content.lower() == "yes":
+        elif message.content.lower() == "yes" and self.is_new_user(message.author) is False:
             profile_id = message.author.name
             await self.profile_id_verification(message, profile_id)
             return None
@@ -341,7 +342,7 @@ class MemberVerification(commands.Cog):
             await self.add_obligatory_reaction(verified_message, osu_profile)
         else:
             osu_profile = await self.get_osu_profile(member.name)
-            if osu_profile:
+            if osu_profile and self.is_new_user(member) is False:
                 await channel.send(content=f"Welcome {member.mention}! We have a verification system in this server "
                                            "so we can give you appropriate roles and keep raids/spam out. \n"
                                            "Is this your osu! profile? "
@@ -378,6 +379,13 @@ class MemberVerification(commands.Cog):
                         await message.add_reaction(stereotype[1])
         except Exception as e:
             print(e)
+
+    def is_new_user(self, user):
+        user_creation_ago = datetime.datetime.utcnow() - user.created_at
+        if abs(user_creation_ago).total_seconds() / 2592000 <= 1 and user.avatar is None:
+            return True
+        else:
+            return False
 
 
 def setup(bot):

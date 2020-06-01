@@ -4,6 +4,7 @@ import discord
 from discord.ext import commands
 from modules import wrappers
 from modules import permissions
+import json
 import osuembed
 
 
@@ -353,9 +354,9 @@ class ModChecker(commands.Cog):
                     for post in mod["posts"]:
                         if post:
                             if not wrappers.in_db_list(history, str(post["id"])):
-                                await self.bot.db.execute("INSERT INTO mod_posts VALUES (?,?,?)",
-                                                          [str(post["id"]), str(mapset_id), str(channel.id)])
-                                await self.bot.db.commit()
+                                #await self.bot.db.execute("INSERT INTO mod_posts VALUES (?,?,?)",
+                                #                          [str(post["id"]), str(mapset_id), str(channel.id)])
+                                #await self.bot.db.commit()
                                 if ((not post["system"]) and
                                         (not post["message"] == "r") and
                                         (not post["message"] == "res") and
@@ -510,10 +511,30 @@ class ModChecker(commands.Cog):
 
         footer = self.get_mod_type(mod)
 
+        if mod["message_type"] == "review":
+            mod_post_contents = ""
+            parse_this_retarded_json = json.loads(str(post["message"]))
+            try:
+                for one_dict in parse_this_retarded_json:
+                    if one_dict["type"] == "paragraph":
+                        mod_post_contents += one_dict["text"]
+                    elif one_dict["type"] == "embed":
+                        related_mod = self.get_discussion_first_message_from_id(discussions, one_dict["discussion_id"])
+                        mod_post_contents += f"[{related_mod}]"
+                        mod_post_contents += f"(https://osu.ppy.sh/beatmapsets/{discussions['beatmapset']['id']}/" \
+                                             f"discussion#/{one_dict['discussion_id']})"
+                    else:
+                        mod_post_contents += json.dumps(one_dict)
+                    mod_post_contents += "\n"
+            except:
+                mod_post_contents = str(post["message"])
+        else:
+            mod_post_contents = str(post["message"])
+
         embed = discord.Embed(
             title=title,
             url=f"https://osu.ppy.sh/beatmapsets/{discussions['beatmapset']['id']}/discussion#/{mod['id']}",
-            description=str(post["message"]),
+            description=mod_post_contents,
             color=footer["color"]
         )
         embed.set_author(
@@ -529,6 +550,14 @@ class ModChecker(commands.Cog):
             icon_url=str(footer["icon"])
         )
         return embed
+
+    def get_discussion_first_message_from_id(self, discussions, discussion_id):
+        for mod in discussions["beatmapset"]["discussions"]:
+            if mod:
+                if "posts" in mod:
+                    if str(discussion_id) == str(mod["id"]):
+                        return mod["posts"][0]["message"]
+        return ""
 
     def get_username_with_group(self, related_users, user_id):
         user = self.get_related_user(related_users, user_id)

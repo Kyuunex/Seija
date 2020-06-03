@@ -500,36 +500,19 @@ class ModChecker(commands.Cog):
 
         mapset_diff_name = str(self.get_diff_name(discussions["beatmapset"]["beatmaps"], mod["beatmap_id"]))
         if tracking_mode == "veto":
-            mapset_title = str(discussions["beatmapset"]["title"])
-            title = f"{mapset_title} [{mapset_diff_name}]"
             if mod["message_type"] == "hype":
                 return None
             elif mod["message_type"] == "praise":
                 return None
+            
+            mapset_title = str(discussions["beatmapset"]["title"])
+            title = f"{mapset_title} [{mapset_diff_name}]"
         else:
             title = mapset_diff_name
 
         footer = self.get_mod_type(mod)
 
-        if mod["message_type"] == "review":
-            mod_post_contents = ""
-            parse_this_retarded_json = json.loads(str(post["message"]))
-            try:
-                for one_dict in parse_this_retarded_json:
-                    if one_dict["type"] == "paragraph":
-                        mod_post_contents += one_dict["text"]
-                    elif one_dict["type"] == "embed":
-                        related_mod = self.get_discussion_first_message_from_id(discussions, one_dict["discussion_id"])
-                        mod_post_contents += f"[{related_mod}]"
-                        mod_post_contents += f"(https://osu.ppy.sh/beatmapsets/{discussions['beatmapset']['id']}/" \
-                                             f"discussion#/{one_dict['discussion_id']})"
-                    else:
-                        mod_post_contents += json.dumps(one_dict)
-                    mod_post_contents += "\n"
-            except:
-                mod_post_contents = str(post["message"])
-        else:
-            mod_post_contents = str(post["message"])
+        mod_post_contents = await self.build_mod_post_contents(discussions, mod, post)
 
         embed = discord.Embed(
             title=title,
@@ -551,6 +534,32 @@ class ModChecker(commands.Cog):
         )
         return embed
 
+    async def build_mod_post_contents(self, discussions, mod, post):
+        if mod["message_type"] == "review":
+            try:
+                parse_this_retarded_json = json.loads(str(post["message"]))
+                mod_post_contents = await self.review_to_wall_of_text(discussions, parse_this_retarded_json)
+            except:
+                mod_post_contents = str(post["message"])
+        else:
+            mod_post_contents = str(post["message"])
+        return mod_post_contents
+
+    async def review_to_wall_of_text(self, discussions, parse_this_retarded_json):
+        mod_post_contents = ""
+        for one_dict in parse_this_retarded_json:
+            if one_dict["type"] == "paragraph":
+                mod_post_contents += one_dict["text"]
+            elif one_dict["type"] == "embed":
+                related_mod = self.get_discussion_first_message_from_id(discussions, one_dict["discussion_id"])
+                mod_post_contents += f"[{related_mod}]"
+                mod_post_contents += f"(https://osu.ppy.sh/beatmapsets/{discussions['beatmapset']['id']}/" \
+                                     f"discussion#/{one_dict['discussion_id']})"
+            else:
+                mod_post_contents += json.dumps(one_dict)
+            mod_post_contents += "\n"
+        return mod_post_contents
+
     def get_discussion_first_message_from_id(self, discussions, discussion_id):
         for mod in discussions["beatmapset"]["discussions"]:
             if mod:
@@ -561,6 +570,9 @@ class ModChecker(commands.Cog):
 
     def get_username_with_group(self, related_users, user_id):
         user = self.get_related_user(related_users, user_id)
+        if not user:
+            return "Unable to get the username"
+
         if user["default_group"] == "bng":
             return user["username"] + " [BN]"
         elif user["default_group"] == "bng_limited":
@@ -575,7 +587,7 @@ class ModChecker(commands.Cog):
             for user in related_users:
                 if str(user_id) == str(user["id"]):
                     return user
-        return ""
+        return None
 
     def get_diff_name(self, beatmaps, beatmap_id):
         for beatmap in beatmaps:

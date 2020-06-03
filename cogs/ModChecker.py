@@ -354,9 +354,9 @@ class ModChecker(commands.Cog):
                     for post in mod["posts"]:
                         if post:
                             if not wrappers.in_db_list(history, str(post["id"])):
-                                #await self.bot.db.execute("INSERT INTO mod_posts VALUES (?,?,?)",
-                                #                          [str(post["id"]), str(mapset_id), str(channel.id)])
-                                #await self.bot.db.commit()
+                                await self.bot.db.execute("INSERT INTO mod_posts VALUES (?,?,?)",
+                                                          [str(post["id"]), str(mapset_id), str(channel.id)])
+                                await self.bot.db.commit()
                                 if ((not post["system"]) and
                                         (not post["message"] == "r") and
                                         (not post["message"] == "res") and
@@ -504,7 +504,7 @@ class ModChecker(commands.Cog):
                 return None
             elif mod["message_type"] == "praise":
                 return None
-            
+
             mapset_title = str(discussions["beatmapset"]["title"])
             title = f"{mapset_title} [{mapset_diff_name}]"
         else:

@@ -37,6 +37,10 @@ async def is_not_ignored(ctx):
     return not (str(ctx.author.id) in ignored_users)
 
 
+async def is_ignored(ctx):
+    return str(ctx.author.id) in ignored_users
+
+
 def get_admin_list():
     contents = ""
     for user_id in admin_list:
@@ -50,3 +54,15 @@ def check_admin(user_id):
 
 def check_owner(user_id):
     return str(user_id) in owner_list
+
+
+async def channel_ban_members(ctx):
+    return (ctx.channel.permissions_for(ctx.author)).ban_members
+
+
+async def channel_manage_messages(ctx):
+    return (ctx.channel.permissions_for(ctx.author)).manage_messages
+
+
+async def channel_manage_guild(ctx):
+    return (ctx.channel.permissions_for(ctx.author)).manage_guild

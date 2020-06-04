@@ -79,6 +79,8 @@ class MemberManagement(commands.Cog):
         updated_members = ""
         async with ctx.channel.typing():
             for member in old_role.members:
+                await asyncio.sleep(0.5)
+
                 async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?",
                                                [str(member.id)]) as cursor:
                     osu_id = await cursor.fetchall()
@@ -100,8 +102,6 @@ class MemberManagement(commands.Cog):
                     await member.add_roles(new_role, reason="reputation updated")
                     await member.remove_roles(old_role, reason="removed old reputation")
                     updated_members += f"{member.mention} : {member.display_name}\n"
-
-                await asyncio.sleep(0.5)
 
         embed = discord.Embed(color=0xbd3661)
 

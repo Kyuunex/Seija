@@ -90,7 +90,7 @@ class MemberManagement(commands.Cog):
                             if ranked_amount >= amount:
                                 await member.add_roles(new_role, reason="reputation updated")
                                 await member.remove_roles(old_role, reason="removed old reputation")
-                                updated_members += f"{member.mention}\n"
+                                updated_members += f"{member.mention} : {member.display_name}\n"
                     await asyncio.sleep(0.5)
             if len(updated_members) > 0:
                 embed = discord.Embed(color=0xbd3661)

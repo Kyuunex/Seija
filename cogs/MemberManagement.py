@@ -83,12 +83,12 @@ class MemberManagement(commands.Cog):
 
                 async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?",
                                                [str(member.id)]) as cursor:
-                    osu_id = await cursor.fetchall()
+                    osu_id = await cursor.fetchone()
                 if not osu_id:
                     continue
 
                 try:
-                    mapsets = await self.bot.osu.get_beatmapsets(u=osu_id[0][0])
+                    mapsets = await self.bot.osu.get_beatmapsets(u=osu_id[0])
                 except:
                     # await ctx.send(e)
                     mapsets = None

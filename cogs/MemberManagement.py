@@ -72,34 +72,45 @@ class MemberManagement(commands.Cog):
             new_role_id = await cursor.fetchall()
         old_role = discord.utils.get(ctx.guild.roles, id=int(old_role_id[0][0]))
         new_role = discord.utils.get(ctx.guild.roles, id=int(new_role_id[0][0]))
-        if old_role and new_role:
-            updated_members = ""
-            async with ctx.channel.typing():
-                for member in old_role.members:
-                    async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?",
-                                                   [str(member.id)]) as cursor:
-                        osu_id = await cursor.fetchall()
-                    if osu_id:
-                        try:
-                            mapsets = await self.bot.osu.get_beatmapsets(u=osu_id[0][0])
-                        except:
-                            # await ctx.send(e)
-                            mapsets = None
-                        if mapsets:
-                            ranked_amount = await self.count_ranked_beatmapsets(mapsets)
-                            if ranked_amount >= amount:
-                                await member.add_roles(new_role, reason="reputation updated")
-                                await member.remove_roles(old_role, reason="removed old reputation")
-                                updated_members += f"{member.mention} : {member.display_name}\n"
-                    await asyncio.sleep(0.5)
-            if len(updated_members) > 0:
-                embed = discord.Embed(color=0xbd3661)
-                embed.set_author(name=f"I gave {new_role_setting} to the following members:")
-                await wrappers.send_large_embed(ctx.channel, embed, updated_members)
-            else:
-                embed = discord.Embed(color=0xbd3661)
-                embed.set_author(name=f"no new member updated with {new_role_setting}")
-                await ctx.send(embed=embed)
+        if not old_role:
+            return
+        if not new_role:
+            return
+        updated_members = ""
+        async with ctx.channel.typing():
+            for member in old_role.members:
+                async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?",
+                                               [str(member.id)]) as cursor:
+                    osu_id = await cursor.fetchall()
+                if not osu_id:
+                    continue
+
+                try:
+                    mapsets = await self.bot.osu.get_beatmapsets(u=osu_id[0][0])
+                except:
+                    # await ctx.send(e)
+                    mapsets = None
+
+                if not mapsets:
+                    continue
+
+                ranked_amount = await self.count_ranked_beatmapsets(mapsets)
+
+                if ranked_amount >= amount:
+                    await member.add_roles(new_role, reason="reputation updated")
+                    await member.remove_roles(old_role, reason="removed old reputation")
+                    updated_members += f"{member.mention} : {member.display_name}\n"
+
+                await asyncio.sleep(0.5)
+
+        embed = discord.Embed(color=0xbd3661)
+
+        if len(updated_members) > 0:
+            embed.set_author(name=f"I gave {new_role_setting} to the following members:")
+            await wrappers.send_large_embed(ctx.channel, embed, updated_members)
+        else:
+            embed.set_author(name=f"no new member updated with {new_role_setting}")
+            await ctx.send(embed=embed)
 
     async def count_ranked_beatmapsets(self, mapsets):
         try:

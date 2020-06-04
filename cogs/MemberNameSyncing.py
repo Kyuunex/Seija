@@ -105,9 +105,9 @@ class MemberNameSyncing(commands.Cog):
                                             title="profile link",
                                             url=f"https://osu.ppy.sh/users/{db_user[1]}"
                                         )
-                                        embed.add_field(name="user", value=member.mention)
-                                        embed.add_field(name="osu_username", value=db_user[2])
-                                        embed.add_field(name="osu_id", value=db_user[1])
+                                        embed.add_field(name="user", value=member.mention, inline=False)
+                                        embed.add_field(name="osu_username", value=db_user[2], inline=False)
+                                        embed.add_field(name="osu_id", value=db_user[1], inline=False)
                                         embed.set_author(name=member.display_name)
                                         embed.set_thumbnail(url=member.avatar_url)
                                         await notices_channel.send(embed=embed)
@@ -124,9 +124,9 @@ class MemberNameSyncing(commands.Cog):
                                             title="profile link",
                                             url=f"https://osu.ppy.sh/users/{db_user[1]}"
                                         )
-                                        embed.add_field(name="user", value=member.mention)
-                                        embed.add_field(name="osu_username", value=db_user[2])
-                                        embed.add_field(name="osu_id", value=db_user[1])
+                                        embed.add_field(name="user", value=member.mention, inline=False)
+                                        embed.add_field(name="osu_username", value=db_user[2], inline=False)
+                                        embed.add_field(name="osu_id", value=db_user[1], inline=False)
                                         embed.set_author(name=member.display_name)
                                         embed.set_thumbnail(url=member.avatar_url)
                                         await notices_channel.send(embed=embed)
@@ -145,10 +145,10 @@ class MemberNameSyncing(commands.Cog):
                 title="profile link",
                 url=f"https://osu.ppy.sh/users/{db_user[1]}"
             )
-            embed.add_field(name="user", value=member.mention)
-            embed.add_field(name="old_osu_username", value=db_user[2])
-            embed.add_field(name="new_osu_username", value=osu_profile.name)
-            embed.add_field(name="osu_id", value=db_user[1])
+            embed.add_field(name="user", value=member.mention, inline=False)
+            embed.add_field(name="old_osu_username", value=db_user[2], inline=False)
+            embed.add_field(name="new_osu_username", value=osu_profile.name, inline=False)
+            embed.add_field(name="osu_id", value=db_user[1], inline=False)
             embed.set_author(name=member.display_name)
             embed.set_thumbnail(url=member.avatar_url)
             if str(db_user[1]) == str(4116573):
@@ -187,11 +187,11 @@ class MemberNameSyncing(commands.Cog):
                 title="profile link",
                 url=f"https://osu.ppy.sh/users/{db_user[1]}"
             )
-            embed.add_field(name="user", value=member.mention)
-            embed.add_field(name="cached_osu_username", value=db_user[2])
-            embed.add_field(name="current_osu_username", value=osu_profile.name)
-            embed.add_field(name="osu_id", value=db_user[1])
-            embed.add_field(name="old_nickname", value=old_nickname)
+            embed.add_field(name="user", value=member.mention, inline=False)
+            embed.add_field(name="cached_osu_username", value=db_user[2], inline=False)
+            embed.add_field(name="current_osu_username", value=osu_profile.name, inline=False)
+            embed.add_field(name="osu_id", value=db_user[1], inline=False)
+            embed.add_field(name="old_nickname", value=old_nickname, inline=False)
             embed.set_author(name=member.display_name)
             embed.set_thumbnail(url=member.avatar_url)
             await notices_channel.send(embed=embed)
@@ -202,11 +202,11 @@ class MemberNameSyncing(commands.Cog):
                 title="profile link",
                 url=f"https://osu.ppy.sh/users/{db_user[1]}"
             )
-            embed.add_field(name="user", value=member.mention)
-            embed.add_field(name="cached_osu_username", value=db_user[2])
-            embed.add_field(name="current_osu_username", value=osu_profile.name)
-            embed.add_field(name="osu_id", value=db_user[1])
-            embed.add_field(name="old_nickname", value=old_nickname)
+            embed.add_field(name="user", value=member.mention, inline=False)
+            embed.add_field(name="cached_osu_username", value=db_user[2], inline=False)
+            embed.add_field(name="current_osu_username", value=osu_profile.name, inline=False)
+            embed.add_field(name="osu_id", value=db_user[1], inline=False)
+            embed.add_field(name="old_nickname", value=old_nickname, inline=False)
             embed.set_author(name=member.display_name)
             embed.set_thumbnail(url=member.avatar_url)
             await notices_channel.send(embed=embed)

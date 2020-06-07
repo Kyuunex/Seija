@@ -21,24 +21,36 @@ class MemberNameSyncing(commands.Cog):
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
-        if before.name != after.name:
-            async with self.bot.db.execute("SELECT guild_id, channel_id FROM channels WHERE setting = ?",
-                                           ["notices"]) as cursor:
-                notices_channel_list = await cursor.fetchall()
-            if notices_channel_list:
-                async with self.bot.db.execute("SELECT * FROM users WHERE user_id = ?", [str(after.id)]) as cursor:
-                    query = await cursor.fetchall()
-                if query:
-                    osu_profile = await self.bot.osu.get_user(u=query[0][1])
-                    if osu_profile:
-                        for this_guild in notices_channel_list:
-                            guild = self.bot.get_guild(int(this_guild[0]))
+        if before.name == after.name:
+            return
 
-                            notices_channel = self.bot.get_channel(int(this_guild[1]))
+        async with self.bot.db.execute("SELECT guild_id, channel_id FROM channels WHERE setting = ?",
+                                       ["notices"]) as cursor:
+            notices_channel_list = await cursor.fetchall()
 
-                            if notices_channel:
-                                member = guild.get_member(int(after.id))
-                                await self.sync_nickname(notices_channel, query[0], member, osu_profile)
+        if not notices_channel_list:
+            return
+
+        async with self.bot.db.execute("SELECT * FROM users WHERE user_id = ?", [str(after.id)]) as cursor:
+            query = await cursor.fetchone()
+
+        if not query:
+            return
+
+        osu_profile = await self.bot.osu.get_user(u=query[1])
+        if not osu_profile:
+            return
+
+        for this_guild in notices_channel_list:
+            guild = self.bot.get_guild(int(this_guild[0]))
+
+            notices_channel = self.bot.get_channel(int(this_guild[1]))
+
+            if not notices_channel:
+                continue
+
+            member = guild.get_member(int(after.id))
+            await self.sync_nickname(notices_channel, query, member, osu_profile)
 
     async def event_history_cleanup_loop(self):
         print("Event History Cleanup Loop launched!")
@@ -67,92 +79,92 @@ class MemberNameSyncing(commands.Cog):
             async with self.bot.db.execute("SELECT guild_id, channel_id FROM channels WHERE setting = ?",
                                            ["member_mapping_feed"]) as cursor:
                 member_mapping_feed_list = await cursor.fetchall()
-            if member_mapping_feed_list:
-                async with self.bot.db.execute("SELECT * FROM users") as cursor:
-                    user_list = await cursor.fetchall()
-                async with self.bot.db.execute("SELECT guild_id, osu_id FROM restricted_users") as cursor:
-                    restricted_user_list = await cursor.fetchall()
+            if not member_mapping_feed_list:
+                await asyncio.sleep(7200)
+                continue
 
-                for mapping_feed_channel_id in member_mapping_feed_list:
+            async with self.bot.db.execute("SELECT * FROM users") as cursor:
+                user_list = await cursor.fetchall()
+            async with self.bot.db.execute("SELECT guild_id, osu_id FROM restricted_users") as cursor:
+                restricted_user_list = await cursor.fetchall()
 
-                    feed_channel = self.bot.get_channel(int(mapping_feed_channel_id[1]))
-                    guild = self.bot.get_guild(int(mapping_feed_channel_id[0]))
+            for mapping_feed_channel_id in member_mapping_feed_list:
 
-                    async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND guild_id = ?",
-                                                   ["notices", str(guild.id)]) as cursor:
-                        guild_notices_channel = await cursor.fetchall()
+                feed_channel = self.bot.get_channel(int(mapping_feed_channel_id[1]))
+                guild = self.bot.get_guild(int(mapping_feed_channel_id[0]))
 
-                    notices_channel = self.bot.get_channel(int(guild_notices_channel[0][0]))
+                async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND guild_id = ?",
+                                               ["notices", str(guild.id)]) as cursor:
+                    guild_notices_channel = await cursor.fetchall()
 
-                    for member in guild.members:
-                        if member.bot:
-                            continue
-                        for db_user in user_list:
-                            if str(member.id) == str(db_user[0]):
-                                try:
-                                    osu_profile = await self.bot.osu.get_user(u=db_user[1], event_days="1")
-                                except Exception as e:
-                                    print(e)
-                                    await asyncio.sleep(120)
-                                    break
-                                if osu_profile:
-                                    await self.sync_nickname(notices_channel, db_user, member, osu_profile)
-                                    await self.check_events(feed_channel, osu_profile)
-                                    if (str(guild.id), str(db_user[1])) in restricted_user_list:
-                                        embed = discord.Embed(
-                                            color=0xbd3661,
-                                            description="unrestricted lol",
-                                            title="profile link",
-                                            url=f"https://osu.ppy.sh/users/{db_user[1]}"
-                                        )
-                                        embed.add_field(name="user", value=member.mention, inline=False)
-                                        embed.add_field(name="osu_username", value=db_user[2], inline=False)
-                                        embed.add_field(name="osu_id", value=db_user[1], inline=False)
-                                        embed.set_author(name=member.display_name)
-                                        embed.set_thumbnail(url=member.avatar_url)
-                                        await notices_channel.send(embed=embed)
-                                        await self.bot.db.execute("DELETE FROM restricted_users "
-                                                                  "WHERE guild_id = ? AND osu_id = ?",
-                                                                  [str(guild.id), str(db_user[1])])
-                                        await self.bot.db.commit()
-                                else:
-                                    # at this point we are sure that the user is restricted.
-                                    if not (str(guild.id), str(db_user[1])) in restricted_user_list:
-                                        embed = discord.Embed(
-                                            color=0xbd3661,
-                                            description="restricted lmao",
-                                            title="profile link",
-                                            url=f"https://osu.ppy.sh/users/{db_user[1]}"
-                                        )
-                                        embed.add_field(name="user", value=member.mention, inline=False)
-                                        embed.add_field(name="osu_username", value=db_user[2], inline=False)
-                                        embed.add_field(name="osu_id", value=db_user[1], inline=False)
-                                        embed.set_author(name=member.display_name)
-                                        embed.set_thumbnail(url=member.avatar_url)
-                                        await notices_channel.send(embed=embed)
-                                        await self.bot.db.execute("INSERT INTO restricted_users VALUES (?,?)",
-                                                                  [str(guild.id), str(db_user[1])])
-                                        await self.bot.db.commit()
-                                await asyncio.sleep(1)
+                notices_channel = self.bot.get_channel(int(guild_notices_channel[0][0]))
+
+                await self.cycle_through_members(feed_channel, guild, notices_channel, restricted_user_list, user_list)
+                
             print(time.strftime("%X %x %Z") + " | member_name_syncing_loop finished")
             await asyncio.sleep(7200)
 
+    async def cycle_through_members(self, feed_channel, guild, notices_channel, restricted_user_list, user_list):
+        for member in guild.members:
+            if member.bot:
+                continue
+            for db_user in user_list:
+                if str(member.id) == str(db_user[0]):
+                    try:
+                        osu_profile = await self.bot.osu.get_user(u=db_user[1], event_days="1")
+                    except Exception as e:
+                        print(e)
+                        await asyncio.sleep(120)
+                        break
+                    if osu_profile:
+                        await self.sync_nickname(notices_channel, db_user, member, osu_profile)
+                        await self.check_events(feed_channel, osu_profile)
+                        if (str(guild.id), str(db_user[1])) in restricted_user_list:
+                            embed = await self.embed_unrestricted(db_user, member)
+                            await notices_channel.send(embed=embed)
+                            await self.bot.db.execute("DELETE FROM restricted_users "
+                                                      "WHERE guild_id = ? AND osu_id = ?",
+                                                      [str(guild.id), str(db_user[1])])
+                            await self.bot.db.commit()
+                    else:
+                        # at this point we are sure that the user is restricted.
+                        if not (str(guild.id), str(db_user[1])) in restricted_user_list:
+                            embed = await self.embed_restricted(db_user, member)
+                            await notices_channel.send(embed=embed)
+                            await self.bot.db.execute("INSERT INTO restricted_users VALUES (?,?)",
+                                                      [str(guild.id), str(db_user[1])])
+                            await self.bot.db.commit()
+                    await asyncio.sleep(1)
+
+    async def embed_unrestricted(self, db_user, member):
+        embed = discord.Embed(
+            color=0xbd3661,
+            title=member.display_name,
+            url=f"https://osu.ppy.sh/users/{db_user[1]}"
+        )
+        embed.add_field(name="user", value=member.mention, inline=False)
+        embed.add_field(name="osu_username", value=db_user[2], inline=False)
+        embed.add_field(name="osu_id", value=db_user[1], inline=False)
+        embed.set_author(name=":tada: unrestricted lol")
+        embed.set_thumbnail(url=member.avatar_url)
+        return embed
+
+    async def embed_restricted(self, db_user, member):
+        embed = discord.Embed(
+            color=0xbd3661,
+            title=member.display_name,
+            url=f"https://osu.ppy.sh/users/{db_user[1]}"
+        )
+        embed.add_field(name="user", value=member.mention, inline=False)
+        embed.add_field(name="osu_username", value=db_user[2], inline=False)
+        embed.add_field(name="osu_id", value=db_user[1], inline=False)
+        embed.set_author(name=":hammer: restricted lmao")
+        embed.set_thumbnail(url=member.avatar_url)
+        return embed
+
     async def sync_nickname(self, notices_channel, db_user, member, osu_profile):
         if str(db_user[2]) != osu_profile.name:
-            embed = discord.Embed(
-                color=0xbd3661,
-                description="namechange",
-                title="profile link",
-                url=f"https://osu.ppy.sh/users/{db_user[1]}"
-            )
-            embed.add_field(name="user", value=member.mention, inline=False)
-            embed.add_field(name="old_osu_username", value=db_user[2], inline=False)
-            embed.add_field(name="new_osu_username", value=osu_profile.name, inline=False)
-            embed.add_field(name="osu_id", value=db_user[1], inline=False)
-            embed.set_author(name=member.display_name)
-            embed.set_thumbnail(url=member.avatar_url)
-            if str(db_user[1]) == str(4116573):
-                embed.set_footer(text="btw, this is bor. yes, i actually added this specific message for bor.")
+            embed = await self.embed_namechange(db_user, member, osu_profile)
             await notices_channel.send(embed=embed)
 
         if member.display_name != osu_profile.name:
@@ -164,81 +176,113 @@ class MemberNameSyncing(commands.Cog):
                                    str(osu_profile.join_date), str(osu_profile.name), str(member.id)])
         await self.bot.db.commit()
 
+    async def embed_namechange(self, db_user, member, osu_profile):
+        embed = discord.Embed(
+            color=0xbd3661,
+            title=member.display_name,
+            url=f"https://osu.ppy.sh/users/{db_user[1]}"
+        )
+        embed.add_field(name="user", value=member.mention, inline=False)
+        embed.add_field(name="old_osu_username", value=db_user[2], inline=False)
+        embed.add_field(name="new_osu_username", value=osu_profile.name, inline=False)
+        embed.add_field(name="osu_id", value=db_user[1], inline=False)
+        embed.set_author(name=":pen_ballpoint: namechange")
+        embed.set_thumbnail(url=member.avatar_url)
+        if str(db_user[1]) == str(4116573):
+            embed.set_footer(text="btw, this is bor. yes, i actually added this specific message for bor.")
+        return embed
+
     async def apply_nickname(self, db_user, member, notices_channel, osu_profile):
         now = datetime.datetime.now()
         if "04-01T" in str(now.isoformat()):
-            return None
+            return
         if "03-31T" in str(now.isoformat()):
-            return None
+            return
         if "1" in str(db_user[7]):
-            return None
+            return
         try:
             if member.guild_permissions.administrator:
-                return None
+                return
         except:
-            return None
+            return
 
         old_nickname = member.display_name
         try:
             await member.edit(nick=osu_profile.name)
-            embed = discord.Embed(
-                color=0xbd3661,
-                description="nickname updated",
-                title="profile link",
-                url=f"https://osu.ppy.sh/users/{db_user[1]}"
-            )
-            embed.add_field(name="user", value=member.mention, inline=False)
-            embed.add_field(name="cached_osu_username", value=db_user[2], inline=False)
-            embed.add_field(name="current_osu_username", value=osu_profile.name, inline=False)
-            embed.add_field(name="osu_id", value=db_user[1], inline=False)
-            embed.add_field(name="old_nickname", value=old_nickname, inline=False)
-            embed.set_author(name=member.display_name)
-            embed.set_thumbnail(url=member.avatar_url)
+            embed = await self.embed_nickname_updated(db_user, member, old_nickname, osu_profile)
             await notices_channel.send(embed=embed)
         except:
-            embed = discord.Embed(
-                color=0xFF0000,
-                description="no perms to update nickname",
-                title="profile link",
-                url=f"https://osu.ppy.sh/users/{db_user[1]}"
-            )
-            embed.add_field(name="user", value=member.mention, inline=False)
-            embed.add_field(name="cached_osu_username", value=db_user[2], inline=False)
-            embed.add_field(name="current_osu_username", value=osu_profile.name, inline=False)
-            embed.add_field(name="osu_id", value=db_user[1], inline=False)
-            embed.add_field(name="old_nickname", value=old_nickname, inline=False)
-            embed.set_author(name=member.display_name)
-            embed.set_thumbnail(url=member.avatar_url)
+            embed = await self.embed_error_name_change(db_user, member, old_nickname, osu_profile)
             await notices_channel.send(embed=embed)
+
+    async def embed_nickname_updated(self, db_user, member, old_nickname, osu_profile):
+        embed = discord.Embed(
+            color=0xbd3661,
+            title=member.display_name,
+            url=f"https://osu.ppy.sh/users/{db_user[1]}"
+        )
+        embed.add_field(name="user", value=member.mention, inline=False)
+        embed.add_field(name="cached_osu_username", value=db_user[2], inline=False)
+        embed.add_field(name="current_osu_username", value=osu_profile.name, inline=False)
+        embed.add_field(name="osu_id", value=db_user[1], inline=False)
+        embed.add_field(name="old_nickname", value=old_nickname, inline=False)
+        embed.set_author(name=":pencil2: nickname updated")
+        embed.set_thumbnail(url=member.avatar_url)
+        return embed
+
+    async def embed_error_name_change(self, db_user, member, old_nickname, osu_profile):
+        embed = discord.Embed(
+            color=0xFF0000,
+            title=member.display_name,
+            url=f"https://osu.ppy.sh/users/{db_user[1]}"
+        )
+        embed.add_field(name="user", value=member.mention, inline=False)
+        embed.add_field(name="cached_osu_username", value=db_user[2], inline=False)
+        embed.add_field(name="current_osu_username", value=osu_profile.name, inline=False)
+        embed.add_field(name="osu_id", value=db_user[1], inline=False)
+        embed.add_field(name="old_nickname", value=old_nickname, inline=False)
+        embed.set_author(name=":anger: no perms to update nickname")
+        embed.set_thumbnail(url=member.avatar_url)
+        return embed
 
     async def check_events(self, channel, user):
         for event in user.events:
             async with self.bot.db.execute("SELECT event_id FROM user_event_history WHERE event_id = ?",
                                            [str(event.id)]) as cursor:
-                is_history_empty = await cursor.fetchall()
-            if not is_history_empty:
-                await self.bot.db.execute("INSERT INTO user_event_history VALUES (?, ?, ?, ?)",
-                                          [str(user.id), str(event.id), str(channel.id), str(int(time.time()))])
-                await self.bot.db.commit()
-                event_color = await self.get_event_color(event.display_text)
-                if event_color:
-                    result = await self.bot.osu.get_beatmapset(s=event.beatmapset_id)
-                    embed = await osuembed.beatmapset(result, event_color)
-                    if embed:
-                        display_text = event.display_text.replace("@", "")
-                        await channel.send(display_text, embed=embed)
+                is_history_not_empty = await cursor.fetchall()
 
-    async def get_event_color(self, string):
-        if "has submitted" in string:
+            if is_history_not_empty:
+                return
+
+            await self.bot.db.execute("INSERT INTO user_event_history VALUES (?, ?, ?, ?)",
+                                      [str(user.id), str(event.id), str(channel.id), str(int(time.time()))])
+            await self.bot.db.commit()
+
+            event_color = await self.get_event_color(event.display_text)
+
+            if not event_color:
+                return
+
+            result = await self.bot.osu.get_beatmapset(s=event.beatmapset_id)
+            embed = await osuembed.beatmapset(result, event_color)
+
+            if not embed:
+                return
+
+            display_text = event.display_text.replace("@", "")
+            await channel.send(display_text, embed=embed)
+
+    async def get_event_color(self, event_description):
+        if "has submitted" in event_description:
             return 0x2a52b2
-        elif "has updated" in string:
+        elif "has updated" in event_description:
             # return 0xb2532a
             return None
-        elif "qualified" in string:
+        elif "qualified" in event_description:
             return 0x2ecc71
-        elif "has been revived" in string:
+        elif "has been revived" in event_description:
             return 0xff93c9
-        elif "has been deleted" in string:
+        elif "has been deleted" in event_description:
             return 0xf2d7d5
         else:
             return None

@@ -100,7 +100,7 @@ class MemberNameSyncing(commands.Cog):
                 notices_channel = self.bot.get_channel(int(guild_notices_channel[0][0]))
 
                 await self.cycle_through_members(feed_channel, guild, notices_channel, restricted_user_list, user_list)
-                
+
             print(time.strftime("%X %x %Z") + " | member_name_syncing_loop finished")
             await asyncio.sleep(7200)
 
@@ -139,26 +139,26 @@ class MemberNameSyncing(commands.Cog):
     async def embed_unrestricted(self, db_user, member):
         embed = discord.Embed(
             color=0xbd3661,
+            description=":tada: unrestricted lol",
             title=member.display_name,
             url=f"https://osu.ppy.sh/users/{db_user[1]}"
         )
         embed.add_field(name="user", value=member.mention, inline=False)
         embed.add_field(name="osu_username", value=db_user[2], inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
-        embed.set_author(name=":tada: unrestricted lol")
         embed.set_thumbnail(url=member.avatar_url)
         return embed
 
     async def embed_restricted(self, db_user, member):
         embed = discord.Embed(
             color=0xbd3661,
+            description=":hammer: restricted lmao",
             title=member.display_name,
             url=f"https://osu.ppy.sh/users/{db_user[1]}"
         )
         embed.add_field(name="user", value=member.mention, inline=False)
         embed.add_field(name="osu_username", value=db_user[2], inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
-        embed.set_author(name=":hammer: restricted lmao")
         embed.set_thumbnail(url=member.avatar_url)
         return embed
 
@@ -179,6 +179,7 @@ class MemberNameSyncing(commands.Cog):
     async def embed_namechange(self, db_user, member, osu_profile):
         embed = discord.Embed(
             color=0xbd3661,
+            description=":pen_ballpoint: namechange",
             title=member.display_name,
             url=f"https://osu.ppy.sh/users/{db_user[1]}"
         )
@@ -186,7 +187,6 @@ class MemberNameSyncing(commands.Cog):
         embed.add_field(name="old_osu_username", value=db_user[2], inline=False)
         embed.add_field(name="new_osu_username", value=osu_profile.name, inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
-        embed.set_author(name=":pen_ballpoint: namechange")
         embed.set_thumbnail(url=member.avatar_url)
         if str(db_user[1]) == str(4116573):
             embed.set_footer(text="btw, this is bor. yes, i actually added this specific message for bor.")
@@ -218,6 +218,7 @@ class MemberNameSyncing(commands.Cog):
     async def embed_nickname_updated(self, db_user, member, old_nickname, osu_profile):
         embed = discord.Embed(
             color=0xbd3661,
+            description=":pencil2: nickname updated",
             title=member.display_name,
             url=f"https://osu.ppy.sh/users/{db_user[1]}"
         )
@@ -226,13 +227,13 @@ class MemberNameSyncing(commands.Cog):
         embed.add_field(name="current_osu_username", value=osu_profile.name, inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
         embed.add_field(name="old_nickname", value=old_nickname, inline=False)
-        embed.set_author(name=":pencil2: nickname updated")
         embed.set_thumbnail(url=member.avatar_url)
         return embed
 
     async def embed_error_name_change(self, db_user, member, old_nickname, osu_profile):
         embed = discord.Embed(
             color=0xFF0000,
+            description=":anger: no perms to update nickname",
             title=member.display_name,
             url=f"https://osu.ppy.sh/users/{db_user[1]}"
         )
@@ -241,7 +242,6 @@ class MemberNameSyncing(commands.Cog):
         embed.add_field(name="current_osu_username", value=osu_profile.name, inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
         embed.add_field(name="old_nickname", value=old_nickname, inline=False)
-        embed.set_author(name=":anger: no perms to update nickname")
         embed.set_thumbnail(url=member.avatar_url)
         return embed
 

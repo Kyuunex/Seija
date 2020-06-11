@@ -342,12 +342,18 @@ class MemberVerification(commands.Cog):
             await self.add_obligatory_reaction(verified_message, osu_profile)
         else:
             osu_profile = await self.get_osu_profile(member.name)
-            if osu_profile and self.is_new_user(member) is False:
-                await channel.send(content=f"Welcome {member.mention}! We have a verification system in this server "
-                                           "so we can give you appropriate roles and keep raids/spam out. \n"
-                                           "Is this your osu! profile? "
-                                           "If yes, type `yes`, if not, post a link to your profile.",
-                                   embed=await osuembed.user(osu_profile))
+            if osu_profile and (self.is_new_user(member) is False):
+                if osu_profile.pp_raw > 0:
+                    await channel.send(content=f"Welcome {member.mention}! We have a verification system in this server "
+                                               "so we can give you appropriate roles and keep raids/spam out. \n"
+                                               "Is this your osu! profile? "
+                                               "If yes, type `yes`, if not, post a link to your profile.",
+                                       embed=await osuembed.user(osu_profile))
+                else:
+                    # this is temporary until i refactor this
+                    await channel.send(f"Welcome {member.mention}! We have a verification system in this server "
+                                       "so we can give you appropriate roles and keep raids/spam out. \n"
+                                       "Please post a link to your osu! profile and I will verify you instantly.")
             else:
                 await channel.send(f"Welcome {member.mention}! We have a verification system in this server "
                                    "so we can give you appropriate roles and keep raids/spam out. \n"

@@ -217,7 +217,6 @@ class ModChecker(commands.Cog):
             async with self.bot.db.execute("SELECT * FROM mod_tracking") as cursor:
                 track_list = await cursor.fetchall()
             for track_entry in track_list:
-                print(time.strftime("%X %x %Z") + " | " + track_entry[0])
                 channel = self.bot.get_channel(int(track_entry[1]))
 
                 if not channel:

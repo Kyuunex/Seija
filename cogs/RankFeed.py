@@ -102,7 +102,7 @@ class RankFeed(commands.Cog):
                     continue
 
                 for mapset_metadata in fresh_entries["beatmapsets"]:
-                    if mapset_metadata["status"] == "loved":
+                    if mapset_metadata["status"] != "ranked":
                         continue
 
                     mapset_id = mapset_metadata["id"]

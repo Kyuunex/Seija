@@ -80,7 +80,7 @@ class MemberNameSyncing(commands.Cog):
                                            ["member_mapping_feed"]) as cursor:
                 member_mapping_feed_list = await cursor.fetchall()
             if not member_mapping_feed_list:
-                await asyncio.sleep(7200)
+                await asyncio.sleep(14400)
                 continue
 
             async with self.bot.db.execute("SELECT * FROM users") as cursor:
@@ -102,7 +102,7 @@ class MemberNameSyncing(commands.Cog):
                 await self.cycle_through_members(feed_channel, guild, notices_channel, restricted_user_list, user_list)
 
             print(time.strftime("%X %x %Z") + " | member_name_syncing_loop finished")
-            await asyncio.sleep(7200)
+            await asyncio.sleep(14400)
 
     async def cycle_through_members(self, feed_channel, guild, notices_channel, restricted_user_list, user_list):
         for member in guild.members:

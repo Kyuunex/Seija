@@ -35,7 +35,7 @@ class GroupFeed(commands.Cog):
             self.bot.loop.create_task(self.groupfeed_background_loop())
         )
 
-    @commands.command(name="groupfeed_add", brief="Add a groupfeed in the current channel", description="")
+    @commands.command(name="groupfeed_add", brief="Add a groupfeed in the current channel")
     @commands.check(permissions.is_admin)
     @commands.check(permissions.is_not_ignored)
     async def groupfeed_add(self, ctx):
@@ -43,13 +43,34 @@ class GroupFeed(commands.Cog):
         await self.bot.db.commit()
         await ctx.send(":ok_hand:")
 
-    @commands.command(name="groupfeed_remove", brief="Remove a groupfeed from the current channel", description="")
+    @commands.command(name="groupfeed_remove", brief="Remove a groupfeed from the current channel")
     @commands.check(permissions.is_admin)
     @commands.check(permissions.is_not_ignored)
     async def groupfeed_remove(self, ctx):
         await self.bot.db.execute("DELETE FROM groupfeed_channel_list WHERE channel_id = ?", [str(ctx.channel.id)])
         await self.bot.db.commit()
         await ctx.send(":ok_hand:")
+
+    @commands.command(name="groupfeed_channel_list", brief="Print GroupFeed enabled channels")
+    @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
+    async def groupfeed_channel_list(self, ctx):
+        """
+        Show a list of channels where GroupFeed is enabled.
+        """
+
+        async with await self.bot.db.execute("SELECT channel_id FROM groupfeed_channel_list") as cursor:
+            groupfeed_channel_list = await cursor.fetchall()
+        if not groupfeed_channel_list:
+            await ctx.send("GroupFeed channel list is empty")
+            return
+
+        buffer = ":notepad_spiral: **GroupFeed Channel list**\n\n"
+        for one_channel in groupfeed_channel_list:
+            buffer += f"<#{one_channel[0]}>\n"
+
+        embed = discord.Embed(color=0xff6781)
+        await wrappers.send_large_embed(ctx.channel, embed, buffer)
 
     def unnest_group_member_id(self, group_members):
         buffer = []

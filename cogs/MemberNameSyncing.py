@@ -108,33 +108,38 @@ class MemberNameSyncing(commands.Cog):
         for member in guild.members:
             if member.bot:
                 continue
+
             for db_user in user_list:
-                if str(member.id) == str(db_user[0]):
-                    try:
-                        osu_profile = await self.bot.osu.get_user(u=db_user[1], event_days="1")
-                    except Exception as e:
-                        print(e)
-                        await asyncio.sleep(120)
-                        break
-                    if osu_profile:
-                        await self.sync_nickname(notices_channel, db_user, member, osu_profile)
-                        await self.check_events(feed_channel, osu_profile)
-                        if (str(guild.id), str(db_user[1])) in restricted_user_list:
-                            embed = await self.embed_unrestricted(db_user, member)
-                            await notices_channel.send(embed=embed)
-                            await self.bot.db.execute("DELETE FROM restricted_users "
-                                                      "WHERE guild_id = ? AND osu_id = ?",
-                                                      [str(guild.id), str(db_user[1])])
-                            await self.bot.db.commit()
-                    else:
-                        # at this point we are sure that the user is restricted.
-                        if not (str(guild.id), str(db_user[1])) in restricted_user_list:
-                            embed = await self.embed_restricted(db_user, member)
-                            await notices_channel.send(embed=embed)
-                            await self.bot.db.execute("INSERT INTO restricted_users VALUES (?,?)",
-                                                      [str(guild.id), str(db_user[1])])
-                            await self.bot.db.commit()
-                    await asyncio.sleep(1)
+                if str(member.id) != str(db_user[0]):
+                    continue
+
+                try:
+                    osu_profile = await self.bot.osu.get_user(u=db_user[1], event_days="1")
+                except Exception as e:
+                    print(e)
+                    await asyncio.sleep(120)
+                    break
+
+                if osu_profile:
+                    await self.sync_nickname(notices_channel, db_user, member, osu_profile)
+                    await self.check_events(feed_channel, osu_profile)
+
+                    if (str(guild.id), str(db_user[1])) in restricted_user_list:
+                        embed = await self.embed_unrestricted(db_user, member)
+                        await notices_channel.send(embed=embed)
+                        await self.bot.db.execute("DELETE FROM restricted_users "
+                                                  "WHERE guild_id = ? AND osu_id = ?",
+                                                  [str(guild.id), str(db_user[1])])
+                        await self.bot.db.commit()
+                else:
+                    # at this point we are sure that the user is restricted.
+                    if not (str(guild.id), str(db_user[1])) in restricted_user_list:
+                        embed = await self.embed_restricted(db_user, member)
+                        await notices_channel.send(embed=embed)
+                        await self.bot.db.execute("INSERT INTO restricted_users VALUES (?,?)",
+                                                  [str(guild.id), str(db_user[1])])
+                        await self.bot.db.commit()
+                await asyncio.sleep(1)
 
     async def embed_unrestricted(self, db_user, member):
         embed = discord.Embed(

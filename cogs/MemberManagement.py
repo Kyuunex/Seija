@@ -146,7 +146,7 @@ class MemberManagement(commands.Cog):
 
                 if ranked_amount < amount:
                     continue
-                    
+
                 await member.add_roles(new_role, reason="reputation updated")
                 await member.remove_roles(old_role, reason="removed old reputation")
                 buffer += f"{member.mention} : {member.display_name}\n"

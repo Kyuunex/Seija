@@ -31,7 +31,9 @@ class MemberNameSyncing(commands.Cog):
         if not notices_channel_list:
             return
 
-        async with self.bot.db.execute("SELECT * FROM users WHERE user_id = ?", [str(after.id)]) as cursor:
+        async with self.bot.db.execute("SELECT user_id, osu_id, osu_username, osu_join_date, "
+                                       "pp, country, ranked_maps_amount, no_sync "
+                                       "FROM users WHERE user_id = ?", [str(after.id)]) as cursor:
             query = await cursor.fetchone()
 
         if not query:
@@ -83,7 +85,8 @@ class MemberNameSyncing(commands.Cog):
                 await asyncio.sleep(14400)
                 continue
 
-            async with self.bot.db.execute("SELECT * FROM users") as cursor:
+            async with self.bot.db.execute("SELECT user_id, osu_id, osu_username, osu_join_date, "
+                                           "pp, country, ranked_maps_amount, no_sync FROM users") as cursor:
                 user_list = await cursor.fetchall()
             async with self.bot.db.execute("SELECT guild_id, osu_id FROM restricted_users") as cursor:
                 restricted_user_list = await cursor.fetchall()

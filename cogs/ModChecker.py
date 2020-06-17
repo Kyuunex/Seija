@@ -177,6 +177,75 @@ class ModChecker(commands.Cog):
             await ctx.send("done")
         await self.bot.db.commit()
 
+    @commands.command(name="force_track", brief="Forcefully track a mapset in the current channel")
+    @commands.guild_only()
+    @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
+    async def force_track(self, ctx, mapset_id, tracking_mode="timeline"):
+        if not mapset_id.isdigit():
+            await ctx.send("a mapset_id is supposed to be all numbers")
+            return
+
+        if not (tracking_mode == "timeline" or tracking_mode == "notification"):
+            await ctx.send("tracking mode can either be `notification` or `timeline`")
+            return
+
+        async with self.bot.db.execute("SELECT mapset_id FROM mod_tracking "
+                                       "WHERE mapset_id = ? AND channel_id = ?",
+                                       [str(mapset_id), str(ctx.channel.id)]) as cursor:
+            mapset_is_already_tracked = await cursor.fetchall()
+        if mapset_is_already_tracked:
+            await ctx.send("This mapset is already tracked in this channel")
+            return
+
+        discussions = await self.bot.osuweb.get_beatmapset_discussions(str(mapset_id))
+        if not discussions:
+            await ctx.send("I am unable to find a modding v2 page for this mapset")
+            return
+
+        if discussions["beatmapset"]["status"] == "graveyard" or discussions["beatmapset"]["status"] == "ranked":
+            await ctx.send("i refuse to track graveyarded and ranked sets")
+            return
+
+        await self.insert_mod_history_in_db(discussions, str(ctx.channel.id))
+        await self.insert_nomination_history_in_db(discussions, str(ctx.channel.id))
+
+        await self.bot.db.execute("INSERT INTO mod_tracking VALUES (?,?,?)",
+                                  [str(mapset_id), str(ctx.channel.id), tracking_mode])
+        try:
+            result = await self.bot.osu.get_beatmapset(s=mapset_id)
+            embed = await osuembed.beatmapset(result)
+
+            await ctx.send("Tracked in veto mode", embed=embed)
+        except:
+            await ctx.send("tracked")
+
+        await self.bot.db.commit()
+
+    @commands.command(name="force_untrack", brief="Forcefully untrack a mapset in the current channel")
+    @commands.guild_only()
+    @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
+    async def force_untrack(self, ctx, mapset_id):
+        if not mapset_id.isdigit():
+            await ctx.send("a mapset_id is supposed to be all numbers")
+            return
+
+        await self.bot.db.execute("DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
+                                  [str(mapset_id), str(ctx.channel.id)])
+        await self.bot.db.execute("DELETE FROM mod_posts WHERE mapset_id = ? AND channel_id = ?",
+                                  [str(mapset_id), str(ctx.channel.id)])
+        await self.bot.db.execute("DELETE FROM mapset_events WHERE mapset_id = ? AND channel_id = ?",
+                                  [str(mapset_id), str(ctx.channel.id)])
+        try:
+            result = await self.bot.osu.get_beatmapset(s=mapset_id)
+            embed = await osuembed.beatmapset(result)
+            await ctx.send("I untracked this mapset in this channel", embed=embed)
+        except:
+            await ctx.send("done")
+
+        await self.bot.db.commit()
+
     @commands.command(name="sublist", brief="List all tracked mapsets everywhere", description="")
     @commands.check(permissions.is_admin)
     @commands.check(permissions.is_not_ignored)

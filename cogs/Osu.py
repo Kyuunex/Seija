@@ -8,31 +8,48 @@ class Osu(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="mapset", brief="Show mapset info", description="")
+    @commands.command(name="mapset", brief="Show mapset info")
     @commands.check(permissions.is_not_ignored)
     async def mapset(self, ctx, mapset_id: str):
-        result = await self.bot.osu.get_beatmapset(s=mapset_id)
-        embed = await osuembed.beatmapset(result)
-        if embed:
-            await ctx.send(embed=embed)
-        else:
-            await ctx.send(content="`No mapset found with that ID`")
+        try:
+            result = await self.bot.osu.get_beatmapset(s=mapset_id)
+        except:
+            await ctx.send("Connection problems?")
+            return
 
-    @commands.command(name="user", brief="Show osu user info", description="")
+        embed = await osuembed.beatmapset(result)
+        if not embed:
+            await ctx.send(content="`No mapset found with that ID`")
+            return
+
+        await ctx.send(embed=embed)
+
+    @commands.command(name="user", brief="Show osu user info")
     @commands.check(permissions.is_not_ignored)
     async def user(self, ctx, *, username):
-        result = await self.bot.osu.get_user(u=username)
-        embed = await osuembed.user(result)
-        if embed:
-            await ctx.send(embed=embed)
-        else:
-            await ctx.send(content="`No user found with that username`")
+        try:
+            result = await self.bot.osu.get_user(u=username)
+        except:
+            await ctx.send("Connection problems?")
+            return
 
-    @commands.command(name="ts", brief="Send an osu editor clickable timestamp",
-                      description="Must start with a timestamp")
+        embed = await osuembed.user(result)
+        if not embed:
+            await ctx.send(content="`No user found with that username`")
+            return
+
+        await ctx.send(embed=embed)
+
+    @commands.command(name="ts", brief="Send an osu editor clickable timestamp")
     @commands.guild_only()
     @commands.check(permissions.is_not_ignored)
     async def ts(self, ctx, *, string):
+        """
+        Send an osu editor clickable timestamp
+        Must start with a timestamp
+        This command needs a proper solution, this is half-assed.
+        """
+
         if "-" in string:
             timestamp_data = string.split("-")
             timestamp_link = (timestamp_data[0]).strip().replace(" ", "_")

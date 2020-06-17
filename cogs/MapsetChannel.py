@@ -286,7 +286,7 @@ class MapsetChannel(commands.Cog):
         except Exception as e:
             await ctx.send(e)
 
-    @commands.command(name="request_mapset_channel", brief="Request a mapset channel",)
+    @commands.command(name="request_mapset_channel", brief="Request a mapset channel")
     @commands.guild_only()
     @commands.check(permissions.is_not_ignored)
     async def make_mapset_channel(self, ctx, mapset_id="0", *, mapset_title=None):

@@ -111,7 +111,7 @@ class ModChecker(commands.Cog):
                                        ["veto", str(ctx.channel.id)]) as cursor:
             is_veto_channel = await cursor.fetchall()
 
-        if is_veto_channel:
+        if not is_veto_channel:
             return None
 
         if not mapset_id.isdigit():
@@ -156,7 +156,7 @@ class ModChecker(commands.Cog):
                                        ["veto", str(ctx.channel.id)]) as cursor:
             is_veto_channel = await cursor.fetchall()
 
-        if is_veto_channel:
+        if not is_veto_channel:
             return None
 
         if not mapset_id.isdigit():

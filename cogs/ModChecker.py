@@ -216,7 +216,7 @@ class ModChecker(commands.Cog):
             result = await self.bot.osu.get_beatmapset(s=mapset_id)
             embed = await osuembed.beatmapset(result)
 
-            await ctx.send("Tracked in veto mode", embed=embed)
+            await ctx.send(f"forcefually tracked in {tracking_mode} mode", embed=embed)
         except:
             await ctx.send("tracked")
 

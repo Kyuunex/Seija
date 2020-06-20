@@ -335,10 +335,14 @@ class MemberVerification(commands.Cog):
                 name = user_db_lookup[0][1]
                 embed = None
             await member.edit(nick=name)
-            verified_message = await channel.send(f"Welcome aboard {member.mention}! Since we know who you are, "
-                                                  "I have automatically gave you appropriate roles. Enjoy your stay!",
-                                                  embed=embed)
-
+            if member.guild.member_count == 1000:
+                verified_message = await channel.send(f"Everyone, please welcome our 1000-th member, {member.mention}!",
+                                                      embed=embed)
+            else:
+                verified_message = await channel.send(f"Welcome aboard {member.mention}! Since we know who you are, "
+                                                      "I have automatically gave you appropriate roles. "
+                                                      "Enjoy your stay!",
+                                                      embed=embed)
             await self.add_obligatory_reaction(verified_message, osu_profile)
         else:
             osu_profile = await self.get_osu_profile(member.name)

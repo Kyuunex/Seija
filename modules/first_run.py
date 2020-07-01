@@ -25,6 +25,7 @@ def create_tables():
         c = conn.cursor()
         c.execute("CREATE TABLE config (setting, parent, value, flag)")
         c.execute("CREATE TABLE admins (user_id, permissions)")
+        c.execute("CREATE TABLE ignored_users (user_id, reason)")
         c.execute("CREATE TABLE users "
                   "(user_id, osu_id, osu_username, osu_join_date, pp, country, ranked_maps_amount, no_sync)")
         c.execute("CREATE TABLE user_event_history (osu_id, event_id, channel_id, timestamp)")

@@ -14,7 +14,7 @@ class MemberManagement(commands.Cog):
     @commands.check(permissions.is_owner)
     @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
-    async def get_members_not_in_db(self, ctx):
+    async def get_members_not_in_db(self, ctx, has_a_role=""):
         """
         This command will return a list of members who are not in the bot's `users` table.
         """
@@ -24,6 +24,12 @@ class MemberManagement(commands.Cog):
             for member in ctx.guild.members:
                 if member.bot:
                     continue
+
+                if has_a_role:
+                    if not len(member.roles) > 1:
+                        # actually every member has @everyone role,
+                        # so, if a user has 2 roles, it means he has 1 assigned role
+                        continue
 
                 async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?",
                                                [str(member.id)]) as cursor:

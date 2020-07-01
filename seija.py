@@ -45,7 +45,7 @@ class Seija(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.background_tasks = []
-        self.app_version = (open(".version", "r+").read()).rstrip()
+        self.app_version = (open(".version", "r+").read()).strip()
         self.description = f"Seija {self.app_version}"
         self.database_file = database_file
         self.osu = aioosuapi(osu_api_key)

@@ -530,7 +530,7 @@ class Queue(commands.Cog):
                             await self.get_category_object(ctx.guild, "advanced_queue"),
                             await self.get_category_object(ctx.guild, "experienced_queue")]
 
-        buffer = ":notepad_spiral: **Open queues**\n\n"
+        buffer = ":page_with_curl: **Open queues**\n\n"
         for queue_category in queue_categories:
             buffer += f"**{queue_category.name}:**\n"
             for text_channel in queue_category.text_channels:
@@ -541,6 +541,7 @@ class Queue(commands.Cog):
                     if perm[0] == "send_messages":
                         if perm[1]:
                             buffer += f"{text_channel.mention}\n"
+            buffer += "\n"
 
         embed = discord.Embed(color=0xff6781)
         await wrappers.send_large_embed(ctx.channel, embed, buffer)

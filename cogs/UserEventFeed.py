@@ -14,35 +14,41 @@ class UserEventFeed(commands.Cog):
             self.bot.loop.create_task(self.usereventfeed_background_loop())
         )
 
-    @commands.command(name="uef_track", brief="Track mapping activity of a specified user", description="")
+    @commands.command(name="uef_track", brief="Track mapping activity of a specified user")
     @commands.check(permissions.is_admin)
     @commands.check(permissions.is_not_ignored)
     async def track(self, ctx, user_id):
+        """
+        This will keep track of mapping activity for a specified user and send it to the current channel.
+        :param user_id: osu! account ID
+        """
+
         user = await self.bot.osu.get_user(u=user_id)
         if not user:
             await ctx.send("can't find a user with that id. maybe they are restricted.")
-            return None
+            return
 
-        async with await self.bot.db.execute("SELECT * FROM usereventfeed_tracklist WHERE osu_id = ?",
+        async with await self.bot.db.execute("SELECT osu_id FROM usereventfeed_tracklist WHERE osu_id = ?",
                                              [str(user.id)]) as cursor:
-            check_is_already_tracked = await cursor.fetchall()
+            check_is_already_tracked = await cursor.fetchone()
         if not check_is_already_tracked:
             await self.bot.db.execute("INSERT INTO usereventfeed_tracklist VALUES (?)", [str(user.id)])
 
         for event in user.events:
-            async with await self.bot.db.execute("SELECT * FROM usereventfeed_history WHERE event_id = ?",
+            async with await self.bot.db.execute("SELECT event_id FROM usereventfeed_history WHERE event_id = ?",
                                                  [str(event.id)]) as cursor:
-                check_is_already_in_history = await cursor.fetchall()
+                check_is_already_in_history = await cursor.fetchone()
             if not check_is_already_in_history:
                 await self.bot.db.execute("INSERT INTO usereventfeed_history VALUES (?, ?, ?)",
                                           [str(user.id), str(event.id), str(int(time.time()))])
 
-        async with await self.bot.db.execute("SELECT * FROM usereventfeed_channels WHERE channel_id = ? AND osu_id = ?",
+        async with await self.bot.db.execute("SELECT channel_id FROM usereventfeed_channels "
+                                             "WHERE channel_id = ? AND osu_id = ?",
                                              [str(ctx.channel.id), str(user.id)]) as cursor:
-            check_is_channel_already_tracked = await cursor.fetchall()
+            check_is_channel_already_tracked = await cursor.fetchone()
         if check_is_channel_already_tracked:
             await ctx.send(f"User `{user.name}` is already tracked in this channel")
-            return None
+            return
 
         await self.bot.db.execute("INSERT INTO usereventfeed_channels VALUES (?, ?)",
                                   [str(user.id), str(ctx.channel.id)])
@@ -50,11 +56,15 @@ class UserEventFeed(commands.Cog):
 
         await self.bot.db.commit()
 
-    @commands.command(name="uef_untrack", brief="Stop tracking the mapping activity of the specified user",
-                      description="")
+    @commands.command(name="uef_untrack", brief="Stop tracking the mapping activity of the specified user")
     @commands.check(permissions.is_admin)
     @commands.check(permissions.is_not_ignored)
     async def untrack(self, ctx, user_id):
+        """
+        Stop tracking mapping activity of a specified user in the current channel
+        :param user_id: osu! account ID
+        """
+
         user = await self.bot.osu.get_user(u=user_id)
         if user:
             user_id = user.id
@@ -65,20 +75,25 @@ class UserEventFeed(commands.Cog):
         await self.bot.db.execute("DELETE FROM usereventfeed_channels WHERE osu_id = ? AND channel_id = ? ",
                                   [str(user_id), str(ctx.channel.id)])
         await self.bot.db.commit()
+
         await ctx.send(f"`{user_name}` is no longer tracked in this channel")
 
-    @commands.command(name="uef_tracklist",
-                      brief="Show a list of all users' mapping activity being tracked and where",
-                      description="")
+    @commands.command(name="uef_tracklist", brief="Show a list of all users' mapping activity being tracked and where")
     @commands.check(permissions.is_admin)
     @commands.check(permissions.is_not_ignored)
-    async def tracklist(self, ctx, everywhere=None):
+    async def tracklist(self, ctx, *args):
+        """
+        Show a list of all users who are being tracked and where
+
+        optional parameter: 'everywhere' - it will show all channels, not just this one.
+        """
+
         channel = ctx.channel
-        async with await self.bot.db.execute("SELECT * FROM usereventfeed_tracklist") as cursor:
+        async with await self.bot.db.execute("SELECT osu_id FROM usereventfeed_tracklist") as cursor:
             tracklist = await cursor.fetchall()
         if not tracklist:
             await ctx.send("user event feed tracklist is empty")
-            return None
+            return
 
         buffer = ":notepad_spiral: **Track list**\n\n"
         for one_entry in tracklist:
@@ -88,9 +103,10 @@ class UserEventFeed(commands.Cog):
             destination_list_str = ""
             for destination_id in destination_list:
                 destination_list_str += f"<#{destination_id[0]}> "
-            if (str(channel.id) in destination_list_str) or everywhere:
+            if (str(channel.id) in destination_list_str) or "everywhere" in args:
                 buffer += f"osu_id: `{one_entry[0]}` | channels: {destination_list_str}\n"
         embed = discord.Embed(color=0xff6781)
+
         await wrappers.send_large_embed(channel, embed, buffer)
 
     async def usereventfeed_background_loop(self):
@@ -104,14 +120,14 @@ class UserEventFeed(commands.Cog):
                     tracklist = await cursor.fetchall()
                 if not tracklist:
                     # UEF tracklist is empty
-                    await asyncio.sleep(1600)
+                    await asyncio.sleep(3600)
                     continue
 
                 print(time.strftime("%X %x %Z") + " | performing user event check")
                 for user_id in tracklist:
                     await self.prepare_to_check(user_id[0])
                 print(time.strftime("%X %x %Z") + " | finished user event check")
-                await asyncio.sleep(1200)
+                await asyncio.sleep(3600)
             except Exception as e:
                 print(time.strftime("%X %x %Z"))
                 print("in usereventfeed_background_loop")
@@ -125,7 +141,7 @@ class UserEventFeed(commands.Cog):
             await self.bot.db.execute("DELETE FROM usereventfeed_tracklist WHERE osu_id = ?", [str(user.id)])
             await self.bot.db.execute("DELETE FROM usereventfeed_channels WHERE osu_id = ?", [str(user.id)])
             await self.bot.db.commit()
-            return None
+            return
 
         async with await self.bot.db.execute("SELECT channel_id FROM usereventfeed_channels WHERE osu_id = ?",
                                              [str(user.id)]) as cursor:
@@ -134,7 +150,7 @@ class UserEventFeed(commands.Cog):
             await self.bot.db.execute("DELETE FROM usereventfeed_tracklist WHERE osu_id = ?", [str(user.id)])
             await self.bot.db.commit()
             print(f"{user.id} is not tracked in any channel so I am untracking them")
-            return None
+            return
 
         channel_list = wrappers.unnest_list(channel_list)
         await self.check_events(channel_list, user)
@@ -144,7 +160,7 @@ class UserEventFeed(commands.Cog):
         for event in user.events:
             async with await self.bot.db.execute("SELECT event_id FROM usereventfeed_history WHERE event_id = ?",
                                                  [str(event.id)]) as cursor:
-                check_is_entry_in_history = await cursor.fetchall()
+                check_is_entry_in_history = await cursor.fetchone()
             if check_is_entry_in_history:
                 continue
 
@@ -181,7 +197,7 @@ class UserEventFeed(commands.Cog):
             return 0x2a52b2
         elif "has updated" in string:
             # return 0xb2532a
-            return None
+            return 0x0
         elif "qualified" in string:
             return 0x2ecc71
         elif "has been revived" in string:
@@ -189,7 +205,7 @@ class UserEventFeed(commands.Cog):
         elif "has been deleted" in string:
             return 0xf2d7d5
         else:
-            return None
+            return 0x0
 
 
 def setup(bot):

@@ -1,3 +1,9 @@
+"""
+You may be wondering, why I am doing name syncing and mapping activity tracking in the same cog.
+The answer is, to reuse api requests and not having to call the api again.
+If you have a better solution that is reasonably simple to implement let me know.
+"""
+
 from discord.ext import commands
 import discord
 import time

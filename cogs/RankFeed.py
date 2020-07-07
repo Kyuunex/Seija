@@ -15,61 +15,72 @@ class RankFeed(commands.Cog):
             self.bot.loop.create_task(self.rankfeed_background_loop())
         )
 
-    @commands.command(name="rankfeed_add", brief="Add a rankfeed in the current channel", description="")
+    @commands.command(name="rankfeed_add", brief="Add a rankfeed in the current channel")
     @commands.check(permissions.is_admin)
     @commands.check(permissions.is_not_ignored)
     async def add(self, ctx):
+        """
+        Start sending information about the latest ranked maps in the channel this command is typed in.
+        """
+
         fresh_entries = await self.bot.osuweb.get_latest_ranked_beatmapsets()
         if not fresh_entries:
             await ctx.send("Connection issues with osu website???")
-            return None
+            return
 
         for mapset_metadata in fresh_entries["beatmapsets"]:
             mapset_id = mapset_metadata["id"]
             async with await self.bot.db.execute("SELECT mapset_id FROM rankfeed_history WHERE mapset_id = ?",
                                                  [str(mapset_id)]) as cursor:
-                check_is_already_in_history = await cursor.fetchall()
+                check_is_already_in_history = await cursor.fetchone()
             if not check_is_already_in_history:
                 await self.bot.db.execute("INSERT INTO rankfeed_history VALUES (?)", [str(mapset_id)])
 
         await self.bot.db.commit()
 
-        async with await self.bot.db.execute("SELECT * FROM rankfeed_channel_list WHERE channel_id = ?",
+        async with await self.bot.db.execute("SELECT channel_id FROM rankfeed_channel_list WHERE channel_id = ?",
                                              [str(ctx.channel.id)]) as cursor:
-            check_is_channel_already_tracked = await cursor.fetchall()
+            check_is_channel_already_tracked = await cursor.fetchone()
         if check_is_channel_already_tracked:
             await ctx.send("Rankfeed is already tracked in this channel")
-            return None
+            return
 
         await self.bot.db.execute("INSERT INTO rankfeed_channel_list VALUES (?)", [str(ctx.channel.id)])
         await ctx.send(":ok_hand:")
 
         await self.bot.db.commit()
 
-    @commands.command(name="rankfeed_remove", brief="Remove a rankfeed from the current channel", description="")
+    @commands.command(name="rankfeed_remove", brief="Remove a rankfeed from the current channel")
     @commands.check(permissions.is_admin)
     @commands.check(permissions.is_not_ignored)
     async def remove(self, ctx):
+        """
+        Stop sending information about the latest ranked maps in the current channel
+        """
+
         await self.bot.db.execute("DELETE FROM rankfeed_channel_list WHERE channel_id = ?", [str(ctx.channel.id)])
         await self.bot.db.commit()
         await ctx.send(":ok_hand:")
 
-    @commands.command(name="rankfeed_tracklist",
-                      brief="Show a list of channels where rankfeed is sent",
-                      description="")
+    @commands.command(name="rankfeed_tracklist", brief="Show a list of channels where rankfeed is sent")
     @commands.check(permissions.is_admin)
     @commands.check(permissions.is_not_ignored)
     async def tracklist(self, ctx):
+        """
+        Show a list of channels where information about the latest ranked maps are being sent.
+        """
+
         async with await self.bot.db.execute("SELECT channel_id FROM rankfeed_channel_list") as cursor:
             tracklist = await cursor.fetchall()
         if not tracklist:
             await ctx.send("Rankfeed tracklist is empty")
-            return None
+            return
 
         buffer = ":notepad_spiral: **Channel list**\n\n"
         for one_entry in tracklist:
             buffer += f"<#{one_entry[0]}>\n"
         embed = discord.Embed(color=0xff6781)
+
         await wrappers.send_large_embed(ctx.channel, embed, buffer)
 
     async def rankfeed_background_loop(self):
@@ -83,14 +94,14 @@ class RankFeed(commands.Cog):
                     rankfeed_channel_list = await cursor.fetchall()
                 if not rankfeed_channel_list:
                     # Rankfeed is not enabled
-                    await asyncio.sleep(1600)
+                    await asyncio.sleep(3600)
                     continue
 
                 async with await self.bot.db.execute("SELECT mapset_id FROM rankfeed_history") as cursor:
                     rankfeed_history_check = await cursor.fetchall()
                 if not rankfeed_history_check:
                     print("no maps in history so i stop so i don't spam")
-                    await asyncio.sleep(1600)
+                    await asyncio.sleep(3600)
                     continue
 
                 print(time.strftime("%X %x %Z") + " | performing rankfeed check")
@@ -98,7 +109,7 @@ class RankFeed(commands.Cog):
                 fresh_entries = await self.bot.osuweb.get_latest_ranked_beatmapsets()
                 if not fresh_entries:
                     print("rankfeed connection issues with osu website???")
-                    await asyncio.sleep(1600)
+                    await asyncio.sleep(3600)
                     continue
 
                 for mapset_metadata in fresh_entries["beatmapsets"]:
@@ -108,7 +119,7 @@ class RankFeed(commands.Cog):
                     mapset_id = mapset_metadata["id"]
                     async with await self.bot.db.execute("SELECT mapset_id FROM rankfeed_history WHERE mapset_id = ?",
                                                          [str(mapset_id)]) as cursor:
-                        check_is_already_in_history = await cursor.fetchall()
+                        check_is_already_in_history = await cursor.fetchone()
                     if check_is_already_in_history:
                         continue
 
@@ -133,7 +144,7 @@ class RankFeed(commands.Cog):
                     await self.bot.db.commit()
 
                 print(time.strftime("%X %x %Z") + " | finished rankfeed check")
-                await asyncio.sleep(1600)
+                await asyncio.sleep(3600)
             except Exception as e:
                 print(time.strftime("%X %x %Z"))
                 print("in rankfeed_background_loop")

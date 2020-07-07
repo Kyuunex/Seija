@@ -240,7 +240,8 @@ class MapsetChannel(commands.Cog):
 
         buffer = ""
 
-        async with self.bot.db.execute("SELECT * FROM mapset_channels") as cursor:
+        async with self.bot.db.execute("SELECT channel_id, role_id, user_id, mapset_id, guild_id "
+                                       "FROM mapset_channels") as cursor:
             mapset_channels = await cursor.fetchall()
         if not mapset_channels:
             buffer += "no mapset channels in my database"

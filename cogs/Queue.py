@@ -51,21 +51,26 @@ class Queue(commands.Cog):
         async with self.bot.db.execute("SELECT user_id FROM queues WHERE channel_id = ? AND is_creator = ?",
                                        [str(ctx.channel.id), str("1")]) as cursor:
             queue_creator_id = await cursor.fetchone()
-            return ctx.guild.get_member(int(queue_creator_id[0]))
+        return ctx.guild.get_member(int(queue_creator_id[0]))
 
-    @commands.command(name="queue_cleanup", brief="Queue cleanup")
+    @commands.command(name="queue_cleanup", brief="Purges messages that are offtopic for a modding queue")
     @commands.guild_only()
     @commands.check(permissions.is_not_ignored)
     async def queue_cleanup(self, ctx, amount=100):
         """
-        Deletes messages that are not made by the queue owner or me or has no beatmap link.
+        Cycles through [amount] of messages and deletes any that:
+        1. is not made by me
+        2. has no beatmap link
+        3. not made by the queue owner
         """
 
-        if not await self.can_manage_queue(ctx):
-            return None
-
         if not await self.channel_is_a_queue(ctx):
-            return None
+            await ctx.send(f"{ctx.author.mention} this channel is not a queue")
+            return
+
+        if not await self.can_manage_queue(ctx):
+            await ctx.send(f"{ctx.author.mention} you are not allowed to manage this queue")
+            return
 
         queue_owner = await self.get_queue_creator(ctx)
         if not queue_owner:
@@ -76,43 +81,67 @@ class Queue(commands.Cog):
 
         try:
             await ctx.message.delete()
-            async with ctx.channel.typing():
-                def the_check(m):
-                    if "https://osu.ppy.sh/beatmapsets/" in m.content:
-                        return False
-                    if m.author == queue_owner:
-                        return False
-                    if m.author == ctx.guild.me:
-                        return False
-                    return True
+        except:
+            await ctx.send(f"{ctx.author.mention} I don't seem to have permissions to purge this queue")
+            return
 
-                deleted = await ctx.channel.purge(limit=int(amount), check=the_check)
-            await ctx.send(f"Deleted {len(deleted)} message(s)")
-        except Exception as e:
-            await ctx.send(str(e).replace("@", ""))
+        async with ctx.channel.typing():
+            def is_message_offtopic(message):
+                if "https://osu.ppy.sh/beatmapsets/" in message.content:
+                    return False
+                if message.author == queue_owner:
+                    return False
+                if message.author == ctx.guild.me:
+                    return False
+                return True
+
+            try:
+                deleted = await ctx.channel.purge(limit=int(amount), check=is_message_offtopic)
+            except:
+                await ctx.send(f"{ctx.author.mention} something went wrong while attempting to purge messages")
+                return
+
+        await ctx.send(f"Deleted {len(deleted)} message(s)")
 
     @commands.command(name="debug_get_kudosu", brief="Print how much kudosu a user has")
     @commands.check(permissions.is_admin)
     @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
-    async def debug_get_kudosu(self, ctx, user_id, osu_id="0"):
+    async def debug_get_kudosu(self, ctx, user_id, osu_id):
+        """
+        Debug command for managers to print how much kudosu a member has.
+        :param user_id: Discord account ID
+        :param osu_id: osu! account ID
+        """
+
+        # TODO: maybe use argparser here
+
         if user_id:
             async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]) as cursor:
-                osu_id = await cursor.fetchall()
+                osu_id_db = await cursor.fetchone()
             if osu_id:
-                osu_id = osu_id[0][0]
+                osu_id = osu_id_db[0]
+
         if osu_id:
             await ctx.send(await self.get_kudosu_int(osu_id))
 
-    @commands.command(name="debug_queue_force_call_on_member_join", brief="Restore queue permissions")
+    @commands.command(name="restore_queue_permissions",
+                      brief="Restore queue permissions",
+                      aliases=['debug_queue_force_call_on_member_join'])
     @commands.check(permissions.is_admin)
     @commands.check(permissions.is_not_ignored)
     @commands.guild_only()
-    async def debug_queue_force_call_on_member_join(self, ctx, user_id):
+    async def restore_queue_permissions(self, ctx, user_id):
+        """
+        Manually restore queue permissions to a member who left and came back and I didn't pick up on it
+        or maybe when they came back with a new Dicsord account
+        :param user_id: Discord account ID
+        """
+
         member = wrappers.get_member_guaranteed(ctx, user_id)
         if not member:
             await ctx.send("no member found with that name")
-            return None
+            return
 
         await self.on_member_join(member)
         await ctx.send("done")
@@ -121,12 +150,19 @@ class Queue(commands.Cog):
     @commands.guild_only()
     @commands.check(permissions.is_not_ignored)
     async def make_queue_channel(self, ctx, *, queue_type="std"):
+        """
+        This command creates a queue style channel for the person executing the command
+        :param queue_type: This specifies the type of the queue, for example std, mania, or whatever you want
+        """
+
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
                                        ["beginner_queue", str(ctx.guild.id)]) as cursor:
             is_enabled_in_server = await cursor.fetchone()
         if not is_enabled_in_server:
             await ctx.send("Not enabled in this server yet.")
-            return None
+            return
+
+        await ctx.send("sure, gimme a moment")
 
         async with self.bot.db.execute("SELECT channel_id FROM queues "
                                        "WHERE user_id = ? AND guild_id = ? AND is_creator = ?",
@@ -135,47 +171,41 @@ class Queue(commands.Cog):
         if member_already_has_a_queue:
             already_existing_queue = self.bot.get_channel(int(member_already_has_a_queue[0]))
             if already_existing_queue:
-                await ctx.send(f"you already have one <#{already_existing_queue.id}>")
-                return None
+                await ctx.send(f"{ctx.author.mention} you already have one <#{already_existing_queue.id}>")
+                return
             else:
+                await ctx.send(f"{ctx.author.mention} it seems you already had a queue "
+                               f"but it was deleted without me noticing. "
+                               f"oh well, new one it is then")
                 await self.bot.db.execute("DELETE FROM queues WHERE channel_id = ?",
                                           [str(member_already_has_a_queue[0])])
                 await self.bot.db.commit()
 
+        guild = ctx.guild
+
+        channel_overwrites = {
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            ctx.message.author: self.queue_owner_default_permissions,
+            guild.me: self.queue_bot_default_permissions
+        }
+
+        underscored_name = ctx.author.display_name.replace(" ", "_").lower()
+        channel_name = f"{underscored_name}-{queue_type}-queue"
+
+        category = await self.get_queue_category(ctx.author)
         try:
-            await ctx.send("sure, gimme a moment")
-            guild = ctx.guild
-            channel_overwrites = {
-                guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                ctx.message.author: self.queue_owner_default_permissions,
-                guild.me: self.queue_bot_default_permissions
-            }
-            underscored_name = ctx.author.display_name.replace(" ", "_").lower()
-            channel_name = f"{underscored_name}-{queue_type}-queue"
-            category = await self.get_queue_category(ctx.author)
             channel = await guild.create_text_channel(channel_name,
                                                       overwrites=channel_overwrites, category=category)
-            await self.bot.db.execute("INSERT INTO queues VALUES (?, ?, ?, ?)",
-                                      [str(channel.id), str(ctx.author.id), str(ctx.guild.id), "1"])
-            await self.bot.db.commit()
-            await channel.send(f"{ctx.author.mention} done!", embed=await Docs.queue_management())
-        except Exception as e:
-            await ctx.send(e)
+        except:
+            await ctx.send(f"{ctx.author.mention} i am unable to create the channel, idk why, maybe no perms. "
+                           f"managers will have to look into this")
+            return
 
-    async def generate_queue_event_embed(self, ctx, args):
-        if len(args) == 0:
-            return None
-        elif len(args) == 2:
-            embed_title = args[0]
-            embed_description = args[1]
-        else:
-            embed_title = "message"
-            embed_description = " ".join(args)
-        embed = discord.Embed(title=embed_title, description=embed_description, color=0xbd3661)
-        embed.set_author(name=ctx.author.display_name,
-                         icon_url=ctx.author.avatar_url_as(static_format="jpg", size=128))
-        await ctx.message.delete()
-        return embed
+        await self.bot.db.execute("INSERT INTO queues VALUES (?, ?, ?, ?)",
+                                  [str(channel.id), str(ctx.author.id), str(ctx.guild.id), "1"])
+        await self.bot.db.commit()
+
+        await channel.send(f"{ctx.author.mention} done!", embed=await Docs.queue_management())
 
     @commands.command(name="add_co_modder", brief="Add a co-modder to your queue")
     @commands.guild_only()
@@ -187,58 +217,85 @@ class Queue(commands.Cog):
         They will be able to open/close/hide/archive the queue.
         Using this command will not prevent them from creating their own separate queue or
         from being added to someone else's queue.
-        They will not be able to remove you from this queue.
-        You, being the creator of this queue, will still not be able to make a new queue,
+        They will not be able to remove you from the queue.
+        You, being the creator of the queue, will still not be able to make a new queue,
         however you can still be a co-owner of someone else's queue.
         """
-        if not await self.is_queue_creator(ctx):
-            return None
 
         if not await self.channel_is_a_queue(ctx):
-            return None
+            await ctx.send(f"{ctx.author.mention} this channel is not a queue")
+            return
+
+        if not await self.is_queue_creator(ctx):
+            await ctx.send(f"{ctx.author.mention} you are not allowed to manage this queue")
+            return
 
         member = wrappers.get_member_guaranteed(ctx, user_id)
         if not member:
             await ctx.send("no member found with that name")
-            return None
+            return
 
         await self.bot.db.execute("INSERT INTO queues VALUES (?, ?, ?, ?)",
                                   [str(ctx.channel.id), str(member.id), str(ctx.guild.id), "0"])
         await self.bot.db.commit()
-        await ctx.channel.set_permissions(member, overwrite=self.queue_owner_default_permissions)
+
+        try:
+            await ctx.channel.set_permissions(member, overwrite=self.queue_owner_default_permissions)
+        except:
+            await ctx.send(f"{ctx.author.mention} i am unable to edit the channel permissions, "
+                           f"idk why, maybe permissions error")
+            return
+
         await ctx.send(f"{member.mention} is now the co-owner of this queue!")
 
-    @commands.command(name="remove_co_modder", brief="Remove a co-modder from your queue", description="")
+    @commands.command(name="remove_co_modder", brief="Remove a co-modder from your queue")
     @commands.guild_only()
     @commands.check(permissions.is_not_ignored)
     async def remove_co_modder(self, ctx, user_id):
-        if not await self.is_queue_creator(ctx):
-            return None
+        """
+        This command allows you to remove a co-modder that you added to your queue
+        :param user_id: Discord account ID
+        """
 
         if not await self.channel_is_a_queue(ctx):
-            return None
+            await ctx.send(f"{ctx.author.mention} this channel is not a queue")
+            return
+
+        if not await self.is_queue_creator(ctx):
+            await ctx.send(f"{ctx.author.mention} you are not allowed to manage this queue")
+            return
 
         member = wrappers.get_member_guaranteed(ctx, user_id)
         if not member:
             await ctx.send("no member found with that name")
-            return None
+            return
 
         await self.bot.db.execute("DELETE FROM queues "
                                   "WHERE channel_id = ? AND user_id = ? AND guild_id = ? AND is_creator = ?",
                                   [str(ctx.channel.id), str(member.id), str(ctx.guild.id), str("0")])
         await self.bot.db.commit()
-        await ctx.channel.set_permissions(member, overwrite=None)
+
+        try:
+            await ctx.channel.set_permissions(member, overwrite=None)
+        except:
+            await ctx.send(f"{ctx.author.mention} i am unable to edit the channel permissions, "
+                           f"idk why, maybe permissions error")
+            return
+
         await ctx.send(f"{member.mention} is no longer a co-owner of this queue!")
 
-    @commands.command(name="get_queue_owner_list", brief="List all the owners of this queue", description="")
+    @commands.command(name="get_queue_owner_list", brief="List all the owners of this queue")
     @commands.guild_only()
     @commands.check(permissions.is_not_ignored)
     async def get_queue_owner_list(self, ctx):
-        if not await self.is_queue_creator(ctx):
-            return None
+        """
+        Prints a list of modders who own the particular queue.
+        The queue creator will have a crown icon next to them.
+        """
 
         if not await self.channel_is_a_queue(ctx):
-            return None
+            await ctx.send(f"{ctx.author.mention} this channel is not a queue")
+            return
 
         async with self.bot.db.execute("SELECT user_id, is_creator FROM queues WHERE channel_id = ?",
                                        [str(ctx.channel.id)]) as cursor:
@@ -246,7 +303,7 @@ class Queue(commands.Cog):
 
         if not queue_owner_list:
             await ctx.send("queue_owner_list is empty. this should not happen")
-            return None
+            return
 
         buffer = ":notepad_spiral: **Owners of this queue**\n\n"
         for one_owner in queue_owner_list:
@@ -259,6 +316,7 @@ class Queue(commands.Cog):
                 buffer += " :crown:"
             buffer += "\n"
         embed = discord.Embed(color=0xff6781)
+
         await wrappers.send_large_embed(ctx.channel, embed, buffer)
 
     @commands.command(name="give_queue", brief="Give your creator permissions of the queue to someone.")
@@ -266,37 +324,58 @@ class Queue(commands.Cog):
     @commands.check(permissions.is_not_ignored)
     async def give_queue(self, ctx, user_id):
         """
-        This will clear all co-owners too.
+        Give your creator permissions of the queue to someone.
+        I had to make this clear all co-modders from the queue too because it was buggy.
+        So, the new creator will have to add all co-modders back again.
         """
-        if not await self.is_queue_creator(ctx):
-            return None
 
         if not await self.channel_is_a_queue(ctx):
-            return None
+            await ctx.send(f"{ctx.author.mention} this channel is not a queue")
+            return
+
+        if not await self.is_queue_creator(ctx):
+            await ctx.send(f"{ctx.author.mention} you are not allowed to manage this queue")
+            return
 
         member = wrappers.get_member_guaranteed(ctx, user_id)
         if not member:
             await ctx.send("no member found with that name")
-            return None
+            return
 
         await self.bot.db.execute("DELETE FROM queues WHERE channel_id = ? AND guild_id = ?",
                                   [str(ctx.channel.id), str(ctx.guild.id)])
         await self.bot.db.execute("INSERT INTO queues VALUES (?, ?, ?, ?)",
                                   [str(ctx.channel.id), str(member.id), str(ctx.guild.id), str("1")])
-
         await self.bot.db.commit()
-        await ctx.channel.set_permissions(member, overwrite=self.queue_owner_default_permissions)
+
+        try:
+            await ctx.channel.set_permissions(member, overwrite=self.queue_owner_default_permissions)
+        except:
+            await ctx.send(f"{ctx.author.mention} i am unable to edit the channel permissions, "
+                           f"idk why, maybe permissions error, although i made the change in the database already")
+            return
+
         await ctx.send(f"You have given the queue creator permissions to {member.mention}")
 
-    @commands.command(name="open", brief="Open the queue", description="")
+    @commands.command(name="open", brief="Open the queue")
     @commands.guild_only()
     @commands.check(permissions.is_not_ignored)
     async def open(self, ctx, *args):
-        if not await self.can_manage_queue(ctx):
-            return None
+        """
+        This command will "open" the queue. It will change channel permissions, so that,
+        anyone who is not explicitly blacklisted from the queue, can post it in.
+
+        :param args: A message you want the bot to post after opening the queue.
+                     If you use this, the message you call the command in in will be deleted.
+        """
 
         if not await self.channel_is_a_queue(ctx):
-            return None
+            await ctx.send(f"{ctx.author.mention} this channel is not a queue")
+            return
+
+        if not await self.can_manage_queue(ctx):
+            await ctx.send(f"{ctx.author.mention} you are not allowed to manage this queue")
+            return
 
         queue_owner = await self.get_queue_creator(ctx)
         if not queue_owner:
@@ -315,11 +394,21 @@ class Queue(commands.Cog):
     @commands.guild_only()
     @commands.check(permissions.is_not_ignored)
     async def close(self, ctx, *args):
-        if not await self.can_manage_queue(ctx):
-            return None
+        """
+        This command will "close" the queue. It will change channel permissions, so that,
+        anyone (who is not explicitly banned from seeing the queue) will see it but cannot send any message in it.
+
+        :param args: A message you want the bot to post after closing the queue.
+                     If you use this, the message you call the command in in will be deleted.
+        """
 
         if not await self.channel_is_a_queue(ctx):
-            return None
+            await ctx.send(f"{ctx.author.mention} this channel is not a queue")
+            return
+
+        if not await self.can_manage_queue(ctx):
+            await ctx.send(f"{ctx.author.mention} you are not allowed to manage this queue")
+            return
 
         queue_owner = await self.get_queue_creator(ctx)
         if not queue_owner:
@@ -334,30 +423,48 @@ class Queue(commands.Cog):
         await self.unarchive_queue(ctx, queue_owner)
         await ctx.send(content="queue is now closed but visible!", embed=embed)
 
-    @commands.command(name="hide", brief="Hide the queue", description="")
+    @commands.command(name="hide", brief="Hide the queue")
     @commands.guild_only()
     @commands.check(permissions.is_not_ignored)
     async def hide(self, ctx, *args):
-        if not await self.can_manage_queue(ctx):
-            return None
+        """
+        This command will "hide" the queue. It will change channel permissions, so that,
+        other than server administrators, nobody can see it.
+
+        :param args: A message you want the bot to post after hiding the queue.
+                     If you use this, the message you call the command in in will be deleted.
+        """
 
         if not await self.channel_is_a_queue(ctx):
-            return None
+            await ctx.send(f"{ctx.author.mention} this channel is not a queue")
+            return
+
+        if not await self.can_manage_queue(ctx):
+            await ctx.send(f"{ctx.author.mention} you are not allowed to manage this queue")
+            return
 
         embed = await self.generate_queue_event_embed(ctx, args)
 
         await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False)
         await ctx.send(content="queue hidden!", embed=embed)
 
-    @commands.command(name="recategorize", brief="Recategorize the queue", description="")
+    @commands.command(name="recategorize", brief="Recategorize the queue")
     @commands.guild_only()
     @commands.check(permissions.is_not_ignored)
     async def recategorize(self, ctx):
-        if not await self.can_manage_queue(ctx):
-            return None
+        """
+        This command will recategorize the queue manually.
+        This is usually needed if the queue creator obtained more kudosu and qualifies in a higher category or
+        has obtained a BN/NAT role.
+        """
 
         if not await self.channel_is_a_queue(ctx):
-            return None
+            await ctx.send(f"{ctx.author.mention} this channel is not a queue")
+            return
+
+        if not await self.can_manage_queue(ctx):
+            await ctx.send(f"{ctx.author.mention} you are not allowed to manage this queue")
+            return
 
         queue_owner = await self.get_queue_creator(ctx)
         if not queue_owner:
@@ -370,36 +477,44 @@ class Queue(commands.Cog):
         new_category = await self.get_queue_category(queue_owner)
         if old_category == new_category:
             await ctx.send(content="queue is already in the category it belongs in!")
-            return None
+            return
 
         await ctx.channel.edit(reason=None, category=new_category)
         await ctx.send(content="queue recategorized!")
 
-    @commands.command(name="archive", brief="Archive the queue", description="")
+    @commands.command(name="archive", brief="Archive the queue")
     @commands.guild_only()
     @commands.check(permissions.is_not_ignored)
     async def archive(self, ctx):
-        if not await self.can_manage_queue(ctx):
-            return None
+        """
+        This command will "archive" the queue. It will change channel permissions, so that,
+        other than server administrators, nobody can see it.
+        Additionally, it will move the channel to an archive category.
+        """
 
         if not await self.channel_is_a_queue(ctx):
-            return None
+            await ctx.send(f"{ctx.author.mention} this channel is not a queue")
+            return
+
+        if not await self.can_manage_queue(ctx):
+            await ctx.send(f"{ctx.author.mention} you are not allowed to manage this queue")
+            return
 
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
                                        ["queue_archive", str(ctx.guild.id)]) as cursor:
             guild_archive_category_id = await cursor.fetchone()
         if not guild_archive_category_id:
             await ctx.send("can't unarchive, guild archive category is not set anywhere")
-            return None
+            return
 
         archive_category = self.bot.get_channel(int(guild_archive_category_id[0]))
         if not archive_category:
             await ctx.send("something's wrong. i can't find the guild archive category")
-            return None
+            return
 
         if ctx.channel.category_id == archive_category.id:
             await ctx.send("queue is already archived!")
-            return None
+            return
 
         await ctx.channel.edit(reason=None, category=archive_category)
         await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False)
@@ -420,27 +535,29 @@ class Queue(commands.Cog):
                                        [str(member.id), str(member.guild.id)]) as cursor:
             queue_id = await cursor.fetchone()
         if not queue_id:
-            return None
+            return
 
         queue_channel = self.bot.get_channel(int(queue_id[0]))
         if not queue_channel:
-            return None
+            return
 
         await queue_channel.set_permissions(target=member, overwrite=self.queue_owner_default_permissions)
         await queue_channel.send("the queue (co)owner has returned, so i have restored permissions.")
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
+        # TODO: i don't trust this.
+
         async with self.bot.db.execute("SELECT channel_id FROM queues "
                                        "WHERE user_id = ? AND guild_id = ? AND is_creator = ?",
                                        [str(member.id), str(member.guild.id), str("1")]) as cursor:
             queue_id = await cursor.fetchone()
         if not queue_id:
-            return None
+            return
 
         queue_channel = self.bot.get_channel(int(queue_id[0]))
         if not queue_channel:
-            return None
+            return
 
         await queue_channel.send("the queue creator has left")
 
@@ -456,18 +573,18 @@ class Queue(commands.Cog):
                 await self.bot.db.execute("UPDATE queues SET is_creator = ? WHERE channel_id = ? AND user_id = ?",
                                           [str("0"), str(queue_channel.id), str(member.id)])
                 await queue_channel.send(f"i have chosen {new_creator.mention} as the queue creator")
-            return None
+            return
 
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
                                        ["queue_archive", str(queue_channel.guild.id)]) as cursor:
             guild_archive_category_id = await cursor.fetchone()
         if not guild_archive_category_id:
-            return None
+            return
 
         archive_category = self.bot.get_channel(int(guild_archive_category_id[0]))
 
         if queue_channel.category_id == archive_category.id:
-            return None
+            return
 
         await queue_channel.edit(reason=None, category=archive_category)
         await queue_channel.set_permissions(queue_channel.guild.default_role,
@@ -546,6 +663,21 @@ class Queue(commands.Cog):
             return user["kudosu"]["total"]
         except:
             return 0
+
+    async def generate_queue_event_embed(self, ctx, args):
+        if len(args) == 0:
+            return None
+        elif len(args) == 2:
+            embed_title = args[0]
+            embed_description = args[1]
+        else:
+            embed_title = "message"
+            embed_description = " ".join(args)
+        embed = discord.Embed(title=embed_title, description=embed_description, color=0xbd3661)
+        embed.set_author(name=ctx.author.display_name,
+                         icon_url=ctx.author.avatar_url_as(static_format="jpg", size=128))
+        await ctx.message.delete()
+        return embed
 
 
 def setup(bot):

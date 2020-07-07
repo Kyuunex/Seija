@@ -136,7 +136,8 @@ class GroupFeed(commands.Cog):
 
         if not user:
             # user is restricted
-            async with await self.bot.db.execute("SELECT * FROM groupfeed_member_info WHERE osu_id = ?",
+            async with await self.bot.db.execute("SELECT osu_id, username, country FROM groupfeed_member_info "
+                                                 "WHERE osu_id = ?",
                                                  [str(event[1])]) as cursor:
                 cached_info = await cursor.fetchone()
             if not cached_info:

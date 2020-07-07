@@ -22,6 +22,11 @@ if not os.path.exists("data"):
 if not os.path.exists(user_extensions_directory):
     os.makedirs(user_extensions_directory)
 
+if os.environ.get('SEIJA_PREFIX'):
+    command_prefix = os.environ.get('SEIJA_PREFIX')
+else:
+    command_prefix = "."
+
 first_run.create_tables()
 
 initial_extensions = [
@@ -91,5 +96,5 @@ class Seija(commands.Bot):
         await first_run.add_admins(self)
 
 
-client = Seija(command_prefix=".")
+client = Seija(command_prefix=command_prefix)
 client.run(bot_token)

@@ -525,10 +525,10 @@ class Queue(commands.Cog):
     @commands.check(permissions.is_not_ignored)
     async def list_open_queues(self, ctx):
         queue_categories = [await self.get_category_object(ctx.guild, "bn_nat_queue"),
-                            await self.get_category_object(ctx.guild, "beginner_queue"),
-                            await self.get_category_object(ctx.guild, "intermediate_queue"),
+                            await self.get_category_object(ctx.guild, "experienced_queue"),
                             await self.get_category_object(ctx.guild, "advanced_queue"),
-                            await self.get_category_object(ctx.guild, "experienced_queue")]
+                            await self.get_category_object(ctx.guild, "intermediate_queue"),
+                            await self.get_category_object(ctx.guild, "beginner_queue")]
 
         buffer = ":page_with_curl: **Open queues**\n\n"
         for queue_category in queue_categories:

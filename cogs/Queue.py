@@ -520,6 +520,31 @@ class Queue(commands.Cog):
         await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False)
         await ctx.send("queue archived!")
 
+    @commands.command(name="list_open_queues", brief="List open queues", aliases=['loq'])
+    @commands.guild_only()
+    @commands.check(permissions.is_not_ignored)
+    async def list_open_queues(self, ctx):
+        queue_categories = [await self.get_category_object(ctx.guild, "bn_nat_queue"),
+                            await self.get_category_object(ctx.guild, "beginner_queue"),
+                            await self.get_category_object(ctx.guild, "intermediate_queue"),
+                            await self.get_category_object(ctx.guild, "advanced_queue"),
+                            await self.get_category_object(ctx.guild, "experienced_queue")]
+
+        buffer = ":notepad_spiral: **Open queues**\n\n"
+        for queue_category in queue_categories:
+            buffer += f"**{queue_category.name}:**\n"
+            for text_channel in queue_category.text_channels:
+                # perms = text_channel.permissions_for(ctx.author)
+                role = ctx.guild.default_role
+                perms = text_channel.overwrites_for(role)
+                for perm in perms:
+                    if perm[0] == "send_messages":
+                        if perm[1]:
+                            buffer += f"{text_channel.mention}\n"
+
+        embed = discord.Embed(color=0xff6781)
+        await wrappers.send_large_embed(ctx.channel, embed, buffer)
+
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, deleted_channel):
         try:

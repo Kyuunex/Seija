@@ -20,7 +20,8 @@ class ModChecker(commands.Cog):
     @commands.guild_only()
     @commands.check(permissions.is_not_ignored)
     async def track(self, ctx, tracking_mode="timeline"):
-        async with self.bot.db.execute("SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
+        async with self.bot.db.execute("SELECT channel_id, role_id, user_id, mapset_id, guild_id FROM mapset_channels "
+                                       "WHERE user_id = ? AND channel_id = ?",
                                        [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
             mapset_owner_check = await cursor.fetchall()
         if not (mapset_owner_check or await permissions.is_admin(ctx)):
@@ -91,7 +92,8 @@ class ModChecker(commands.Cog):
     @commands.guild_only()
     @commands.check(permissions.is_not_ignored)
     async def untrack(self, ctx):
-        async with self.bot.db.execute("SELECT * FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
+        async with self.bot.db.execute("SELECT channel_id, role_id, user_id, mapset_id, guild_id FROM mapset_channels "
+                                       "WHERE user_id = ? AND channel_id = ?",
                                        [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
             mapset_owner_check = await cursor.fetchall()
         if not (mapset_owner_check or await permissions.is_admin(ctx)):
@@ -250,7 +252,7 @@ class ModChecker(commands.Cog):
     @commands.check(permissions.is_admin)
     @commands.check(permissions.is_not_ignored)
     async def sublist(self, ctx):
-        async with self.bot.db.execute("SELECT * FROM mod_tracking") as cursor:
+        async with self.bot.db.execute("SELECT mapset_id, channel_id, mode FROM mod_tracking") as cursor:
             track_list = await cursor.fetchall()
         for mapset in track_list:
             try:
@@ -264,7 +266,8 @@ class ModChecker(commands.Cog):
     @commands.command(name="veto_list", brief="List all vetoed mapsets everywhere", description="")
     @commands.check(permissions.is_not_ignored)
     async def veto_list(self, ctx):
-        async with self.bot.db.execute("SELECT * FROM mod_tracking WHERE mode = ?", ["veto"]) as cursor:
+        async with self.bot.db.execute("SELECT mapset_id, channel_id, mode FROM mod_tracking "
+                                       "WHERE mode = ?", ["veto"]) as cursor:
             vetoed_sets = await cursor.fetchall()
         if len(vetoed_sets) == 0:
             await ctx.send("Nothing is tracked in veto mode at this moment")
@@ -283,7 +286,7 @@ class ModChecker(commands.Cog):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
             await asyncio.sleep(10)
-            async with self.bot.db.execute("SELECT * FROM mod_tracking") as cursor:
+            async with self.bot.db.execute("SELECT mapset_id, channel_id, mode FROM mod_tracking") as cursor:
                 track_list = await cursor.fetchall()
             for track_entry in track_list:
                 channel = self.bot.get_channel(int(track_entry[1]))
@@ -300,7 +303,7 @@ class ModChecker(commands.Cog):
                 mapset_id = str(track_entry[0])
                 tracking_mode = str(track_entry[2])
 
-                async with self.bot.db.execute("SELECT * FROM mod_tracking "
+                async with self.bot.db.execute("SELECT mapset_id, channel_id, mode FROM mod_tracking "
                                                "WHERE mapset_id = ? AND channel_id = ? AND mode = ?",
                                                [str(mapset_id), str(channel.id), str(tracking_mode)]) as cursor:
                     is_no_longer_tracked = await cursor.fetchall()

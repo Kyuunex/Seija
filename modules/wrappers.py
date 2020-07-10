@@ -1,3 +1,6 @@
+import discord
+
+
 async def send_large_text(channel, contents):
     content_lines = contents.splitlines(True)
     output = ""
@@ -56,3 +59,10 @@ def get_member_guaranteed(ctx, lookup):
         if member.display_name.lower() == lookup.lower():
             return member
     return None
+
+
+async def embed_exception(exception):
+    embed = discord.Embed(title="Exception",
+                          description=str(exception),
+                          color=0xff0000)
+    return embed

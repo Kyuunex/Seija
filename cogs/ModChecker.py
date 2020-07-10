@@ -78,8 +78,9 @@ class ModChecker(commands.Cog):
 
         try:
             discussions = await self.bot.osuweb.get_beatmapset_discussions(str(mapset_id[0]))
-        except:
-            await ctx.send("I am having connection issues with osu servers, try again later")
+        except Exception as e:
+            await ctx.send("I am having connection issues with osu servers, try again later", 
+                           embed=await wrappers.embed_exception(e))
             return
 
         if not discussions:
@@ -104,16 +105,18 @@ class ModChecker(commands.Cog):
 
             beatmap_object = await self.bot.osu.get_beatmapset(s=str(mapset_id[0]))
             embed = await osuembed.beatmapset(beatmap_object)
-        except:
+        except Exception as e:
             embed = None
-            await ctx.send("I am having connection issues but i still managed to track this idk what happened lol")
+            await ctx.send("I am having connection issues but i still managed to track this idk what happened lol",
+                           embed=await wrappers.embed_exception(e))
 
         await ctx.send("Tracked", embed=embed)
 
         try:
             await self.unarchive_channel(ctx, "mapset")
-        except:
-            await ctx.send("I seem to be having a problem unarchiving the channel. maybe permissions are messed up??")
+        except Exception as e:
+            await ctx.send("I seem to be having a problem unarchiving the channel. maybe permissions are messed up??",
+                           embed=await wrappers.embed_exception(e))
 
         await self.bot.db.commit()
 
@@ -172,8 +175,9 @@ class ModChecker(commands.Cog):
 
         try:
             discussions = await self.bot.osuweb.get_beatmapset_discussions(str(mapset_id))
-        except:
-            await ctx.send("i am having connection issues with osu servers to do this")
+        except Exception as e:
+            await ctx.send("i am having connection issues with osu servers to do this",
+                           embed=await wrappers.embed_exception(e))
             return
 
         if not discussions:
@@ -195,9 +199,10 @@ class ModChecker(commands.Cog):
             embed = await osuembed.beatmapset(result)
 
             await ctx.send("Tracked in veto mode", embed=embed)
-        except:
+        except Exception as e:
             # same, as in .track command, no need to do the separate spi call for the embed thingy later on
-            await ctx.send("tracked")
+            await ctx.send("tracked",
+                           embed=await wrappers.embed_exception(e))
 
         await self.bot.db.commit()
 
@@ -232,8 +237,8 @@ class ModChecker(commands.Cog):
             result = await self.bot.osu.get_beatmapset(s=mapset_id)
             embed = await osuembed.beatmapset(result)
             await ctx.send("I untracked this mapset in this channel", embed=embed)
-        except:
-            await ctx.send("done")
+        except Exception as e:
+            await ctx.send("done", embed=await wrappers.embed_exception(e))
 
         await self.bot.db.commit()
 
@@ -266,8 +271,8 @@ class ModChecker(commands.Cog):
 
         try:
             discussions = await self.bot.osuweb.get_beatmapset_discussions(str(mapset_id))
-        except:
-            await ctx.send("connection issues bla bla bla")
+        except Exception as e:
+            await ctx.send("connection issues bla bla bla", embed=await wrappers.embed_exception(e))
             return
 
         if not discussions:
@@ -289,9 +294,9 @@ class ModChecker(commands.Cog):
             embed = await osuembed.beatmapset(result)
 
             await ctx.send(f"forcefully tracked in {tracking_mode} mode", embed=embed)
-        except:
+        except Exception as e:
             # same as in track
-            await ctx.send("tracked")
+            await ctx.send("tracked", embed=await wrappers.embed_exception(e))
 
         await self.bot.db.commit()
 
@@ -320,8 +325,8 @@ class ModChecker(commands.Cog):
             result = await self.bot.osu.get_beatmapset(s=mapset_id)
             embed = await osuembed.beatmapset(result)
             await ctx.send("I untracked this mapset in this channel", embed=embed)
-        except:
-            await ctx.send("done")
+        except Exception as e:
+            await ctx.send("done", embed=await wrappers.embed_exception(e))
 
         await self.bot.db.commit()
 
@@ -345,8 +350,8 @@ class ModChecker(commands.Cog):
             try:
                 result = await self.bot.osu.get_beatmapset(s=str(mapset[0]))
                 embed = await osuembed.beatmapset(result)
-            except:
-                await ctx.send("Connection issues?")
+            except Exception as e:
+                await ctx.send("Connection issues?", embed=await wrappers.embed_exception(e))
                 embed = None
             await ctx.send(content="mapset_id `%s` | channel <#%s> | tracking_mode `%s`" % mapset, embed=embed)
 
@@ -369,8 +374,8 @@ class ModChecker(commands.Cog):
             try:
                 result = await self.bot.osu.get_beatmapset(s=str(mapset[0]))
                 embed = await osuembed.beatmapset(result)
-            except:
-                await ctx.send("Connection issues?")
+            except Exception as e:
+                await ctx.send("Connection issues?", embed=await wrappers.embed_exception(e))
                 embed = None
             await ctx.send(content="mapset_id `%s` | channel <#%s> | tracking_mode `%s`" % mapset, embed=embed)
 

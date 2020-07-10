@@ -81,8 +81,9 @@ class Queue(commands.Cog):
 
         try:
             await ctx.message.delete()
-        except:
-            await ctx.send(f"{ctx.author.mention} I don't seem to have permissions to purge this queue")
+        except Exception as e:
+            await ctx.send(f"{ctx.author.mention} I don't seem to have permissions to purge this queue",
+                           embed=await wrappers.embed_exception(e))
             return
 
         async with ctx.channel.typing():
@@ -97,8 +98,9 @@ class Queue(commands.Cog):
 
             try:
                 deleted = await ctx.channel.purge(limit=int(amount), check=is_message_offtopic)
-            except:
-                await ctx.send(f"{ctx.author.mention} something went wrong while attempting to purge messages")
+            except Exception as e:
+                await ctx.send(f"{ctx.author.mention} something went wrong while attempting to purge messages", 
+                               embed=await wrappers.embed_exception(e))
                 return
 
         await ctx.send(f"Deleted {len(deleted)} message(s)")
@@ -241,9 +243,10 @@ class Queue(commands.Cog):
 
         try:
             await ctx.channel.set_permissions(member, overwrite=self.queue_owner_default_permissions)
-        except:
+        except Exception as e:
             await ctx.send(f"{ctx.author.mention} i am unable to edit the channel permissions, "
-                           f"idk why, maybe permissions error")
+                           f"idk why, maybe permissions error",
+                           embed=await wrappers.embed_exception(e))
             return
 
         await ctx.send(f"{member.mention} is now the co-owner of this queue!")
@@ -277,9 +280,10 @@ class Queue(commands.Cog):
 
         try:
             await ctx.channel.set_permissions(member, overwrite=None)
-        except:
+        except Exception as e:
             await ctx.send(f"{ctx.author.mention} i am unable to edit the channel permissions, "
-                           f"idk why, maybe permissions error")
+                           f"idk why, maybe permissions error", 
+                           embed=await wrappers.embed_exception(e))
             return
 
         await ctx.send(f"{member.mention} is no longer a co-owner of this queue!")
@@ -350,9 +354,10 @@ class Queue(commands.Cog):
 
         try:
             await ctx.channel.set_permissions(member, overwrite=self.queue_owner_default_permissions)
-        except:
+        except Exception as e:
             await ctx.send(f"{ctx.author.mention} i am unable to edit the channel permissions, "
-                           f"idk why, maybe permissions error, although i made the change in the database already")
+                           f"idk why, maybe permissions error, although i made the change in the database already", 
+                           embed=await wrappers.embed_exception(e))
             return
 
         await ctx.send(f"You have given the queue creator permissions to {member.mention}")

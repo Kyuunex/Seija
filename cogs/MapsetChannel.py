@@ -75,7 +75,7 @@ class MapsetChannel(commands.Cog):
             await member.add_roles(role, reason="added to mapset")
             await ctx.send(f"added {member.mention} in this channel")
         except Exception as e:
-            await ctx.send(e)
+            await ctx.send(embed=await wrappers.embed_exception(e))
 
     @commands.command(name="remove", brief="Remove a user from the current mapset channel")
     @commands.check(permissions.is_not_ignored)
@@ -102,7 +102,7 @@ class MapsetChannel(commands.Cog):
             await member.remove_roles(role, reason="removed from mapset")
             await ctx.send(f"removed {member.mention} from this channel")
         except Exception as e:
-            await ctx.send(e)
+            await ctx.send(embed=await wrappers.embed_exception(e))
 
     @commands.command(name="claim_diff", brief="Claim a beatmapset difficulty")
     @commands.guild_only()
@@ -160,7 +160,7 @@ class MapsetChannel(commands.Cog):
             await ctx.channel.edit(reason="mapset abandoned", category=archive_category)
             await ctx.send("moved to archive")
         except Exception as e:
-            await ctx.send(e)
+            await ctx.send(embed=await wrappers.embed_exception(e))
 
     @commands.command(name="set_id", brief="Set a mapset id for this channel")
     @commands.guild_only()
@@ -186,10 +186,10 @@ class MapsetChannel(commands.Cog):
             if not mapset:
                 await ctx.send("I can't find any mapset with that id")
                 return
-        except:
+        except Exception as e:
             await ctx.send("i have connection issues with osu servers "
                            "so i can't verify if the id you specified is legit. "
-                           "try again later")
+                           "try again later", embed=await wrappers.embed_exception(e))
             return
 
         await self.bot.db.execute("UPDATE mapset_channels SET mapset_id = ? WHERE channel_id = ?",
@@ -285,7 +285,7 @@ class MapsetChannel(commands.Cog):
             await role.delete(reason="manually nuked the role due to abuse")
             await ctx.channel.delete(reason="manually nuked the channel due to abuse")
         except Exception as e:
-            await ctx.send(e)
+            await ctx.send(embed=await wrappers.embed_exception(e))
 
     @commands.command(name="request_mapset_channel", brief="Request a mapset channel")
     @commands.guild_only()

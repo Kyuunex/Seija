@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import osuembed
 from modules import permissions
+from modules import wrappers
 
 
 class Osu(commands.Cog):
@@ -13,8 +14,9 @@ class Osu(commands.Cog):
     async def mapset(self, ctx, mapset_id: str):
         try:
             result = await self.bot.osu.get_beatmapset(s=mapset_id)
-        except:
-            await ctx.send("Connection problems?")
+        except Exception as e:
+            await ctx.send("Connection problems?",
+                           embed=await wrappers.embed_exception(e))
             return
 
         embed = await osuembed.beatmapset(result)
@@ -29,8 +31,9 @@ class Osu(commands.Cog):
     async def user(self, ctx, *, username):
         try:
             result = await self.bot.osu.get_user(u=username)
-        except:
-            await ctx.send("Connection problems?")
+        except Exception as e:
+            await ctx.send("Connection problems?", 
+                           embed=await wrappers.embed_exception(e))
             return
 
         embed = await osuembed.user(result)

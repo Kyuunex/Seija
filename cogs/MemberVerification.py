@@ -5,6 +5,7 @@ import sqlite3
 from discord.ext import commands
 from discord.utils import escape_markdown
 from modules import permissions
+from modules import wrappers
 import osuembed
 import datetime
 
@@ -43,8 +44,9 @@ class MemberVerification(commands.Cog):
 
         try:
             osu_profile = await self.bot.osu.get_user(u=osu_id)
-        except:
-            await ctx.send("i have connection issues with osu servers. so i can't do that right now")
+        except Exception as e:
+            await ctx.send("i have connection issues with osu servers. so i can't do that right now", 
+                           embed=await wrappers.embed_exception(e))
             return
 
         if not osu_profile:
@@ -65,13 +67,13 @@ class MemberVerification(commands.Cog):
 
         try:
             await member.add_roles(role)
-        except:
-            await ctx.send("i can't give the role")
+        except Exception as e:
+            await ctx.send("i can't give the role", embed=await wrappers.embed_exception(e))
 
         try:
             await member.edit(nick=osu_profile.name)
-        except:
-            await ctx.send("i can't update the nickname of this user")
+        except Exception as e:
+            await ctx.send("i can't update the nickname of this user", embed=await wrappers.embed_exception(e))
 
         embed = await osuembed.user(osu_profile)
 
@@ -134,7 +136,7 @@ class MemberVerification(commands.Cog):
                 await ctx.send("kicking old account")
                 await old_account.kick()
         except Exception as e:
-            await ctx.send(e)
+            await ctx.send(embed=await wrappers.embed_exception(e))
 
         await self.bot.db.execute("UPDATE users SET user_id = ? WHERE user_id = ?", [str(new_id), str(old_id)])
         await self.bot.db.execute("UPDATE map_owners SET user_id = ? WHERE user_id = ?", [str(new_id), str(old_id)])
@@ -171,8 +173,8 @@ class MemberVerification(commands.Cog):
             await member.edit(roles=[])
             await member.edit(nick=None)
             await ctx.send("removed nickname and roles")
-        except:
-            await ctx.send("no perms to change nickname and/or remove roles")
+        except Exception as e:
+            await ctx.send("no perms to change nickname and/or remove roles", embed=await wrappers.embed_exception(e))
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -272,9 +274,10 @@ class MemberVerification(commands.Cog):
 
         try:
             mapset = await self.bot.osu.get_beatmapset(s=mapset_id)
-        except:
+        except Exception as e:
             await channel.send("i am having issues connecting to osu servers to verify you. "
-                               "try again later or wait for a manager to help")
+                               "try again later or wait for a manager to help", 
+                               embed=await wrappers.embed_exception(e))
             return
 
         if not mapset:
@@ -345,9 +348,10 @@ class MemberVerification(commands.Cog):
 
         try:
             osu_profile = await self.bot.osu.get_user(u=osu_id)
-        except:
+        except Exception as e:
             await channel.send("i am having issues connecting to osu servers to verify you. "
-                               "try again later or wait for a manager to help")
+                               "try again later or wait for a manager to help", 
+                               embed=await wrappers.embed_exception(e))
             return
 
         if not osu_profile:
@@ -416,19 +420,21 @@ class MemberVerification(commands.Cog):
         try:
             member_mapsets = await self.bot.osu.get_beatmapsets(u=str(user_db_lookup[0]))
             ranked_amount = await self.count_ranked_beatmapsets(member_mapsets)
-        except:
+        except Exception as e:
             await channel.send("hm, new member joined and i seem to be having problems connecting to osu servers, "
-                               "so, for now, i'll just pretend you don't have any ranked maps.")
+                               "so, for now, i'll just pretend you don't have any ranked maps.", 
+                               embed=await wrappers.embed_exception(e))
             ranked_amount = 0
 
         role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
         await member.add_roles(role)
         try:
             osu_profile = await self.get_osu_profile(user_db_lookup[0])
-        except:
+        except Exception as e:
             await channel.send("okay, i also can't check your osu profile. "
                                "although i do have your osu profile info in my database. "
-                               "I'll just use the cached info then")
+                               "I'll just use the cached info then", 
+                               embed=await wrappers.embed_exception(e))
             osu_profile = None
 
         if osu_profile:
@@ -460,7 +466,7 @@ class MemberVerification(commands.Cog):
 
         try:
             osu_profile = await self.get_osu_profile(member.name)
-        except:
+        except Exception as e:
             # connection issues
             await channel.send(f"Welcome {member.mention}! in this server, we have a verification system "
                                "for purposes of giving correct roles and dealing with raids. "
@@ -469,7 +475,8 @@ class MemberVerification(commands.Cog):
                                "so, now I ask you link your profile and if it does not work, "
                                "wait patiently a little bit and then link your profile again. "
                                "worse case, managers will have to manually let you in. "
-                               "it will just take time. idk what else to put here. ")
+                               "it will just take time. ingore the error bellow, this is for the managers. ", 
+                               embed=await wrappers.embed_exception(e))
             return
 
         if (osu_profile and

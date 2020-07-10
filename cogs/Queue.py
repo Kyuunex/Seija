@@ -196,9 +196,9 @@ class Queue(commands.Cog):
         try:
             channel = await guild.create_text_channel(channel_name,
                                                       overwrites=channel_overwrites, category=category)
-        except:
+        except Exception as e:
             await ctx.send(f"{ctx.author.mention} i am unable to create the channel, idk why, maybe no perms. "
-                           f"managers will have to look into this")
+                           f"managers will have to look into this", embed=await wrappers.embed_exception(e))
             return
 
         await self.bot.db.execute("INSERT INTO queues VALUES (?, ?, ?, ?)",

@@ -1,4 +1,5 @@
 import discord
+from discord.utils import escape_markdown
 
 
 async def send_large_text(channel, contents):
@@ -63,6 +64,7 @@ def get_member_guaranteed(ctx, lookup):
 
 async def embed_exception(exception):
     embed = discord.Embed(title="Exception",
-                          description=str(exception),
+                          description=escape_markdown(str(exception)),
                           color=0xff0000)
+    embed.set_footer(text="This error information is for staff, just ignore it.")
     return embed

@@ -66,6 +66,30 @@ def get_member_guaranteed(ctx, lookup):
     return None
 
 
+def get_member_guaranteed_custom_guild(ctx, guild, lookup):
+    if len(ctx.message.mentions) > 0:
+        return ctx.message.mentions[0]
+
+    if lookup.isdigit():
+        result = guild.get_member(int(lookup))
+        if result:
+            return result
+
+    if "#" in lookup:
+        result = guild.get_member_named(lookup)
+        if result:
+            return result
+
+    for member in guild.members:
+        if member.display_name.lower() == lookup.lower():
+            return member
+    return None
+
+
+def make_message_link(message):
+    return f"https://discordapp.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
+
+
 async def embed_exception(exception):
     embed = discord.Embed(title="Exception",
                           description=escape_markdown(str(exception)),

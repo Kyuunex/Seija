@@ -2,6 +2,7 @@ import discord
 import os
 import time
 import psutil
+import json
 from discord.ext import commands
 from modules import permissions
 from modules import wrappers
@@ -293,10 +294,11 @@ class BotManagement(commands.Cog):
         buffer += f"**Memory usage:** {memory_usage} MB\n"
         buffer += f"\n"
 
+        with open(".contributors.json") as contributors_file:
+            contributor_list = json.load(contributors_file)
         buffer += f"**Bot contributors:**\n"
-        buffer += f"```\n"
-        buffer += f"{os.popen('git shortlog -sn').read()}\n"
-        buffer += f"```\n"
+        for contributor in contributor_list:
+            buffer += f"[{contributor['name']}]({contributor['url']})\n"
 
         embed = discord.Embed(title="About this bot", color=0xe95e62)
         await wrappers.send_large_embed(ctx.channel, embed, buffer)

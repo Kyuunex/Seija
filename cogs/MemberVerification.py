@@ -45,7 +45,7 @@ class MemberVerification(commands.Cog):
         try:
             osu_profile = await self.bot.osu.get_user(u=osu_id)
         except Exception as e:
-            await ctx.send("i have connection issues with osu servers. so i can't do that right now", 
+            await ctx.send("i have connection issues with osu servers. so i can't do that right now",
                            embed=await wrappers.embed_exception(e))
             return
 
@@ -187,6 +187,9 @@ class MemberVerification(commands.Cog):
                 # something is misconfigured
                 continue
 
+            if member.guild.member_count == 1000:
+                await channel.send(f"owo, our 1000-th member is here!")
+
             if member.bot:
                 await channel.send(f"beep boop boop beep, {member.mention} has joined our army of bots")
                 return
@@ -276,7 +279,7 @@ class MemberVerification(commands.Cog):
             mapset = await self.bot.osu.get_beatmapset(s=mapset_id)
         except Exception as e:
             await channel.send("i am having issues connecting to osu servers to verify you. "
-                               "try again later or wait for a manager to help", 
+                               "try again later or wait for a manager to help",
                                embed=await wrappers.embed_exception(e))
             return
 
@@ -350,7 +353,7 @@ class MemberVerification(commands.Cog):
             osu_profile = await self.bot.osu.get_user(u=osu_id)
         except Exception as e:
             await channel.send("i am having issues connecting to osu servers to verify you. "
-                               "try again later or wait for a manager to help", 
+                               "try again later or wait for a manager to help",
                                embed=await wrappers.embed_exception(e))
             return
 
@@ -422,7 +425,7 @@ class MemberVerification(commands.Cog):
             ranked_amount = await self.count_ranked_beatmapsets(member_mapsets)
         except Exception as e:
             await channel.send("hm, new member joined and i seem to be having problems connecting to osu servers, "
-                               "so, for now, i'll just pretend you don't have any ranked maps.", 
+                               "so, for now, i'll just pretend you don't have any ranked maps.",
                                embed=await wrappers.embed_exception(e))
             ranked_amount = 0
 
@@ -433,7 +436,7 @@ class MemberVerification(commands.Cog):
         except Exception as e:
             await channel.send("okay, i also can't check your osu profile. "
                                "although i do have your osu profile info in my database. "
-                               "I'll just use the cached info then", 
+                               "I'll just use the cached info then",
                                embed=await wrappers.embed_exception(e))
             osu_profile = None
 
@@ -445,14 +448,10 @@ class MemberVerification(commands.Cog):
             embed = None
 
         await member.edit(nick=name)
-        if member.guild.member_count == 1000:
-            verified_message = await channel.send(f"Everyone, please welcome our 1000-th member, {member.mention}!",
-                                                  embed=embed)
-        else:
-            verified_message = await channel.send(f"Welcome aboard {member.mention}! Since we know who you are, "
-                                                  "I have automatically gave you appropriate roles. "
-                                                  "Enjoy your stay!",
-                                                  embed=embed)
+        verified_message = await channel.send(f"Welcome aboard {member.mention}! Since we know who you are, "
+                                              "I have automatically gave you appropriate roles. "
+                                              "Enjoy your stay!",
+                                              embed=embed)
 
         await self.add_obligatory_reaction(verified_message, osu_profile)
 
@@ -475,7 +474,7 @@ class MemberVerification(commands.Cog):
                                "so, now I ask you link your profile and if it does not work, "
                                "wait patiently a little bit and then link your profile again. "
                                "worse case, managers will have to manually let you in. "
-                               "it will just take time. ingore the error bellow, this is for the managers. ", 
+                               "it will just take time. ingore the error bellow, this is for the managers. ",
                                embed=await wrappers.embed_exception(e))
             return
 

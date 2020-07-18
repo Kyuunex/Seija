@@ -237,7 +237,7 @@ class Queue(commands.Cog):
             await ctx.send("no member found with that name")
             return
 
-        if member.id == self.get_queue_creator(ctx).id:
+        if member.id == (await self.get_queue_creator(ctx)).id:
             await ctx.send(f"{ctx.author.mention} the member you're trying to add is the owner of this queue")
             return
 
@@ -277,7 +277,7 @@ class Queue(commands.Cog):
             await ctx.send("no member found with that name")
             return
 
-        if member.id == self.get_queue_creator(ctx).id:
+        if member.id == (await self.get_queue_creator(ctx)).id:
             await ctx.send(f"{ctx.author.mention} the member you're trying to remove is the owner of this queue")
             return
 

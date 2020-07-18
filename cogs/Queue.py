@@ -237,6 +237,9 @@ class Queue(commands.Cog):
             await ctx.send("no member found with that name")
             return
 
+        if member.id == self.get_queue_creator(ctx).id:
+            await ctx.send(f"{ctx.author.mention} the member you're trying to add is the owner of this queue")
+
         await self.bot.db.execute("INSERT INTO queues VALUES (?, ?, ?, ?)",
                                   [str(ctx.channel.id), str(member.id), str(ctx.guild.id), "0"])
         await self.bot.db.commit()
@@ -272,6 +275,9 @@ class Queue(commands.Cog):
         if not member:
             await ctx.send("no member found with that name")
             return
+
+        if member.id == self.get_queue_creator(ctx).id:
+            await ctx.send(f"{ctx.author.mention} the member you're trying to remove is the owner of this queue")
 
         await self.bot.db.execute("DELETE FROM queues "
                                   "WHERE channel_id = ? AND user_id = ? AND guild_id = ? AND is_creator = ?",

@@ -108,6 +108,8 @@ class MemberManagement(commands.Cog):
         This command checks the ranked map amount of every `Mapper` and `Ranked Mapper`
         and based on the amount of ranked maps, gives them a higher role.
         """
+        await ctx.send("i started checking the amount of ranked maps for every mapper and ranked mapper. "
+                       "this will take few minutes or more")
 
         await self.check_ranked_amount_by_role(ctx, 10, "ranked_mapper", "experienced_mapper")
         await self.check_ranked_amount_by_role(ctx, 1, "mapper", "ranked_mapper")

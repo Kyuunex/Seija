@@ -318,6 +318,9 @@ class MapsetChannel(commands.Cog):
                 if not mapset:
                     await ctx.send("you specified incorrect mapset id. "
                                    "you can correct this with `.set_id` command in the mapset channel")
+                if str(mapset.approved) == "1" or str(mapset.approved) == "2":
+                    await ctx.send("This map is ranked, you are not supposed to make a channel for it")
+                    return
             except Exception as e:
                 mapset = None
                 print(e)

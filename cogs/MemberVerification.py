@@ -476,7 +476,7 @@ class MemberVerification(commands.Cog):
                                "so, now I ask you link your profile and if it does not work, "
                                "wait patiently a little bit and then link your profile again. "
                                "worse case, managers will have to manually let you in. "
-                               "it will just take time. ingore the error bellow, this is for the managers. ",
+                               "it will just take time. ignore the error bellow, this is for the managers. ",
                                embed=await wrappers.embed_exception(e))
             return
 

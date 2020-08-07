@@ -23,7 +23,7 @@ class RankFeed(commands.Cog):
         Start sending information about the latest ranked maps in the channel this command is typed in.
         """
 
-        fresh_entries = await self.bot.osuweb.get_latest_ranked_beatmapsets()
+        fresh_entries = await self.bot.osuweb.scrape_latest_ranked_beatmapsets()
         if not fresh_entries:
             await ctx.send("Connection issues with osu website???")
             return
@@ -106,7 +106,7 @@ class RankFeed(commands.Cog):
 
                 print(time.strftime("%X %x %Z") + " | performing rankfeed check")
 
-                fresh_entries = await self.bot.osuweb.get_latest_ranked_beatmapsets()
+                fresh_entries = await self.bot.osuweb.scrape_latest_ranked_beatmapsets()
                 if not fresh_entries:
                     print("rankfeed connection issues with osu website???")
                     await asyncio.sleep(3600)

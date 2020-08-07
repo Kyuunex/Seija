@@ -77,7 +77,7 @@ class ModChecker(commands.Cog):
             return
 
         try:
-            discussions = await self.bot.osuweb.get_beatmapset_discussions(str(mapset_id[0]))
+            discussions = await self.bot.osuweb.scrape_beatmapset_discussions(str(mapset_id[0]))
         except Exception as e:
             await ctx.send("I am having connection issues with osu servers, try again later", 
                            embed=await wrappers.embed_exception(e))
@@ -174,7 +174,7 @@ class ModChecker(commands.Cog):
             return
 
         try:
-            discussions = await self.bot.osuweb.get_beatmapset_discussions(str(mapset_id))
+            discussions = await self.bot.osuweb.scrape_beatmapset_discussions(str(mapset_id))
         except Exception as e:
             await ctx.send("i am having connection issues with osu servers to do this",
                            embed=await wrappers.embed_exception(e))
@@ -270,7 +270,7 @@ class ModChecker(commands.Cog):
             return
 
         try:
-            discussions = await self.bot.osuweb.get_beatmapset_discussions(str(mapset_id))
+            discussions = await self.bot.osuweb.scrape_beatmapset_discussions(str(mapset_id))
         except Exception as e:
             await ctx.send("connection issues bla bla bla", embed=await wrappers.embed_exception(e))
             return
@@ -416,7 +416,7 @@ class ModChecker(commands.Cog):
                     continue
 
                 try:
-                    discussions = await self.bot.osuweb.get_beatmapset_discussions(mapset_id)
+                    discussions = await self.bot.osuweb.scrape_beatmapset_discussions(mapset_id)
                     if not discussions:
                         # if we are here,
                         # it means the mapset someone got tracked but there is no discussions page for it

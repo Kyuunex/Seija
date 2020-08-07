@@ -182,7 +182,7 @@ class GroupFeed(commands.Cog):
         await self.bot.db.commit()
 
     async def check_group(self, channel_list, group_id):
-        fresh_entries = await self.bot.osuweb.get_group_members(group_id)
+        fresh_entries = await self.bot.osuweb.scrape_group_members(group_id)
         if not fresh_entries:
             print("groupfeed connection problems?")
             return None

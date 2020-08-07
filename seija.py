@@ -12,6 +12,8 @@ from modules import first_run
 
 from modules.connections import bot_token as bot_token
 from modules.connections import osu_api_key as osu_api_key
+from modules.connections import client_id as client_id
+from modules.connections import client_secret as client_secret
 from modules.connections import database_file as database_file
 
 user_extensions_directory = "user_extensions"
@@ -54,7 +56,7 @@ class Seija(commands.Bot):
         self.description = f"Seija {self.app_version}"
         self.database_file = database_file
         self.osu = aioosuapi(osu_api_key)
-        self.osuweb = aioosuwebapi()
+        self.osuweb = aioosuwebapi(client_id, client_secret)
 
         for extension in initial_extensions:
             try:

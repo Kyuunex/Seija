@@ -550,32 +550,41 @@ class ModChecker(commands.Cog):
                                             print(e)
 
     async def notification_mode_tracking(self, discussions, channel, mapset_id):
-        # TODO: literally rewrite the whole thing
-        current_status = await self.check_if_resolved(discussions)  # 1 - we have new mods, 0 - no new mods
-        async with self.bot.db.execute("SELECT status FROM mapset_notification_status "
-                                       "WHERE mapset_id = ? AND channel_id = ?",
-                                       [str(mapset_id), str(channel.id)]) as cursor:
-            cached_status = await cursor.fetchall()
-        if not cached_status:
-            await self.bot.db.execute("INSERT INTO mapset_notification_status VALUES (?, ?, ?, ?)",
-                                      [str(mapset_id), str(0), str(channel.id), str(current_status)])
-            await self.bot.db.commit()
-            return None
+        diffs_lol = discussions["beatmapset"]["beatmaps"]
+        diffs_lol.append({"id": 0, "version": "All difficulties"})
+        for one_difficulty in diffs_lol:
+            diff_id = one_difficulty["id"]
+            diff_status = await self.check_if_diff_resolved(discussions, diff_id)  # 1 - new mods, 0 - no new mods
 
-        cached_status = cached_status[0][0]
-        if cached_status != current_status:
-            await self.bot.db.execute("UPDATE mapset_notification_status SET status = ? "
-                                      "WHERE mapset_id = ? AND channel_id = ?",
-                                      [str(current_status), str(mapset_id), str(channel.id)])
-            await self.bot.db.commit()
-            if current_status == "1":
-                unresolved_diffs = await self.get_unresolved_diffs(discussions)
-                return_message = "new mods on: "
-                for diff in unresolved_diffs:
-                    return_message += f"\n> {self.get_diff_name(discussions['beatmapset']['beatmaps'], diff)}"
-                return_message += "\nno further notifications until all mods are resolved"
-                await channel.send(return_message.replace("@", ""))
-        return None
+            async with self.bot.db.execute("SELECT status FROM mapset_notification_status "
+                                           "WHERE mapset_id = ? AND map_id = ? AND channel_id = ?",
+                                           [str(mapset_id), str(diff_id), str(channel.id)]) as cursor:
+                cached_status_db = await cursor.fetchone()
+            if not cached_status_db:
+                await self.bot.db.execute("INSERT INTO mapset_notification_status VALUES (?, ?, ?, ?)",
+                                          [str(mapset_id), str(diff_id), str(channel.id), str(diff_status)])
+                await self.bot.db.commit()
+                continue
+
+            cached_status = cached_status_db[0]
+            if cached_status != diff_status:
+                await self.bot.db.execute("UPDATE mapset_notification_status SET status = ? "
+                                          "WHERE mapset_id = ? AND map_id = ? AND channel_id = ?",
+                                          [str(diff_status), str(mapset_id), str(diff_id), str(channel.id)])
+                await self.bot.db.commit()
+                if diff_status == "1":
+                    return_message = ""
+                    async with self.bot.db.execute("SELECT user_id FROM map_owners WHERE map_id = ?",
+                                                   [str(diff_id)]) as cursor:
+                        map_owner = await cursor.fetchone()
+                    if map_owner:
+                        return_message += f"<@{map_owner[0]}> "
+                        # TODO: fix the allowed_mentions bullshittery
+                        # allowed_mentions=discord.AllowedMentions(users=True)
+                    return_message += "new mod(s) on: "
+                    return_message += f"**{one_difficulty['version']}**. "
+                    return_message += "no further notifications until all mods are resolved for this diff"
+                    await channel.send(return_message.replace("@", ""))
 
     async def check_nomination_status(self, discussions, channel, mapset_id, tracking_mode):
         async with self.bot.db.execute("SELECT event_id FROM mapset_events WHERE channel_id = ?",
@@ -630,6 +639,16 @@ class ModChecker(commands.Cog):
             if mod:
                 if not mod["resolved"]:
                     return "1"
+
+    async def check_if_diff_resolved(self, discussions, diff_id):
+        if diff_id == 0:
+            diff_id = None
+
+        for mod in discussions["beatmapset"]["discussions"]:
+            if mod and mod['beatmap_id'] == diff_id:
+                if not mod["resolved"]:
+                    return "1"
+        return "0"
 
     async def get_unresolved_diffs(self, discussions):
         return_list = []

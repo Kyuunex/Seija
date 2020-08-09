@@ -248,6 +248,7 @@ class MapsetChannel(commands.Cog):
 
         for channel in mapset_channels:
             buffer += "channel_id <#%s> | role_id %s | user_id <@%s> | mapset_id %s | guild_id %s \n" % channel
+            buffer += "\n"
 
         embed = discord.Embed(color=0xff6781)
 

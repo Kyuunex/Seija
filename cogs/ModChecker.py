@@ -740,7 +740,8 @@ class ModChecker(commands.Cog):
             try:
                 parse_this_retarded_json = json.loads(str(post["message"]))
                 mod_post_contents = await self.review_to_wall_of_text(discussions, parse_this_retarded_json)
-            except:
+            except Exception as e:
+                print(f"in build mod post contents {str(e)}")
                 mod_post_contents = str(post["message"])
         else:
             mod_post_contents = str(post["message"])

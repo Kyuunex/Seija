@@ -87,6 +87,9 @@ class Seija(commands.Bot):
         # Close connection to the database
         await self.db.close()
 
+        # Close osu web api session
+        await self.osuweb.close()
+
         # Run actual discord.py close.
         await super().close()
 

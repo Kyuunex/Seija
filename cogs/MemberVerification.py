@@ -543,6 +543,8 @@ class MemberVerification(commands.Cog):
             return False
 
     async def is_a_bn_or_nat(self, osu_profile, member):
+        return  # for now we disable this
+        
         async with self.bot.db.execute("SELECT group_id FROM groupfeed_group_members WHERE osu_id = ?",
                                        [str(osu_profile.id)]) as cursor:
             group_id_list = await cursor.fetchall()

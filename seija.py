@@ -82,14 +82,18 @@ class Seija(commands.Bot):
         for task in self.background_tasks:
             task.cancel()
 
-        # Close connection to the database
-        await self.db.close()
-
         # Close osu web api session
         await self.osuweb.close()
 
+        # Close connection to the database
+        if self.db:
+            await self.db.close()
+
         # Run actual discord.py close.
-        await super().close()
+        # await super().close()
+
+        # for now let's just quit() since the thing above does not work :c
+        quit()
 
     async def on_ready(self):
         print("Logged in as")

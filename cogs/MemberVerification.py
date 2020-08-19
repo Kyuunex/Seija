@@ -418,7 +418,6 @@ class MemberVerification(commands.Cog):
                                               embed=embed)
 
         await self.add_obligatory_reaction(verified_message, osu_profile)
-        await self.is_a_bn_or_nat(osu_profile, member)
 
     async def member_is_already_verified_and_just_needs_roles(self, channel, member, user_db_lookup):
         try:
@@ -455,7 +454,6 @@ class MemberVerification(commands.Cog):
                                               embed=embed)
 
         await self.add_obligatory_reaction(verified_message, osu_profile)
-        await self.is_a_bn_or_nat(osu_profile, member)
 
     async def ask_just_joined_member_to_verify(self, channel, member):
         async with self.bot.db.execute("SELECT osu_id, osu_username FROM users WHERE user_id = ?",
@@ -541,26 +539,6 @@ class MemberVerification(commands.Cog):
             return True
         else:
             return False
-
-    async def is_a_bn_or_nat(self, osu_profile, member):
-        return  # for now we disable this
-        
-        async with self.bot.db.execute("SELECT group_id FROM groupfeed_group_members WHERE osu_id = ?",
-                                       [str(osu_profile.id)]) as cursor:
-            group_id_list = await cursor.fetchall()
-        if not group_id_list:
-            return
-
-        group_role_list = (
-            ("7", "nat"),
-            ("28", "bn"),
-            ("32", "bn")
-        )
-
-        for group_id in group_id_list:
-            for group_role_id in group_role_list:
-                if str(group_id[0]) == group_role_id[0]:
-                    await member.add_roles(await self.get_role_from_db(group_role_id[1], member.guild))
 
 
 def setup(bot):

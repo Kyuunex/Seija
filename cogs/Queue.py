@@ -698,7 +698,7 @@ class Queue(commands.Cog):
 
     async def get_kudosu_int(self, osu_id):
         try:
-            user = await self.bot.osuweb.get_user(str(osu_id))
+            user = await self.bot.osuweb.get_user_array(str(osu_id))
             return user["kudosu"]["total"]
         except:
             return 0

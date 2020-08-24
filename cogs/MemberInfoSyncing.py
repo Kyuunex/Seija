@@ -5,7 +5,7 @@ import asyncio
 import datetime
 
 
-class MemberNameSyncing(commands.Cog):
+class MemberInfoSyncing(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -224,4 +224,4 @@ class MemberNameSyncing(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(MemberNameSyncing(bot))
+    bot.add_cog(MemberInfoSyncing(bot))

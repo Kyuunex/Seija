@@ -37,7 +37,7 @@ initial_extensions = [
     "cogs.MapsetChannel",
     "cogs.MapsetGitRepo",
     "cogs.MemberManagement",
-    "cogs.MemberNameSyncing",
+    "cogs.MemberInfoSyncing",
     "cogs.MemberStatistics",
     "cogs.MemberVerification",
     "cogs.ModChecker",

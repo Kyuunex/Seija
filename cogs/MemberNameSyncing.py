@@ -55,9 +55,9 @@ class MemberNameSyncing(commands.Cog):
             await asyncio.sleep(10)
             print(time.strftime("%X %x %Z") + " | member_name_syncing_loop start")
             async with self.bot.db.execute("SELECT guild_id, channel_id FROM channels WHERE setting = ?",
-                                           ["member_mapping_feed"]) as cursor:
-                member_mapping_feed_list = await cursor.fetchall()
-            if not member_mapping_feed_list:
+                                           ["notices"]) as cursor:
+                guild_notices_channel_list = await cursor.fetchall()
+            if not guild_notices_channel_list:
                 await asyncio.sleep(14400)
                 continue
 
@@ -67,23 +67,17 @@ class MemberNameSyncing(commands.Cog):
             async with self.bot.db.execute("SELECT guild_id, osu_id FROM restricted_users") as cursor:
                 restricted_user_list = await cursor.fetchall()
 
-            for mapping_feed_channel_id in member_mapping_feed_list:
+            for guild_notices_channel_id in guild_notices_channel_list:
 
-                feed_channel = self.bot.get_channel(int(mapping_feed_channel_id[1]))
-                guild = self.bot.get_guild(int(mapping_feed_channel_id[0]))
+                guild = self.bot.get_guild(int(guild_notices_channel_id[0]))
+                notices_channel = self.bot.get_channel(int(guild_notices_channel_id[1]))
 
-                async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND guild_id = ?",
-                                               ["notices", str(guild.id)]) as cursor:
-                    guild_notices_channel = await cursor.fetchall()
-
-                notices_channel = self.bot.get_channel(int(guild_notices_channel[0][0]))
-
-                await self.cycle_through_members(feed_channel, guild, notices_channel, restricted_user_list, user_list)
+                await self.cycle_through_members(guild, notices_channel, restricted_user_list, user_list)
 
             print(time.strftime("%X %x %Z") + " | member_name_syncing_loop finished")
             await asyncio.sleep(14400)
 
-    async def cycle_through_members(self, feed_channel, guild, notices_channel, restricted_user_list, user_list):
+    async def cycle_through_members(self, guild, notices_channel, restricted_user_list, user_list):
         for member in guild.members:
             if member.bot:
                 continue

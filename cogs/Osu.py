@@ -3,6 +3,7 @@ from discord.ext import commands
 import osuembed
 from modules import permissions
 from modules import wrappers
+import osuwebembed
 
 
 class Osu(commands.Cog):
@@ -30,16 +31,17 @@ class Osu(commands.Cog):
     @commands.check(permissions.is_not_ignored)
     async def user(self, ctx, *, username):
         try:
-            result = await self.bot.osu.get_user(u=username)
+            result = await self.bot.osuweb.get_user_array(username)
         except Exception as e:
             await ctx.send("Connection problems?", 
                            embed=await wrappers.embed_exception(e))
             return
 
-        embed = await osuembed.user(result)
-        if not embed:
+        if not result:
             await ctx.send(content="`No user found with that username`")
             return
+
+        embed = await osuwebembed.user_array(result)
 
         await ctx.send(embed=embed)
 

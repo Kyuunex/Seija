@@ -1,16 +1,8 @@
-"""
-You may be wondering, why I am doing name syncing and mapping activity tracking in the same cog.
-The answer is, to reuse api requests and not having to call the api again.
-If you have a better solution that is reasonably simple to implement let me know.
-"""
-
 from discord.ext import commands
 import discord
 import time
 import asyncio
 import datetime
-import osuembed
-from modules import wrappers
 
 
 class MemberNameSyncing(commands.Cog):
@@ -19,10 +11,6 @@ class MemberNameSyncing(commands.Cog):
 
         self.bot.background_tasks.append(
             self.bot.loop.create_task(self.member_name_syncing_loop())
-        )
-
-        self.bot.background_tasks.append(
-            self.bot.loop.create_task(self.event_history_cleanup_loop())
         )
 
     @commands.Cog.listener()
@@ -59,24 +47,6 @@ class MemberNameSyncing(commands.Cog):
 
             member = guild.get_member(int(after.id))
             await self.sync_nickname(notices_channel, query, member, osu_profile)
-
-    async def event_history_cleanup_loop(self):
-        print("Event History Cleanup Loop launched!")
-        await self.bot.wait_until_ready()
-        while not self.bot.is_closed():
-            try:
-                await asyncio.sleep(10)
-                print(time.strftime("%X %x %Z") + " | event_history_cleanup_loop start")
-                before = int(time.time()) - 172800
-                await self.bot.db.execute("DELETE FROM user_event_history WHERE timestamp < ?", [before])
-                await self.bot.db.commit()
-                print(time.strftime("%X %x %Z") + " | event_history_cleanup_loop finished")
-                await asyncio.sleep(86400)
-            except Exception as e:
-                print(time.strftime("%X %x %Z"))
-                print("in event_history_cleanup_loop")
-                print(e)
-                await asyncio.sleep(86400)
 
     async def member_name_syncing_loop(self):
         print("Member Name Syncing Loop launched!")
@@ -131,7 +101,6 @@ class MemberNameSyncing(commands.Cog):
 
                 if osu_profile:
                     await self.sync_nickname(notices_channel, db_user, member, osu_profile)
-                    await self.check_events(feed_channel, osu_profile)
 
                     if (str(guild.id), str(db_user[1])) in restricted_user_list:
                         embed = await self.embed_unrestricted(db_user, member)
@@ -258,48 +227,6 @@ class MemberNameSyncing(commands.Cog):
         embed.add_field(name="old_nickname", value=old_nickname, inline=False)
         embed.set_thumbnail(url=member.avatar_url)
         return embed
-
-    async def check_events(self, channel, user):
-        for event in user.events:
-            async with self.bot.db.execute("SELECT event_id FROM user_event_history WHERE event_id = ?",
-                                           [str(event.id)]) as cursor:
-                is_history_not_empty = await cursor.fetchall()
-
-            if is_history_not_empty:
-                return
-
-            await self.bot.db.execute("INSERT INTO user_event_history VALUES (?, ?, ?, ?)",
-                                      [str(user.id), str(event.id), str(channel.id), str(int(time.time()))])
-            await self.bot.db.commit()
-
-            event_color = await self.get_event_color(event.display_text)
-
-            if not event_color:
-                return
-
-            result = await self.bot.osu.get_beatmapset(s=event.beatmapset_id)
-            embed = await osuembed.beatmapset(result, event_color)
-
-            if not embed:
-                return
-
-            display_text = event.display_text.replace("@", "")
-            await channel.send(display_text, embed=embed)
-
-    async def get_event_color(self, event_description):
-        if "has submitted" in event_description:
-            return 0x2a52b2
-        elif "has updated" in event_description:
-            # return 0xb2532a
-            return None
-        elif "qualified" in event_description:
-            return 0x2ecc71
-        elif "has been revived" in event_description:
-            return 0xff93c9
-        elif "has been deleted" in event_description:
-            return 0xf2d7d5
-        else:
-            return None
 
 
 def setup(bot):

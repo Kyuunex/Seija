@@ -50,6 +50,34 @@ class MapsetChannel(commands.Cog):
         await self.on_member_join(member)
         await ctx.send("done")
 
+    @commands.command(name="show_mapset_members", brief="Print out a list of members who are in this mapset")
+    @commands.check(permissions.is_not_ignored)
+    @commands.guild_only()
+    async def show_mapset_members(self, ctx):
+        """
+        This command print out members who have the role that is tied to this mapset channel.
+        """
+
+        async with self.bot.db.execute("SELECT role_id FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
+                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+            role_id_list = await cursor.fetchone()
+        if not role_id_list:
+            await ctx.send("not your mapset channel")
+            return
+
+        try:
+            role = discord.utils.get(ctx.guild.roles, id=int(role_id_list[0]))
+            buffer = ""
+
+            for member in role.members:
+                buffer += f"{member.display_name}\n"
+
+            embed = discord.Embed(color=0xadff2f)
+            embed.set_author(name="Mapset members")
+            await wrappers.send_large_embed(ctx.channel, embed, buffer)
+        except Exception as e:
+            await ctx.send(embed=await wrappers.embed_exception(e))
+
     @commands.command(name="add", brief="Add a user in the current mapset channel")
     @commands.check(permissions.is_not_ignored)
     @commands.guild_only()

@@ -223,7 +223,9 @@ class Docs(commands.Cog):
         embed.add_field(name=".track (tracking_mode)",
                         value="Track the mapset in this channel. "
                               "For (tracking_mode), specify `timeline` for the discussion/timeline type "
-                              "or `notification` for the notification type.",
+                              "or `notification` for the notification type.\n"
+                              "timeline mode example: https://i.imgur.com/3pHW9FM.png\n"
+                              "notification mode example: https://i.imgur.com/e2LwWh2.png\n",
                         inline=False)
         embed.add_field(name=".untrack", value="Untrack everything in this channel.", inline=False)
 

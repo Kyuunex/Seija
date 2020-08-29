@@ -35,7 +35,10 @@ class ModChecker(commands.Cog):
         """
         This tracks the mapset.
         The ID used will be the one specified upon channel creation or set using set_id command.
-        :param tracking_mode: pls use 'timeline' mode for now
+        :param tracking_mode: 'timeline' or 'notification'
+
+        timeline mode example: https://i.imgur.com/3pHW9FM.png
+        notification mode example: https://i.imgur.com/e2LwWh2.png
         """
 
         if not await self.can_manage_mapset_channel(ctx):

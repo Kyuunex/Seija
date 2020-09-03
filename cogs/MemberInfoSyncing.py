@@ -33,8 +33,8 @@ class MemberInfoSyncing(commands.Cog):
         if not query:
             return
 
-        osu_profile = await self.bot.osu.get_user(u=query[1])
-        if not osu_profile:
+        fresh_osu_data = await self.bot.osuweb.get_user_array(query[1])
+        if not fresh_osu_data:
             return
 
         for this_guild in notices_channel_list:
@@ -46,7 +46,7 @@ class MemberInfoSyncing(commands.Cog):
                 continue
 
             member = guild.get_member(int(after.id))
-            await self.sync_nickname(notices_channel, query, member, osu_profile)
+            await self.sync_nickname(notices_channel, query, member, fresh_osu_data)
 
     async def member_name_syncing_loop(self):
         print("Member Info Syncing Loop launched!")
@@ -90,29 +90,30 @@ class MemberInfoSyncing(commands.Cog):
                 continue
 
             try:
-                # fresh_osu_data = await self.bot.osuweb.get_user_array(stored_user_info[1])
-                osu_profile = await self.bot.osu.get_user(u=stored_user_info[1], event_days="1")
+                fresh_osu_data = await self.bot.osuweb.get_user_array(stored_user_info[1])
             except Exception as e:
                 print(e)
                 await asyncio.sleep(120)
                 break
 
-            if osu_profile:
-                await self.sync_nickname(notices_channel, stored_user_info, member, osu_profile)
+            if fresh_osu_data:
+                await self.sync_nickname(notices_channel, stored_user_info, member, fresh_osu_data)
 
-                await self.bot.db.execute("UPDATE users SET country = ?, pp = ?, "
-                                          "osu_join_date = ?, osu_username = ? WHERE user_id = ?;",
-                                          [str(osu_profile.country), str(osu_profile.pp_raw),
-                                           str(osu_profile.join_date), str(osu_profile.name), str(member.id)])
+                await self.bot.db.execute("UPDATE users "
+                                          "SET country = ?, pp = ?, osu_join_date = ?, "
+                                          "osu_username = ?, ranked_maps_amount = ? WHERE user_id = ?",
+                                          [str(fresh_osu_data["country_code"]), str(fresh_osu_data["statistics"]["pp"]),
+                                           str(fresh_osu_data["join_date"]), str(fresh_osu_data["username"]),
+                                           str(fresh_osu_data["ranked_and_approved_beatmapset_count"]), str(member.id)])
                 await self.bot.db.commit()
 
-            await self.restrict_unrestrict_checks(osu_profile, guild, stored_user_info,
+            await self.restrict_unrestrict_checks(fresh_osu_data, guild, stored_user_info,
                                                   restricted_user_list, member, notices_channel)
             await asyncio.sleep(1)
 
-    async def restrict_unrestrict_checks(self, osu_profile, guild, stored_user_info,
+    async def restrict_unrestrict_checks(self, fresh_osu_data, guild, stored_user_info,
                                          restricted_user_list, member, notices_channel):
-        is_not_restricted = bool(osu_profile)
+        is_not_restricted = bool(fresh_osu_data)
 
         if is_not_restricted:
             if (str(guild.id), str(stored_user_info[1])) in restricted_user_list:
@@ -137,41 +138,38 @@ class MemberInfoSyncing(commands.Cog):
                 return db_user
         return None
 
-    async def sync_nickname(self, notices_channel, db_user, member, osu_profile):
-        if str(db_user[2]) != osu_profile.name:
-            embed = await NoticesEmbeds.namechange(db_user, member, osu_profile)
+    async def sync_nickname(self, notices_channel, db_user, member, fresh_osu_data):
+        if str(db_user[2]) != str(fresh_osu_data["username"]):
+            embed = await NoticesEmbeds.namechange(db_user, member, fresh_osu_data)
             await notices_channel.send(embed=embed)
 
-        if member.display_name != osu_profile.name:
-            await self.apply_nickname(db_user, member, notices_channel, osu_profile)
-
-    async def apply_nickname(self, db_user, member, notices_channel, osu_profile):
-        now = datetime.datetime.now()
-        if "04-01T" in str(now.isoformat()):
-            return
-        if "03-31T" in str(now.isoformat()):
-            return
-        if "1" in str(db_user[7]):
-            return
-        try:
-            if member.guild_permissions.administrator:
+        if member.display_name != str(fresh_osu_data["username"]):
+            now = datetime.datetime.now()
+            if "04-01T" in str(now.isoformat()):
                 return
-        except:
-            return
+            if "03-31T" in str(now.isoformat()):
+                return
+            if "1" in str(db_user[7]):
+                return
+            try:
+                if member.guild_permissions.administrator:
+                    return
+            except:
+                return
 
-        old_nickname = member.display_name
-        try:
-            await member.edit(nick=osu_profile.name)
-            embed = await NoticesEmbeds.nickname_updated(db_user, member, old_nickname, osu_profile)
-            await notices_channel.send(embed=embed)
-        except:
-            embed = await NoticesEmbeds.error_name_change(db_user, member, old_nickname, osu_profile)
-            await notices_channel.send(embed=embed)
+            old_nickname = member.display_name
+            try:
+                await member.edit(nick=fresh_osu_data["username"])
+                embed = await NoticesEmbeds.nickname_updated(db_user, member, old_nickname, fresh_osu_data)
+                await notices_channel.send(embed=embed)
+            except:
+                embed = await NoticesEmbeds.error_name_change(db_user, member, old_nickname, fresh_osu_data)
+                await notices_channel.send(embed=embed)
 
 
 class NoticesEmbeds:
     @staticmethod
-    async def nickname_updated(db_user, member, old_nickname, osu_profile):
+    async def nickname_updated(db_user, member, old_nickname, fresh_osu_data):
         embed = discord.Embed(
             color=0xbd3661,
             description=":pencil2: nickname updated",
@@ -180,14 +178,14 @@ class NoticesEmbeds:
         )
         embed.add_field(name="user", value=member.mention, inline=False)
         embed.add_field(name="cached_osu_username", value=db_user[2], inline=False)
-        embed.add_field(name="current_osu_username", value=osu_profile.name, inline=False)
+        embed.add_field(name="current_osu_username", value=fresh_osu_data["username"], inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
         embed.add_field(name="old_nickname", value=old_nickname, inline=False)
         embed.set_thumbnail(url=member.avatar_url)
         return embed
 
     @staticmethod
-    async def error_name_change(db_user, member, old_nickname, osu_profile):
+    async def error_name_change(db_user, member, old_nickname, fresh_osu_data):
         embed = discord.Embed(
             color=0xFF0000,
             description=":anger: no perms to update nickname",
@@ -196,14 +194,14 @@ class NoticesEmbeds:
         )
         embed.add_field(name="user", value=member.mention, inline=False)
         embed.add_field(name="cached_osu_username", value=db_user[2], inline=False)
-        embed.add_field(name="current_osu_username", value=osu_profile.name, inline=False)
+        embed.add_field(name="current_osu_username", value=fresh_osu_data["username"], inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
         embed.add_field(name="old_nickname", value=old_nickname, inline=False)
         embed.set_thumbnail(url=member.avatar_url)
         return embed
 
     @staticmethod
-    async def namechange(db_user, member, osu_profile):
+    async def namechange(db_user, member, fresh_osu_data):
         embed = discord.Embed(
             color=0xbd3661,
             description=":pen_ballpoint: namechange",
@@ -212,7 +210,7 @@ class NoticesEmbeds:
         )
         embed.add_field(name="user", value=member.mention, inline=False)
         embed.add_field(name="old_osu_username", value=db_user[2], inline=False)
-        embed.add_field(name="new_osu_username", value=osu_profile.name, inline=False)
+        embed.add_field(name="new_osu_username", value=fresh_osu_data["username"], inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
         embed.set_thumbnail(url=member.avatar_url)
         if str(db_user[1]) == str(4116573):

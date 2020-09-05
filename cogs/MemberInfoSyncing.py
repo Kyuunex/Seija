@@ -89,6 +89,12 @@ class MemberInfoSyncing(commands.Cog):
         return discord.utils.get(guild.roles, id=int(role_id[0]))
 
     async def sync_the_guild(self, guild, notices_channel, restricted_user_list, stored_user_info_list):
+        group_roles = [
+            [7, await self.get_role_from_db("nat", guild)],
+            [28, await self.get_role_from_db("bn", guild)],
+            [32, await self.get_role_from_db("bn", guild)],
+        ]
+
         for member in guild.members:
             if member.bot:
                 continue

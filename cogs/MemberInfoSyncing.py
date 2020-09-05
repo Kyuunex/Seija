@@ -138,9 +138,9 @@ class MemberInfoSyncing(commands.Cog):
                 return db_user
         return None
 
-    async def sync_nickname(self, notices_channel, db_user, member, fresh_osu_data):
-        if str(db_user[2]) != str(fresh_osu_data["username"]):
-            embed = await NoticesEmbeds.namechange(db_user, member, fresh_osu_data)
+    async def sync_nickname(self, notices_channel, stored_user_info, member, fresh_osu_data):
+        if str(stored_user_info[2]) != str(fresh_osu_data["username"]):
+            embed = await NoticesEmbeds.namechange(stored_user_info, member, fresh_osu_data)
             await notices_channel.send(embed=embed)
 
         if member.display_name != str(fresh_osu_data["username"]):
@@ -149,7 +149,7 @@ class MemberInfoSyncing(commands.Cog):
                 return
             if "03-31T" in str(now.isoformat()):
                 return
-            if "1" in str(db_user[7]):
+            if "1" in str(stored_user_info[7]):
                 return
             try:
                 if member.guild_permissions.administrator:
@@ -160,10 +160,10 @@ class MemberInfoSyncing(commands.Cog):
             old_nickname = member.display_name
             try:
                 await member.edit(nick=fresh_osu_data["username"])
-                embed = await NoticesEmbeds.nickname_updated(db_user, member, old_nickname, fresh_osu_data)
+                embed = await NoticesEmbeds.nickname_updated(stored_user_info, member, old_nickname, fresh_osu_data)
                 await notices_channel.send(embed=embed)
             except:
-                embed = await NoticesEmbeds.error_name_change(db_user, member, old_nickname, fresh_osu_data)
+                embed = await NoticesEmbeds.error_name_change(stored_user_info, member, old_nickname, fresh_osu_data)
                 await notices_channel.send(embed=embed)
 
 

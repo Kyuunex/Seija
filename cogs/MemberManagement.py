@@ -1,9 +1,8 @@
 import discord
-import asyncio
 from discord.ext import commands
 from modules import permissions
 from modules import wrappers
-import osuembed
+import osuwebembed
 
 
 class MemberManagement(commands.Cog):
@@ -91,13 +90,18 @@ class MemberManagement(commands.Cog):
         if not osu_id:
             return
 
-        result = await self.bot.osu.get_user(u=osu_id[0])
+        try:
+            result = await self.bot.osuweb.get_user_array(osu_id[0])
+        except Exception as e:
+            await ctx.send("Connection problems?",
+                           embed=await wrappers.embed_exception(e))
+            return
         if not result:
             await ctx.send(f"<https://osu.ppy.sh/users/{osu_id[0]}>")
             return
 
-        embed = await osuembed.user(result)
-        await ctx.send(result.url, embed=embed)
+        embed = await osuwebembed.user_array(result)
+        await ctx.send(embed=embed)
 
 
 def setup(bot):

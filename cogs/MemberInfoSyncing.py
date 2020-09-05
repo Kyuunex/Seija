@@ -80,6 +80,14 @@ class MemberInfoSyncing(commands.Cog):
             print(time.strftime("%X %x %Z") + " | member_name_syncing_loop finished")
             await asyncio.sleep(14400)
 
+    async def get_role_from_db(self, setting, guild):
+        async with self.bot.db.execute("SELECT role_id FROM roles WHERE setting = ? AND guild_id = ?",
+                                       [setting, str(guild.id)]) as cursor:
+            role_id = await cursor.fetchone()
+        if not role_id:
+            raise ValueError(f"CONFIGURE ROLES FOR GUILD {str(guild.id)} PLEASE")
+        return discord.utils.get(guild.roles, id=int(role_id[0]))
+
     async def sync_the_guild(self, guild, notices_channel, restricted_user_list, stored_user_info_list):
         for member in guild.members:
             if member.bot:
@@ -98,6 +106,7 @@ class MemberInfoSyncing(commands.Cog):
 
             if fresh_osu_data:
                 await self.sync_nickname(notices_channel, stored_user_info, member, fresh_osu_data)
+                await self.sync_group_roles(notices_channel, stored_user_info, member, group_roles, fresh_osu_data)
 
                 await self.bot.db.execute("UPDATE users "
                                           "SET country = ?, pp = ?, osu_join_date = ?, "
@@ -166,6 +175,50 @@ class MemberInfoSyncing(commands.Cog):
                 embed = await NoticesEmbeds.error_name_change(stored_user_info, member, old_nickname, fresh_osu_data)
                 await notices_channel.send(embed=embed)
 
+    async def sync_group_roles(self, notices_channel, stored_user_info, member, group_roles, fresh_osu_data):
+        user_qualifies_for_these_roles = await self.get_user_qualified_group_roles(fresh_osu_data, group_roles)
+        user_already_has_these_roles = await self.get_user_existing_group_roles(member, group_roles)
+
+        if set(user_qualifies_for_these_roles) == set(user_already_has_these_roles):
+            return
+
+        changes = ["", ""]
+
+        if user_already_has_these_roles:
+            for role_to_remove in user_already_has_these_roles:
+                try:
+                    await member.remove_roles(role_to_remove)
+                    changes[1] += f"{role_to_remove} "
+                except:
+                    pass
+
+        if user_qualifies_for_these_roles:
+            for role_to_add in user_qualifies_for_these_roles:
+                try:
+                    await member.add_roles(role_to_add)
+                    changes[0] += f"{role_to_add} "
+                except:
+                    pass
+
+        embed = await NoticesEmbeds.group_role_change(stored_user_info, member, changes)
+        await notices_channel.send(embed=embed)
+
+    async def get_user_qualified_group_roles(self, fresh_osu_data, group_roles):
+        return_list = []
+        for group in fresh_osu_data["groups"]:
+            for group_role in group_roles:
+                if int(group["id"]) == int(group_role[0]):
+                    return_list.append(group_role[1])
+        return return_list
+
+    async def get_user_existing_group_roles(self, member, group_roles):
+        return_list = []
+        for role in member.roles:
+            for group_role in group_roles:
+                if int(role.id) == int(group_role[1].id):
+                    return_list.append(group_role[1])
+        return list(dict.fromkeys(return_list))  # this has to happen since we use the same BN role for probation BNs
+
 
 class NoticesEmbeds:
     @staticmethod
@@ -215,6 +268,22 @@ class NoticesEmbeds:
         embed.set_thumbnail(url=member.avatar_url)
         if str(db_user[1]) == str(4116573):
             embed.set_footer(text="btw, this is bor. yes, i actually added this specific message for bor.")
+        return embed
+
+    @staticmethod
+    async def group_role_change(db_user, member, changes):
+        embed = discord.Embed(
+            color=0xbd3661,
+            description=":label: group role change",
+            title=member.display_name,
+            url=f"https://osu.ppy.sh/users/{db_user[1]}"
+        )
+        embed.add_field(name="user", value=member.mention, inline=False)
+        embed.add_field(name="osu_username", value=db_user[2], inline=False)
+        embed.add_field(name="osu_id", value=db_user[1], inline=False)
+        embed.add_field(name="added group role", value=changes[0], inline=False)
+        embed.add_field(name="removed group role", value=changes[1], inline=False)
+        embed.set_thumbnail(url=member.avatar_url)
         return embed
 
     @staticmethod

@@ -89,6 +89,12 @@ class MemberInfoSyncing(commands.Cog):
         return discord.utils.get(guild.roles, id=int(role_id[0]))
 
     async def sync_the_guild(self, guild, notices_channel, restricted_user_list, stored_user_info_list):
+        mapper_roles = {
+            10: await self.get_role_from_db("experienced_mapper", guild),
+            1: await self.get_role_from_db("ranked_mapper", guild),
+            0: await self.get_role_from_db("mapper", guild),
+        }
+
         group_roles = [
             [7, await self.get_role_from_db("nat", guild)],
             [28, await self.get_role_from_db("bn", guild)],
@@ -112,6 +118,7 @@ class MemberInfoSyncing(commands.Cog):
 
             if fresh_osu_data:
                 await self.sync_nickname(notices_channel, stored_user_info, member, fresh_osu_data)
+                await self.sync_mapper_roles(notices_channel, stored_user_info, member, mapper_roles, fresh_osu_data)
                 await self.sync_group_roles(notices_channel, stored_user_info, member, group_roles, fresh_osu_data)
 
                 await self.bot.db.execute("UPDATE users "
@@ -225,6 +232,49 @@ class MemberInfoSyncing(commands.Cog):
                     return_list.append(group_role[1])
         return list(dict.fromkeys(return_list))  # this has to happen since we use the same BN role for probation BNs
 
+    async def sync_mapper_roles(self, notices_channel, stored_user_info, member, mapper_roles, fresh_osu_data):
+        user_qualifies_for_this_role = await self.get_user_qualified_mapper_role(fresh_osu_data, mapper_roles)
+        user_already_has_this_role = await self.get_user_existing_mapper_role(member, mapper_roles)
+
+        if user_qualifies_for_this_role == user_already_has_this_role:
+            return
+
+        changes = [None, None]
+
+        if user_already_has_this_role:
+            try:
+                await member.remove_roles(user_already_has_this_role)
+                changes[1] = user_already_has_this_role
+            except:
+                pass
+
+        if user_qualifies_for_this_role:
+            try:
+                await member.add_roles(user_qualifies_for_this_role)
+                changes[0] = user_qualifies_for_this_role
+            except:
+                pass
+
+        embed = await NoticesEmbeds.mapper_role_change(stored_user_info, member, changes)
+        await notices_channel.send(embed=embed)
+
+    async def get_user_qualified_mapper_role(self, fresh_osu_data, mapper_roles):
+        ranked_amount = fresh_osu_data["ranked_and_approved_beatmapset_count"]
+
+        if ranked_amount >= 10:
+            return mapper_roles[10]
+        elif ranked_amount >= 1:
+            return mapper_roles[1]
+        else:
+            return mapper_roles[0]
+
+    async def get_user_existing_mapper_role(self, member, mapper_roles):
+        for role in member.roles:
+            for amount_required, mapper_role in mapper_roles.items():
+                if int(role.id) == int(mapper_role.id):
+                    return mapper_role
+        return None
+
 
 class NoticesEmbeds:
     @staticmethod
@@ -289,6 +339,22 @@ class NoticesEmbeds:
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
         embed.add_field(name="added group role", value=changes[0], inline=False)
         embed.add_field(name="removed group role", value=changes[1], inline=False)
+        embed.set_thumbnail(url=member.avatar_url)
+        return embed
+
+    @staticmethod
+    async def mapper_role_change(db_user, member, changes):
+        embed = discord.Embed(
+            color=0xbd3661,
+            description=":map: mapper role change",
+            title=member.display_name,
+            url=f"https://osu.ppy.sh/users/{db_user[1]}"
+        )
+        embed.add_field(name="user", value=member.mention, inline=False)
+        embed.add_field(name="osu_username", value=db_user[2], inline=False)
+        embed.add_field(name="osu_id", value=db_user[1], inline=False)
+        embed.add_field(name="added mapper role", value=changes[0], inline=False)
+        embed.add_field(name="removed mapper role", value=changes[1], inline=False)
         embed.set_thumbnail(url=member.avatar_url)
         return embed
 

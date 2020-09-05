@@ -7,6 +7,7 @@ from discord.utils import escape_markdown
 from modules import permissions
 from modules import wrappers
 import osuembed
+import osuwebembed
 import datetime
 
 
@@ -43,18 +44,17 @@ class MemberVerification(commands.Cog):
             return
 
         try:
-            osu_profile = await self.bot.osu.get_user(u=osu_id)
+            fresh_osu_data = await self.bot.osuweb.get_user_array(osu_id)
         except Exception as e:
             await ctx.send("i have connection issues with osu servers. so i can't do that right now",
                            embed=await wrappers.embed_exception(e))
             return
 
-        if not osu_profile:
+        if not fresh_osu_data:
             await ctx.send("no osu account found with that osu_id or username")
             return
 
-        member_mapsets = await self.bot.osu.get_beatmapsets(u=str(osu_profile.id))
-        ranked_amount = await self.count_ranked_beatmapsets(member_mapsets)
+        ranked_amount = fresh_osu_data["ranked_and_approved_beatmapset_count"]
 
         try:
             role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
@@ -71,19 +71,20 @@ class MemberVerification(commands.Cog):
             await ctx.send("i can't give the role", embed=await wrappers.embed_exception(e))
 
         try:
-            await member.edit(nick=osu_profile.name)
+            await member.edit(nick=fresh_osu_data["username"])
         except Exception as e:
             await ctx.send("i can't update the nickname of this user", embed=await wrappers.embed_exception(e))
 
-        embed = await osuembed.user(osu_profile)
+        embed = await osuwebembed.user_array(fresh_osu_data)
 
         await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [str(member.id)])
         await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
-                                  [str(member.id), str(osu_profile.id), str(osu_profile.name),
-                                   str(osu_profile.join_date),
-                                   str(osu_profile.pp_raw), str(osu_profile.country), str(ranked_amount), "0"])
+                                  [str(member.id), str(fresh_osu_data["id"]), str(fresh_osu_data["username"]),
+                                   str(fresh_osu_data["join_date"]), str(fresh_osu_data["statistics"]["pp"]),
+                                   str(fresh_osu_data["country_code"]), str(ranked_amount), "0"])
         await self.bot.db.commit()
 
+        await self.check_group_roles(ctx.channel, member, ctx.guild, fresh_osu_data)
         await ctx.send(content=f"Manually Verified: {member.name}", embed=embed)
 
     @commands.command(name="verify_restricted", brief="Manually verify a restricted member")
@@ -251,9 +252,9 @@ class MemberVerification(commands.Cog):
 
             if osu_id:
                 try:
-                    osu_profile = await self.bot.osu.get_user(u=osu_id[0])
-                    embed = await osuembed.user(osu_profile, 0xffffff, "User left")
-                    member_name = osu_profile.name
+                    fresh_osu_data = await self.bot.osuweb.small_get_user_array(osu_id[0])
+                    embed = await osuwebembed.user_array(fresh_osu_data, 0xffffff, "User left")
+                    member_name = fresh_osu_data["username"]
                 except:
                     print("Connection issues?")
                     embed = None
@@ -350,14 +351,14 @@ class MemberVerification(commands.Cog):
         member = message.author
 
         try:
-            osu_profile = await self.bot.osu.get_user(u=osu_id)
+            fresh_osu_data = await self.bot.osuweb.get_user_array(osu_id)
         except Exception as e:
             await channel.send("i am having issues connecting to osu servers to verify you. "
                                "try again later or wait for a manager to help",
                                embed=await wrappers.embed_exception(e))
             return
 
-        if not osu_profile:
+        if not fresh_osu_data:
             if osu_id.isdigit():
                 await channel.send("verification failure, "
                                    "i can't find any profile from that link or you are restricted. "
@@ -365,33 +366,33 @@ class MemberVerification(commands.Cog):
             else:
                 await channel.send("verification failure, "
                                    "either your discord username does not match a username of any osu account "
-                                   "at the tole you typed 'yes', "
+                                   "at the time you typed 'yes', "
                                    "or you linked an incorrect profile. "
                                    "this error also pops up if you are restricted, in that case, "
                                    "link any of your recently uploaded maps (ranked with the latest name preferred)")
             return
 
-        member_mapsets = await self.bot.osu.get_beatmapsets(u=str(osu_profile.id))
-        ranked_amount = await self.count_ranked_beatmapsets(member_mapsets)
+        ranked_amount = fresh_osu_data["ranked_and_approved_beatmapset_count"]
         role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
 
         async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]) as cursor:
             already_linked_to = await cursor.fetchone()
         if already_linked_to:
-            if str(osu_profile.id) != already_linked_to[0]:
+            if str(fresh_osu_data["id"]) != already_linked_to[0]:
                 await channel.send(f"{member.mention} it seems like your discord account is already in my database and "
                                    f"is linked to <https://osu.ppy.sh/users/{already_linked_to[0]}>")
                 return
             else:
                 try:
                     await member.add_roles(role)
-                    await member.edit(nick=osu_profile.name)
+                    await member.edit(nick=fresh_osu_data["username"])
                 except:
                     pass
                 await channel.send(content=f"{member.mention} i already know lol. here, have some roles")
                 return
 
-        async with self.bot.db.execute("SELECT user_id FROM users WHERE osu_id = ?", [str(osu_profile.id)]) as cursor:
+        async with self.bot.db.execute("SELECT user_id FROM users WHERE osu_id = ?",
+                                       [str(fresh_osu_data["id"])]) as cursor:
             check_if_new_discord_account = await cursor.fetchone()
         if check_if_new_discord_account:
             if str(check_if_new_discord_account[0]) != str(member.id):
@@ -402,47 +403,41 @@ class MemberVerification(commands.Cog):
 
         try:
             await member.add_roles(role)
-            await member.edit(nick=osu_profile.name)
+            await member.edit(nick=fresh_osu_data["username"])
         except:
             pass
 
-        embed = await osuembed.user(osu_profile)
+        embed = await osuwebembed.user_array(fresh_osu_data)
         await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [str(member.id)])
         await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
-                                  [str(member.id), str(osu_profile.id), str(osu_profile.name),
-                                   str(osu_profile.join_date),
-                                   str(osu_profile.pp_raw), str(osu_profile.country), str(ranked_amount), "0"])
+                                  [str(member.id), str(fresh_osu_data["id"]), str(fresh_osu_data["username"]),
+                                   str(fresh_osu_data["join_date"]), str(fresh_osu_data["statistics"]["pp"]),
+                                   str(fresh_osu_data["country_code"]), str(ranked_amount), "0"])
         await self.bot.db.commit()
         verified_message = await channel.send(content=f"`Verified: {escape_markdown(member.name)}` \n"
                                                       f"You should also read the rules if you haven't already.",
                                               embed=embed)
 
-        await self.add_obligatory_reaction(verified_message, osu_profile)
+        await self.add_obligatory_reaction(verified_message, fresh_osu_data["country_code"])
+        await self.check_group_roles(channel, member, member.guild, fresh_osu_data)
 
     async def member_is_already_verified_and_just_needs_roles(self, channel, member, user_db_lookup):
-        try:
-            member_mapsets = await self.bot.osu.get_beatmapsets(u=str(user_db_lookup[0]))
-            ranked_amount = await self.count_ranked_beatmapsets(member_mapsets)
-        except Exception as e:
-            await channel.send("hm, new member joined and i seem to be having problems connecting to osu servers, "
-                               "so, for now, i'll just pretend you don't have any ranked maps.",
-                               embed=await wrappers.embed_exception(e))
-            ranked_amount = 0
+        ranked_amount = user_db_lookup[2]
 
         role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
         await member.add_roles(role)
         try:
-            osu_profile = await self.get_osu_profile(user_db_lookup[0])
+            fresh_osu_data = await self.bot.osuweb.get_user_array(user_db_lookup[0])
         except Exception as e:
             await channel.send("okay, i also can't check your osu profile. "
                                "although i do have your osu profile info in my database. "
                                "I'll just use the cached info then",
                                embed=await wrappers.embed_exception(e))
-            osu_profile = None
+            fresh_osu_data = None
 
-        if osu_profile:
-            name = osu_profile.name
-            embed = await osuembed.user(osu_profile)
+        if fresh_osu_data:
+            name = fresh_osu_data["username"]
+            embed = await osuwebembed.user_array(fresh_osu_data)
         else:
             name = user_db_lookup[1]
             embed = None
@@ -453,10 +448,11 @@ class MemberVerification(commands.Cog):
                                               "Enjoy your stay!",
                                               embed=embed)
 
-        await self.add_obligatory_reaction(verified_message, osu_profile)
+        await self.add_obligatory_reaction(verified_message, fresh_osu_data["country_code"])
+        await self.check_group_roles(channel, member, member.guild, fresh_osu_data)
 
     async def ask_just_joined_member_to_verify(self, channel, member):
-        async with self.bot.db.execute("SELECT osu_id, osu_username FROM users WHERE user_id = ?",
+        async with self.bot.db.execute("SELECT osu_id, osu_username, ranked_maps_amount FROM users WHERE user_id = ?",
                                        [str(member.id)]) as cursor:
             user_db_lookup = await cursor.fetchone()
         if user_db_lookup:
@@ -464,7 +460,7 @@ class MemberVerification(commands.Cog):
             return
 
         try:
-            osu_profile = await self.get_osu_profile(member.name)
+            fresh_osu_data = await self.bot.osuweb.get_user_array(member.name)
         except Exception as e:
             # connection issues
             await channel.send(f"Welcome {member.mention}! in this server, we have a verification system "
@@ -478,25 +474,19 @@ class MemberVerification(commands.Cog):
                                embed=await wrappers.embed_exception(e))
             return
 
-        if (osu_profile and
+        if (fresh_osu_data and
                 (self.is_new_user(member) is False) and
-                osu_profile.pp_raw and
-                float(osu_profile.pp_raw) > 0):
+                fresh_osu_data["statistics"]["pp"] and
+                float(fresh_osu_data["statistics"]["pp"]) > 0):
             await channel.send(content=f"Welcome {member.mention}! We have a verification system in this server "
                                        "so we can give you appropriate roles and keep raids/spam out. \n"
                                        "Is this your osu! profile? "
                                        "If yes, type `yes`, if not, post a link to your profile.",
-                               embed=await osuembed.user(osu_profile))
+                               embed=await osuwebembed.small_user_array(fresh_osu_data))
         else:
             await channel.send(f"Welcome {member.mention}! We have a verification system in this server "
                                "so we can give you appropriate roles and keep raids/spam out. \n"
                                "Please post a link to your osu! profile and I will verify you instantly.")
-
-    async def get_osu_profile(self, name):
-        try:
-            return await self.bot.osu.get_user(u=name)
-        except:
-            return None
 
     async def count_ranked_beatmapsets(self, beatmapsets):
         try:
@@ -510,11 +500,11 @@ class MemberVerification(commands.Cog):
             print(e)
             return 0
 
-    async def add_obligatory_reaction(self, message, osu_profile):
+    async def add_obligatory_reaction(self, message, country):
         try:
-            if osu_profile.country:
+            if country:
                 for stereotype in self.post_verification_emotes:
-                    if osu_profile.country == stereotype[0]:
+                    if country == stereotype[0]:
                         await message.add_reaction(stereotype[1])
         except Exception as e:
             print(e)
@@ -539,6 +529,31 @@ class MemberVerification(commands.Cog):
             return True
         else:
             return False
+
+    async def check_group_roles(self, channel, member, guild, fresh_osu_data):
+        group_roles = [
+            [7, await self.get_role_from_db("nat", guild)],
+            [28, await self.get_role_from_db("bn", guild)],
+            [32, await self.get_role_from_db("bn", guild)],
+        ]
+
+        user_qualifies_for_these_roles = await self.get_user_qualified_group_roles(fresh_osu_data, group_roles)
+
+        if user_qualifies_for_these_roles:
+            for role_to_add in user_qualifies_for_these_roles:
+                try:
+                    await member.add_roles(role_to_add)
+                    await channel.send(f"additionally, i applied the {role_to_add} role")
+                except:
+                    pass
+
+    async def get_user_qualified_group_roles(self, fresh_osu_data, group_roles):
+        return_list = []
+        for group in fresh_osu_data["groups"]:
+            for group_role in group_roles:
+                if int(group["id"]) == int(group_role[0]):
+                    return_list.append(group_role[1])
+        return return_list
 
 
 def setup(bot):

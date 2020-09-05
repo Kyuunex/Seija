@@ -270,7 +270,7 @@ class MemberVerification(commands.Cog):
 
             goodbye_message = random.choice(member_goodbye_messages)
 
-            await channel.send(goodbye_message[0] % escaped_member_name, embed=embed)
+            await channel.send(goodbye_message[0] % f"**{escaped_member_name}**", embed=embed)
 
     async def mapset_id_verification(self, message, mapset_id):
         channel = message.channel

@@ -195,13 +195,13 @@ class MemberInfoSyncing(commands.Cog):
         if set(user_qualifies_for_these_roles) == set(user_already_has_these_roles):
             return
 
-        changes = ["", ""]
+        changes = [None, None]
 
         if user_already_has_these_roles:
             for role_to_remove in user_already_has_these_roles:
                 try:
                     await member.remove_roles(role_to_remove)
-                    changes[1] += f"{role_to_remove} "
+                    changes[1] = role_to_remove
                 except:
                     pass
 
@@ -209,7 +209,7 @@ class MemberInfoSyncing(commands.Cog):
             for role_to_add in user_qualifies_for_these_roles:
                 try:
                     await member.add_roles(role_to_add)
-                    changes[0] += f"{role_to_add} "
+                    changes[0] = role_to_add
                 except:
                     pass
 

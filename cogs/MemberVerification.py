@@ -307,7 +307,7 @@ class MemberVerification(commands.Cog):
         async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]) as cursor:
             already_linked_to = await cursor.fetchone()
         if already_linked_to:
-            if str(mapset.creator_id) != already_linked_to[0]:
+            if int(mapset.creator_id) != int(already_linked_to[0]):
                 await channel.send(f"{member.mention} it seems like your discord account is already in my database "
                                    f"and is linked to <https://osu.ppy.sh/users/{already_linked_to[0]}>")
                 return
@@ -324,7 +324,7 @@ class MemberVerification(commands.Cog):
                                        [str(mapset.creator_id)]) as cursor:
             check_if_new_discord_account = await cursor.fetchone()
         if check_if_new_discord_account:
-            if str(check_if_new_discord_account[0]) != str(member.id):
+            if int(check_if_new_discord_account[0]) != int(member.id):
                 old_user_id = check_if_new_discord_account[0]
                 await channel.send(f"this osu account is already linked to <@{old_user_id}> in my database. "
                                    "if there's a problem, for example, you got a new discord account, ping kyuunex.")
@@ -378,7 +378,7 @@ class MemberVerification(commands.Cog):
         async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]) as cursor:
             already_linked_to = await cursor.fetchone()
         if already_linked_to:
-            if str(fresh_osu_data["id"]) != already_linked_to[0]:
+            if int(fresh_osu_data["id"]) != int(already_linked_to[0]):
                 await channel.send(f"{member.mention} it seems like your discord account is already in my database and "
                                    f"is linked to <https://osu.ppy.sh/users/{already_linked_to[0]}>")
                 return
@@ -395,7 +395,7 @@ class MemberVerification(commands.Cog):
                                        [str(fresh_osu_data["id"])]) as cursor:
             check_if_new_discord_account = await cursor.fetchone()
         if check_if_new_discord_account:
-            if str(check_if_new_discord_account[0]) != str(member.id):
+            if int(check_if_new_discord_account[0]) != int(member.id):
                 old_user_id = check_if_new_discord_account[0]
                 await channel.send(f"this osu account is already linked to <@{old_user_id}> in my database. "
                                    "if there's a problem, for example, you got a new discord account, ping kyuunex.")

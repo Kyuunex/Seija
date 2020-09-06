@@ -9,6 +9,7 @@ from modules import wrappers
 import osuembed
 import osuwebembed
 import datetime
+import dateutil
 
 
 class MemberVerification(commands.Cog):
@@ -474,10 +475,7 @@ class MemberVerification(commands.Cog):
                                embed=await wrappers.embed_exception(e))
             return
 
-        if (fresh_osu_data and
-                (self.is_new_user(member) is False) and
-                fresh_osu_data["statistics"]["pp"] and
-                float(fresh_osu_data["statistics"]["pp"]) > 0):
+        if self.autodetect_profile_inquiry_conditions(fresh_osu_data, member):
             await channel.send(content=f"Welcome {member.mention}! We have a verification system in this server "
                                        "so we can give you appropriate roles and keep raids/spam out. \n"
                                        "Is this your osu! profile? "
@@ -487,6 +485,29 @@ class MemberVerification(commands.Cog):
             await channel.send(f"Welcome {member.mention}! We have a verification system in this server "
                                "so we can give you appropriate roles and keep raids/spam out. \n"
                                "Please post a link to your osu! profile and I will verify you instantly.")
+
+    def autodetect_profile_inquiry_conditions(self, fresh_osu_data, member):
+        try:
+            if self.is_new_user(member):
+                return False
+
+            if not fresh_osu_data:
+                return False
+
+            if fresh_osu_data['last_visit']:
+                last_visit = dateutil.parser.parse(fresh_osu_data['last_visit'])
+
+                user_creation_ago = datetime.datetime.now().timestamp() - last_visit.timestamp()
+                if user_creation_ago/60/60/24 > 30:
+                    return False
+
+            if fresh_osu_data["statistics"]:
+                if float(fresh_osu_data["statistics"]["pp"]) < 100:
+                    return False
+
+            return True
+        except:
+            return False
 
     async def count_ranked_beatmapsets(self, beatmapsets):
         try:

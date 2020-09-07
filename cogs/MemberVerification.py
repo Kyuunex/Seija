@@ -408,7 +408,9 @@ class MemberVerification(commands.Cog):
         except:
             pass
 
-        embed = await osuwebembed.user_array(fresh_osu_data)
+        embed_color = self.get_correct_embed_trust_color(member, fresh_osu_data)
+        embed = await osuwebembed.user_array(fresh_osu_data, color=embed_color)
+
         await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [str(member.id)])
         await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
                                   [str(member.id), str(fresh_osu_data["id"]), str(fresh_osu_data["username"]),
@@ -575,6 +577,33 @@ class MemberVerification(commands.Cog):
                 if int(group["id"]) == int(group_role[0]):
                     return_list.append(group_role[1])
         return return_list
+
+    def get_correct_embed_trust_color(self, member, fresh_osu_data):
+        if fresh_osu_data['discord']:
+            if str(member) == str(fresh_osu_data['discord']):
+                return 0x00ff00
+
+        if self.user_is_suspicious(fresh_osu_data):
+            return 0xff0000
+
+        if fresh_osu_data['discord']:
+            if str(member) != str(fresh_osu_data['discord']):
+                return 0xff5500
+
+        return 0xffbb00
+
+    def user_is_suspicious(self, fresh_osu_data):
+        join_date = dateutil.parser.parse(fresh_osu_data['join_date'])
+
+        account_age_seconds = datetime.datetime.now().timestamp() - join_date.timestamp()
+        if account_age_seconds / 60 / 60 / 24 < 30:
+            return True
+
+        if fresh_osu_data["statistics"]:
+            if float(fresh_osu_data["statistics"]["pp"]) < 100:
+                return True
+
+        return False
 
 
 def setup(bot):

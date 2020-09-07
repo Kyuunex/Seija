@@ -1,3 +1,4 @@
+import dateutil
 from discord.ext import commands
 import discord
 import time
@@ -121,11 +122,13 @@ class MemberInfoSyncing(commands.Cog):
                 await self.sync_mapper_roles(notices_channel, stored_user_info, member, mapper_roles, fresh_osu_data)
                 await self.sync_group_roles(notices_channel, stored_user_info, member, group_roles, fresh_osu_data)
 
+                join_date = dateutil.parser.parse(fresh_osu_data['join_date'])
+                join_date_int = int(join_date.timestamp())
                 await self.bot.db.execute("UPDATE users "
                                           "SET country = ?, pp = ?, osu_join_date = ?, "
                                           "osu_username = ?, ranked_maps_amount = ? WHERE user_id = ?",
                                           [str(fresh_osu_data["country_code"]), str(fresh_osu_data["statistics"]["pp"]),
-                                           str(fresh_osu_data["join_date"]), str(fresh_osu_data["username"]),
+                                           str(join_date_int), str(fresh_osu_data["username"]),
                                            str(fresh_osu_data["ranked_and_approved_beatmapset_count"]), str(member.id)])
                 await self.bot.db.commit()
 

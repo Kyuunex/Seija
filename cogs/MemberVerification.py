@@ -78,10 +78,13 @@ class MemberVerification(commands.Cog):
 
         embed = await osuwebembed.user_array(fresh_osu_data)
 
+        join_date = dateutil.parser.parse(fresh_osu_data['join_date'])
+        join_date_int = int(join_date.timestamp())
+
         await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [str(member.id)])
         await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
                                   [str(member.id), str(fresh_osu_data["id"]), str(fresh_osu_data["username"]),
-                                   str(fresh_osu_data["join_date"]), str(fresh_osu_data["statistics"]["pp"]),
+                                   str(join_date_int), str(fresh_osu_data["statistics"]["pp"]),
                                    str(fresh_osu_data["country_code"]), str(ranked_amount), "0"])
         await self.bot.db.commit()
 
@@ -411,10 +414,13 @@ class MemberVerification(commands.Cog):
         embed_color = self.get_correct_embed_trust_color(member, fresh_osu_data)
         embed = await osuwebembed.user_array(fresh_osu_data, color=embed_color)
 
+        join_date = dateutil.parser.parse(fresh_osu_data['join_date'])
+        join_date_int = int(join_date.timestamp())
+
         await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [str(member.id)])
         await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
                                   [str(member.id), str(fresh_osu_data["id"]), str(fresh_osu_data["username"]),
-                                   str(fresh_osu_data["join_date"]), str(fresh_osu_data["statistics"]["pp"]),
+                                   str(join_date_int), str(fresh_osu_data["statistics"]["pp"]),
                                    str(fresh_osu_data["country_code"]), str(ranked_amount), "0"])
         await self.bot.db.commit()
         verified_message = await channel.send(content=f"`Verified: {escape_markdown(member.name)}` \n"

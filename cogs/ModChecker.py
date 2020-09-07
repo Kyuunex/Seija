@@ -1,5 +1,6 @@
 import time
 import asyncio
+import dateutil
 import discord
 from discord.ext import commands
 from modules import wrappers
@@ -693,9 +694,13 @@ class ModChecker(commands.Cog):
         embed.set_thumbnail(
             url=f"https://b.ppy.sh/thumb/{discussions['beatmapset']['id']}l.jpg"
         )
-        embed.set_footer(
-            text=str(event["created_at"]),
-        )
+        try:
+            created_at = dateutil.parser.parse(event['created_at'])
+            embed.set_footer(
+                text=str(created_at.isoformat(' ')),
+            )
+        except:
+            pass
         return embed
 
     async def mod_post_embed(self, post, discussions, mod, tracking_mode):

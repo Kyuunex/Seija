@@ -31,7 +31,7 @@ class MemberManagement(commands.Cog):
                         continue
 
                 async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?",
-                                               [str(member.id)]) as cursor:
+                                               [int(member.id)]) as cursor:
                     in_db_check = await cursor.fetchall()
                 if in_db_check:
                     continue
@@ -66,7 +66,7 @@ class MemberManagement(commands.Cog):
                     continue
 
                 async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?",
-                                               [str(member.id)]) as cursor:
+                                               [int(member.id)]) as cursor:
                     query = await cursor.fetchone()
                 if not query:
                     continue
@@ -85,7 +85,7 @@ class MemberManagement(commands.Cog):
         Return what osu account is a discord account linked to
         """
 
-        async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]) as cursor:
+        async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [int(user_id)]) as cursor:
             osu_id = await cursor.fetchone()
         if not osu_id:
             return

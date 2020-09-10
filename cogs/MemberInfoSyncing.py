@@ -28,7 +28,7 @@ class MemberInfoSyncing(commands.Cog):
 
         async with self.bot.db.execute("SELECT user_id, osu_id, osu_username, osu_join_date, "
                                        "pp, country, ranked_maps_amount, no_sync "
-                                       "FROM users WHERE user_id = ?", [str(after.id)]) as cursor:
+                                       "FROM users WHERE user_id = ?", [int(after.id)]) as cursor:
             query = await cursor.fetchone()
 
         if not query:
@@ -83,7 +83,7 @@ class MemberInfoSyncing(commands.Cog):
 
     async def get_role_from_db(self, setting, guild):
         async with self.bot.db.execute("SELECT role_id FROM roles WHERE setting = ? AND guild_id = ?",
-                                       [setting, str(guild.id)]) as cursor:
+                                       [setting, int(guild.id)]) as cursor:
             role_id = await cursor.fetchone()
         if not role_id:
             raise ValueError(f"CONFIGURE ROLES FOR GUILD {str(guild.id)} PLEASE")
@@ -123,12 +123,13 @@ class MemberInfoSyncing(commands.Cog):
                 await self.sync_group_roles(notices_channel, stored_user_info, member, group_roles, fresh_osu_data)
 
                 await self.bot.db.execute("UPDATE users "
-                                          "SET country = ?, pp = ?,"
-                                          "osu_username = ?, ranked_maps_amount = ?, kudosu = ? WHERE user_id = ?",
-                                          [str(fresh_osu_data["country_code"]), str(fresh_osu_data["statistics"]["pp"]),
+                                          "SET country = ?, pp = ?, osu_username = ?, "
+                                          "ranked_maps_amount = ?, kudosu = ? WHERE user_id = ?",
+                                          [str(fresh_osu_data["country_code"]), int(fresh_osu_data["statistics"]["pp"]),
                                            str(fresh_osu_data["username"]),
-                                           str(fresh_osu_data["ranked_and_approved_beatmapset_count"]),
-                                           int(fresh_osu_data["kudosu"]["total"]), str(member.id)])
+                                           int(fresh_osu_data["ranked_and_approved_beatmapset_count"]),
+                                           int(fresh_osu_data["kudosu"]["total"]),
+                                           int(member.id)])
                 await self.bot.db.commit()
 
             await self.restrict_unrestrict_checks(fresh_osu_data, guild, stored_user_info,
@@ -140,25 +141,25 @@ class MemberInfoSyncing(commands.Cog):
         is_not_restricted = bool(fresh_osu_data)
 
         if is_not_restricted:
-            if (str(guild.id), str(stored_user_info[1])) in restricted_user_list:
+            if (int(guild.id), int(stored_user_info[1])) in restricted_user_list:
                 embed = await NoticesEmbeds.unrestricted(stored_user_info, member)
                 await notices_channel.send(embed=embed)
                 await self.bot.db.execute("DELETE FROM restricted_users "
                                           "WHERE guild_id = ? AND osu_id = ?",
-                                          [str(guild.id), str(stored_user_info[1])])
+                                          [int(guild.id), int(stored_user_info[1])])
                 await self.bot.db.commit()
         else:
             # at this point we are sure that the user is restricted.
-            if not (str(guild.id), str(stored_user_info[1])) in restricted_user_list:
+            if not (int(guild.id), int(stored_user_info[1])) in restricted_user_list:
                 embed = await NoticesEmbeds.restricted(stored_user_info, member)
                 await notices_channel.send(embed=embed)
                 await self.bot.db.execute("INSERT INTO restricted_users VALUES (?,?)",
-                                          [str(guild.id), str(stored_user_info[1])])
+                                          [int(guild.id), int(stored_user_info[1])])
                 await self.bot.db.commit()
 
     def get_cached_info(self, cached_user_info_list, member):
         for db_user in cached_user_info_list:
-            if str(member.id) == str(db_user[0]):
+            if int(member.id) == int(db_user[0]):
                 return db_user
         return None
 
@@ -324,7 +325,7 @@ class NoticesEmbeds:
         embed.add_field(name="new_osu_username", value=fresh_osu_data["username"], inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
         embed.set_thumbnail(url=member.avatar_url)
-        if str(db_user[1]) == str(4116573):
+        if int(db_user[1]) == 4116573:
             embed.set_footer(text="btw, this is bor. yes, i actually added this specific message for bor.")
         return embed
 

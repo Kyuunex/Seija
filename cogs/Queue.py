@@ -32,24 +32,24 @@ class Queue(commands.Cog):
             return True
         async with self.bot.db.execute("SELECT user_id FROM queues "
                                        "WHERE user_id = ? AND channel_id = ? AND is_creator = ?",
-                                       [str(ctx.author.id), str(ctx.channel.id), str("1")]) as cursor:
+                                       [int(ctx.author.id), int(ctx.channel.id), 1]) as cursor:
             return bool(await cursor.fetchone())
 
     async def can_manage_queue(self, ctx):
         if await permissions.is_admin(ctx):
             return True
         async with self.bot.db.execute("SELECT user_id FROM queues WHERE user_id = ? AND channel_id = ?",
-                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+                                       [int(ctx.author.id), int(ctx.channel.id)]) as cursor:
             return bool(await cursor.fetchone())
 
     async def channel_is_a_queue(self, ctx):
         async with self.bot.db.execute("SELECT user_id FROM queues WHERE channel_id = ?",
-                                       [str(ctx.channel.id)]) as cursor:
+                                       [int(ctx.channel.id)]) as cursor:
             return bool(await cursor.fetchone())
 
     async def get_queue_creator(self, ctx):
         async with self.bot.db.execute("SELECT user_id FROM queues WHERE channel_id = ? AND is_creator = ?",
-                                       [str(ctx.channel.id), str("1")]) as cursor:
+                                       [int(ctx.channel.id), 1]) as cursor:
             queue_creator_id = await cursor.fetchone()
         return ctx.guild.get_member(int(queue_creator_id[0]))
 
@@ -119,7 +119,7 @@ class Queue(commands.Cog):
         # TODO: maybe use argparser here
 
         if user_id:
-            async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [str(user_id)]) as cursor:
+            async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [int(user_id)]) as cursor:
                 osu_id_db = await cursor.fetchone()
             if osu_id:
                 osu_id = osu_id_db[0]
@@ -158,7 +158,7 @@ class Queue(commands.Cog):
         """
 
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
-                                       ["beginner_queue", str(ctx.guild.id)]) as cursor:
+                                       ["beginner_queue", int(ctx.guild.id)]) as cursor:
             is_enabled_in_server = await cursor.fetchone()
         if not is_enabled_in_server:
             await ctx.send("Not enabled in this server yet.")
@@ -168,7 +168,7 @@ class Queue(commands.Cog):
 
         async with self.bot.db.execute("SELECT channel_id FROM queues "
                                        "WHERE user_id = ? AND guild_id = ? AND is_creator = ?",
-                                       [str(ctx.author.id), str(ctx.guild.id), str("1")]) as cursor:
+                                       [int(ctx.author.id), int(ctx.guild.id), 1]) as cursor:
             member_already_has_a_queue = await cursor.fetchone()
         if member_already_has_a_queue:
             already_existing_queue = self.bot.get_channel(int(member_already_has_a_queue[0]))
@@ -180,7 +180,7 @@ class Queue(commands.Cog):
                                f"but it was deleted without me noticing. "
                                f"oh well, new one it is then")
                 await self.bot.db.execute("DELETE FROM queues WHERE channel_id = ?",
-                                          [str(member_already_has_a_queue[0])])
+                                          [int(member_already_has_a_queue[0])])
                 await self.bot.db.commit()
 
         guild = ctx.guild
@@ -204,7 +204,7 @@ class Queue(commands.Cog):
             return
 
         await self.bot.db.execute("INSERT INTO queues VALUES (?, ?, ?, ?)",
-                                  [str(channel.id), str(ctx.author.id), str(ctx.guild.id), "1"])
+                                  [int(channel.id), int(ctx.author.id), int(ctx.guild.id), 1])
         await self.bot.db.commit()
 
         await channel.send(f"{ctx.author.mention} done!", embed=await Docs.queue_management())
@@ -242,7 +242,7 @@ class Queue(commands.Cog):
             return
 
         await self.bot.db.execute("INSERT INTO queues VALUES (?, ?, ?, ?)",
-                                  [str(ctx.channel.id), str(member.id), str(ctx.guild.id), "0"])
+                                  [int(ctx.channel.id), int(member.id), int(ctx.guild.id), 0])
         await self.bot.db.commit()
 
         try:
@@ -283,7 +283,7 @@ class Queue(commands.Cog):
 
         await self.bot.db.execute("DELETE FROM queues "
                                   "WHERE channel_id = ? AND user_id = ? AND guild_id = ? AND is_creator = ?",
-                                  [str(ctx.channel.id), str(member.id), str(ctx.guild.id), str("0")])
+                                  [int(ctx.channel.id), int(member.id), int(ctx.guild.id), 0])
         await self.bot.db.commit()
 
         try:
@@ -310,7 +310,7 @@ class Queue(commands.Cog):
             return
 
         async with self.bot.db.execute("SELECT user_id, is_creator FROM queues WHERE channel_id = ?",
-                                       [str(ctx.channel.id)]) as cursor:
+                                       [int(ctx.channel.id)]) as cursor:
             queue_owner_list = await cursor.fetchall()
 
         if not queue_owner_list:
@@ -355,9 +355,9 @@ class Queue(commands.Cog):
             return
 
         await self.bot.db.execute("DELETE FROM queues WHERE channel_id = ? AND guild_id = ?",
-                                  [str(ctx.channel.id), str(ctx.guild.id)])
+                                  [int(ctx.channel.id), int(ctx.guild.id)])
         await self.bot.db.execute("INSERT INTO queues VALUES (?, ?, ?, ?)",
-                                  [str(ctx.channel.id), str(member.id), str(ctx.guild.id), str("1")])
+                                  [int(ctx.channel.id), int(member.id), int(ctx.guild.id), 1])
         await self.bot.db.commit()
 
         try:
@@ -514,7 +514,7 @@ class Queue(commands.Cog):
             return
 
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
-                                       ["queue_archive", str(ctx.guild.id)]) as cursor:
+                                       ["queue_archive", int(ctx.guild.id)]) as cursor:
             guild_archive_category_id = await cursor.fetchone()
         if not guild_archive_category_id:
             await ctx.send("can't unarchive, guild archive category is not set anywhere")
@@ -562,7 +562,7 @@ class Queue(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, deleted_channel):
         try:
-            await self.bot.db.execute("DELETE FROM queues WHERE channel_id = ?", [str(deleted_channel.id)])
+            await self.bot.db.execute("DELETE FROM queues WHERE channel_id = ?", [int(deleted_channel.id)])
             await self.bot.db.commit()
             print(f"channel {deleted_channel.name} is deleted. maybe not a queue")
         except Exception as e:
@@ -571,7 +571,7 @@ class Queue(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         async with self.bot.db.execute("SELECT channel_id FROM queues WHERE user_id = ? AND guild_id = ?",
-                                       [str(member.id), str(member.guild.id)]) as cursor:
+                                       [int(member.id), int(member.guild.id)]) as cursor:
             queue_id = await cursor.fetchone()
         if not queue_id:
             return
@@ -589,7 +589,7 @@ class Queue(commands.Cog):
 
         async with self.bot.db.execute("SELECT channel_id FROM queues "
                                        "WHERE user_id = ? AND guild_id = ? AND is_creator = ?",
-                                       [str(member.id), str(member.guild.id), str("1")]) as cursor:
+                                       [int(member.id), int(member.guild.id), 1]) as cursor:
             queue_id = await cursor.fetchone()
         if not queue_id:
             return
@@ -602,20 +602,20 @@ class Queue(commands.Cog):
 
         async with self.bot.db.execute("SELECT user_id FROM queues "
                                        "WHERE channel_id = ? AND guild_id = ? AND is_creator = ?",
-                                       [str(queue_channel.id), str(member.guild.id), str("0")]) as cursor:
+                                       [int(queue_channel.id), int(member.guild.id), 0]) as cursor:
             queue_co_owners = await cursor.fetchall()
         if queue_co_owners:
             new_creator = await self.choose_a_new_queue_creator(member.guild, queue_co_owners)
             if new_creator:
                 await self.bot.db.execute("UPDATE queues SET is_creator = ? WHERE channel_id = ? AND user_id = ?",
-                                          [str("1"), str(queue_channel.id), str(new_creator.id)])
+                                          [1, int(queue_channel.id), int(new_creator.id)])
                 await self.bot.db.execute("UPDATE queues SET is_creator = ? WHERE channel_id = ? AND user_id = ?",
-                                          [str("0"), str(queue_channel.id), str(member.id)])
+                                          [0, int(queue_channel.id), int(member.id)])
                 await queue_channel.send(f"i have chosen {new_creator.mention} as the queue creator")
             return
 
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
-                                       ["queue_archive", str(queue_channel.guild.id)]) as cursor:
+                                       ["queue_archive", int(queue_channel.guild.id)]) as cursor:
             guild_archive_category_id = await cursor.fetchone()
         if not guild_archive_category_id:
             return
@@ -641,7 +641,7 @@ class Queue(commands.Cog):
 
     async def get_category_id(self, guild, setting):
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
-                                       [setting, str(guild.id)]) as cursor:
+                                       [setting, int(guild.id)]) as cursor:
             category_id = await cursor.fetchone()
         if not category_id:
             return None
@@ -658,7 +658,7 @@ class Queue(commands.Cog):
 
     async def get_role_object(self, guild, setting):
         async with self.bot.db.execute("SELECT role_id FROM roles WHERE setting = ? AND guild_id = ?",
-                                       [setting, str(guild.id)]) as cursor:
+                                       [setting, int(guild.id)]) as cursor:
             role_id = await cursor.fetchone()
         if not role_id:
             return None
@@ -678,7 +678,7 @@ class Queue(commands.Cog):
         elif (await self.get_role_object(member.guild, "bn")) in member.roles:
             return await self.get_category_object(member.guild, "bn_nat_queue")
 
-        async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [str(member.id)]) as cursor:
+        async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [int(member.id)]) as cursor:
             osu_id = await cursor.fetchone()
         if osu_id:
             kudosu = await self.get_kudosu_int(osu_id[0])

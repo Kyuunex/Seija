@@ -17,7 +17,7 @@ class Docs(commands.Cog):
         if sub_help == "veto":
             async with self.bot.db.execute("SELECT channel_id FROM channels "
                                            "WHERE setting = ? AND channel_id = ?",
-                                           ["veto", str(ctx.channel.id)]) as cursor:
+                                           ["veto", int(ctx.channel.id)]) as cursor:
                 is_veto_channel = await cursor.fetchone()
             if not is_veto_channel:
                 embed = await self.main(ctx)
@@ -58,7 +58,7 @@ class Docs(commands.Cog):
                         inline=False)
 
         async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND channel_id = ?",
-                                       ["veto", str(ctx.channel.id)]) as cursor:
+                                       ["veto", int(ctx.channel.id)]) as cursor:
             is_veto_channel = await cursor.fetchone()
         if is_veto_channel:
             embed.add_field(name=".docs veto",

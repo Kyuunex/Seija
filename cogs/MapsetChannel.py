@@ -59,7 +59,7 @@ class MapsetChannel(commands.Cog):
         """
 
         async with self.bot.db.execute("SELECT role_id FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
-                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+                                       [int(ctx.author.id), int(ctx.channel.id)]) as cursor:
             role_id_list = await cursor.fetchone()
         if not role_id_list:
             await ctx.send("not your mapset channel")
@@ -87,7 +87,7 @@ class MapsetChannel(commands.Cog):
         """
 
         async with self.bot.db.execute("SELECT role_id FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
-                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+                                       [int(ctx.author.id), int(ctx.channel.id)]) as cursor:
             role_id_list = await cursor.fetchone()
         if not role_id_list:
             await ctx.send("not your mapset channel")
@@ -114,7 +114,7 @@ class MapsetChannel(commands.Cog):
         """
 
         async with self.bot.db.execute("SELECT role_id FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
-                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+                                       [int(ctx.author.id), int(ctx.channel.id)]) as cursor:
             role_id_list = await cursor.fetchone()
         if not role_id_list:
             await ctx.send("not your mapset channel")
@@ -142,7 +142,7 @@ class MapsetChannel(commands.Cog):
         This command is a placeholder at this point in time.
         """
 
-        await self.bot.db.execute("INSERT INTO map_owners VALUES (?, ?)", [str(map_id), str(ctx.author.id)])
+        await self.bot.db.execute("INSERT INTO difficulty_claims VALUES (?, ?)", [int(map_id), int(ctx.author.id)])
         await self.bot.db.commit()
         await ctx.send("done")
 
@@ -156,18 +156,18 @@ class MapsetChannel(commands.Cog):
         """
 
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
-                                       ["mapset_archive", str(ctx.guild.id)]) as cursor:
+                                       ["mapset_archive", int(ctx.guild.id)]) as cursor:
             guild_archive_category_id = await cursor.fetchone()
         if not guild_archive_category_id:
             await ctx.send("no archive category set for this server")
             return
 
         async with self.bot.db.execute("SELECT user_id FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
-                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+                                       [int(ctx.author.id), int(ctx.channel.id)]) as cursor:
             mapset_owner_check = await cursor.fetchone()
 
         async with self.bot.db.execute("SELECT mapset_id FROM mapset_channels WHERE channel_id = ?",
-                                       [str(ctx.channel.id)]) as cursor:
+                                       [int(ctx.channel.id)]) as cursor:
             is_mapset_channel = await cursor.fetchone()
 
         if not is_mapset_channel:
@@ -178,8 +178,8 @@ class MapsetChannel(commands.Cog):
             await ctx.send(f"{ctx.author.mention} this is not your mapset channel")
             return
 
-        await self.bot.db.execute("DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)])
-        await self.bot.db.execute("DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.channel.id)])
+        await self.bot.db.execute("DELETE FROM mod_tracking WHERE channel_id = ?", [int(ctx.channel.id)])
+        await self.bot.db.execute("DELETE FROM mod_post_history WHERE channel_id = ?", [int(ctx.channel.id)])
         await self.bot.db.commit()
         await ctx.send("untracked everything in this channel")
 
@@ -200,7 +200,7 @@ class MapsetChannel(commands.Cog):
         """
 
         async with self.bot.db.execute("SELECT user_id FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
-                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+                                       [int(ctx.author.id), int(ctx.channel.id)]) as cursor:
             mapset_owner_check = await cursor.fetchone()
         if not (mapset_owner_check or await permissions.is_admin(ctx)):
             return
@@ -221,7 +221,7 @@ class MapsetChannel(commands.Cog):
             return
 
         await self.bot.db.execute("UPDATE mapset_channels SET mapset_id = ? WHERE channel_id = ?",
-                                  [str(mapset.id), str(ctx.channel.id)])
+                                  [int(mapset.id), int(ctx.channel.id)])
         await self.bot.db.commit()
 
         embed = await osuembed.beatmapset(mapset)
@@ -237,7 +237,7 @@ class MapsetChannel(commands.Cog):
         user_id can only be that discord account's id
         """
         async with self.bot.db.execute("SELECT user_id FROM mapset_channels WHERE user_id = ? AND channel_id = ?",
-                                       [str(ctx.author.id), str(ctx.channel.id)]) as cursor:
+                                       [int(ctx.author.id), int(ctx.channel.id)]) as cursor:
             mapset_owner_check = await cursor.fetchone()
         if not (mapset_owner_check or await permissions.is_admin(ctx)):
             return
@@ -252,7 +252,7 @@ class MapsetChannel(commands.Cog):
             return
 
         await self.bot.db.execute("UPDATE mapset_channels SET user_id = ? WHERE channel_id = ?",
-                                  [str(user_id), str(ctx.channel.id)])
+                                  [int(user_id), int(ctx.channel.id)])
         await self.bot.db.commit()
 
         await ctx.channel.set_permissions(target=member, overwrite=self.mapset_owner_default_permissions)
@@ -293,7 +293,7 @@ class MapsetChannel(commands.Cog):
         """
 
         async with self.bot.db.execute("SELECT role_id FROM mapset_channels WHERE channel_id = ?",
-                                       [str(ctx.channel.id)]) as cursor:
+                                       [int(ctx.channel.id)]) as cursor:
             role_id = await cursor.fetchone()
         if not role_id:
             await ctx.send("this is not a mapset channel")
@@ -304,12 +304,12 @@ class MapsetChannel(commands.Cog):
             await asyncio.sleep(2)
             role = discord.utils.get(ctx.guild.roles, id=int(role_id[0]))
 
-            await self.bot.db.execute("DELETE FROM mod_tracking WHERE channel_id = ?", [str(ctx.channel.id)])
-            await self.bot.db.execute("DELETE FROM mod_posts WHERE channel_id = ?", [str(ctx.channel.id)])
+            await self.bot.db.execute("DELETE FROM mod_tracking WHERE channel_id = ?", [int(ctx.channel.id)])
+            await self.bot.db.execute("DELETE FROM mod_post_history WHERE channel_id = ?", [int(ctx.channel.id)])
             await ctx.send("untracked")
             await asyncio.sleep(2)
 
-            await self.bot.db.execute("DELETE FROM mapset_channels WHERE channel_id = ?", [str(ctx.channel.id)])
+            await self.bot.db.execute("DELETE FROM mapset_channels WHERE channel_id = ?", [int(ctx.channel.id)])
             await self.bot.db.commit()
             await role.delete(reason="manually nuked the role due to abuse")
             await ctx.channel.delete(reason="manually nuked the channel due to abuse")
@@ -326,7 +326,7 @@ class MapsetChannel(commands.Cog):
         """
 
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
-                                       ["mapset", str(ctx.guild.id)]) as cursor:
+                                       ["mapset", int(ctx.guild.id)]) as cursor:
             guild_mapset_category_id = await cursor.fetchone()
 
         if not mapset_id.isdigit():
@@ -347,7 +347,7 @@ class MapsetChannel(commands.Cog):
                 if not mapset:
                     await ctx.send("you specified incorrect mapset id. "
                                    "you can correct this with `.set_id` command in the mapset channel")
-                if str(mapset.approved) == "1" or str(mapset.approved) == "2":
+                if int(mapset.approved) == 1 or int(mapset.approved) == 2:
                     await ctx.send("This map is ranked, you are not supposed to make a channel for it")
                     return
             except Exception as e:
@@ -358,10 +358,10 @@ class MapsetChannel(commands.Cog):
                                "and later you can update it with `.set_id` command")
 
         if mapset:
-            mapset_id = str(mapset.id)
+            mapset_id = int(mapset.id)
             channel_topic = str(mapset.url)
         else:
-            mapset_id = "0"
+            mapset_id = 0
             channel_topic = ""
 
         if mapset_title:
@@ -397,17 +397,17 @@ class MapsetChannel(commands.Cog):
                                    "You can use the `.track` command bellow to start tracking.",
                            embed=await Docs.mapset_channel_management())
         await self.bot.db.execute("INSERT INTO mapset_channels VALUES (?, ?, ?, ?, ?)",
-                                  [str(channel.id), str(mapset_role.id), str(ctx.author.id), str(mapset_id),
-                                   str(ctx.guild.id)])
+                                  [int(channel.id), int(mapset_role.id), int(ctx.author.id), int(mapset_id),
+                                   int(ctx.guild.id)])
         await self.bot.db.commit()
         await ctx.send("ok, i'm done!")
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, deleted_channel):
         try:
-            await self.bot.db.execute("DELETE FROM mapset_channels WHERE channel_id = ?", [str(deleted_channel.id)])
-            await self.bot.db.execute("DELETE FROM mod_tracking WHERE channel_id = ?", [str(deleted_channel.id)])
-            await self.bot.db.execute("DELETE FROM mod_posts WHERE channel_id = ?", [str(deleted_channel.id)])
+            await self.bot.db.execute("DELETE FROM mapset_channels WHERE channel_id = ?", [int(deleted_channel.id)])
+            await self.bot.db.execute("DELETE FROM mod_tracking WHERE channel_id = ?", [int(deleted_channel.id)])
+            await self.bot.db.execute("DELETE FROM mod_post_history WHERE channel_id = ?", [int(deleted_channel.id)])
             await self.bot.db.commit()
             print(f"channel {deleted_channel.name} is deleted, "
                   f"just in case it's a mapset channel, i'll ran sql commands")
@@ -418,7 +418,7 @@ class MapsetChannel(commands.Cog):
     async def on_member_join(self, member):
         async with self.bot.db.execute("SELECT channel_id, role_id FROM mapset_channels "
                                        "WHERE user_id = ? AND guild_id = ?",
-                                       [str(member.id), str(member.guild.id)]) as cursor:
+                                       [int(member.id), int(member.guild.id)]) as cursor:
             mapsets_user_is_in = await cursor.fetchall()
         if not mapsets_user_is_in:
             return
@@ -443,7 +443,7 @@ class MapsetChannel(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         async with self.bot.db.execute("SELECT channel_id FROM mapset_channels WHERE user_id = ? AND guild_id = ?",
-                                       [str(member.id), str(member.guild.id)]) as cursor:
+                                       [int(member.id), int(member.guild.id)]) as cursor:
             mapsets_user_is_in = await cursor.fetchall()
         if not mapsets_user_is_in:
             return
@@ -454,14 +454,14 @@ class MapsetChannel(commands.Cog):
                 continue
 
             await channel.send("the mapset owner has left the server")
-            await self.bot.db.execute("DELETE FROM mod_tracking WHERE channel_id = ?", [str(channel.id)])
-            await self.bot.db.execute("DELETE FROM mod_posts WHERE channel_id = ?", [str(channel.id)])
+            await self.bot.db.execute("DELETE FROM mod_tracking WHERE channel_id = ?", [int(channel.id)])
+            await self.bot.db.execute("DELETE FROM mod_post_history WHERE channel_id = ?", [int(channel.id)])
             await self.bot.db.commit()
             await channel.send("untracked everything in this channel")
 
             async with self.bot.db.execute("SELECT category_id FROM categories "
                                            "WHERE setting = ? AND guild_id = ?",
-                                           ["mapset_archive", str(channel.guild.id)]) as cursor:
+                                           ["mapset_archive", int(channel.guild.id)]) as cursor:
                 guild_archive_category_id = await cursor.fetchone()
             if not guild_archive_category_id:
                 continue

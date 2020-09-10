@@ -11,10 +11,10 @@ async def add_admins(self):
         app_info = await self.application_info()
         if app_info.team:
             for team_member in app_info.team.members:
-                await self.db.execute("INSERT INTO admins VALUES (?, ?)", [str(team_member.id), "1"])
+                await self.db.execute("INSERT INTO admins VALUES (?, ?)", [int(team_member.id), 1])
                 print(f"Added {team_member.name} to admin list")
         else:
-            await self.db.execute("INSERT INTO admins VALUES (?, ?)", [str(app_info.owner.id), "1"])
+            await self.db.execute("INSERT INTO admins VALUES (?, ?)", [int(app_info.owner.id), 1])
             print(f"Added {app_info.owner.name} to admin list")
         await self.db.commit()
 
@@ -23,30 +23,41 @@ def create_tables():
     if not os.path.exists(database_file):
         conn = sqlite3.connect(database_file)
         c = conn.cursor()
-        c.execute("CREATE TABLE config (setting, parent, value, flag)")
-        c.execute("CREATE TABLE admins (user_id, permissions)")
-        c.execute("CREATE TABLE ignored_users (user_id, reason)")
-        c.execute("CREATE TABLE users "
-                  "(user_id, osu_id, osu_username, osu_join_date, pp, country, ranked_maps_amount, kudosu, no_sync)")
-        c.execute("CREATE TABLE user_event_history (osu_id, event_id, channel_id, timestamp)")
+        c.execute("""CREATE TABLE "config" ("setting" TEXT, "parent" TEXT, "value" TEXT, "flag" TEXT)""")
+        c.execute("""CREATE TABLE "admins" ("user_id" INTEGER, "permissions" INTEGER)""")
+        c.execute("""CREATE TABLE "ignored_users" ("user_id" INTEGER, "reason" TEXT)""")
 
-        c.execute("CREATE TABLE channels (setting, guild_id, channel_id)")
-        c.execute("CREATE TABLE categories (setting, guild_id, category_id)")
-        c.execute("CREATE TABLE roles (setting, guild_id, role_id)")
+        c.execute("""CREATE TABLE "users" ("user_id" INTEGER, "osu_id" INTEGER, "osu_username" TEXT, 
+        "osu_join_date" INTEGER, "pp" INTEGER, "country" TEXT, 
+        "ranked_maps_amount" INTEGER, "kudosu" INTEGER, "no_sync" INTEGER)""")
 
-        c.execute("CREATE TABLE mod_posts (post_id, mapset_id, channel_id)")
-        c.execute("CREATE TABLE mapset_events (event_id, mapset_id, channel_id)")
-        c.execute("CREATE TABLE mod_tracking (mapset_id, channel_id, mode)")
-        c.execute("CREATE TABLE mod_tracking_pauselist (mapset_id, channel_id, mode)")
-        c.execute("CREATE TABLE mapset_notification_status (mapset_id, map_id, channel_id, status)")
-        c.execute("CREATE TABLE map_owners (map_id, user_id)")
-        c.execute("CREATE TABLE notices (timestamp, notice)")
-        c.execute("CREATE TABLE restricted_users (guild_id, osu_id)")
-        c.execute("CREATE TABLE queues (channel_id, user_id, guild_id, is_creator)")
-        c.execute("CREATE TABLE mapset_channels (channel_id, role_id, user_id, mapset_id, guild_id)")
-        c.execute("CREATE TABLE name_backups (id, name)")
-        c.execute("CREATE TABLE member_goodbye_messages (message)")
+        c.execute("""CREATE TABLE "channels" ("setting" TEXT, "guild_id" INTEGER, "channel_id" INTEGER)""")
+        c.execute("""CREATE TABLE "categories" ("setting" TEXT, "guild_id" INTEGER, "category_id" INTEGER)""")
+        c.execute("""CREATE TABLE "roles" ("setting" TEXT, "guild_id" INTEGER, "role_id" INTEGER)""")
+
+        c.execute("""CREATE TABLE "mod_post_history" ("post_id" INTEGER, "mapset_id" INTEGER, "channel_id" INTEGER)""")
+
+        c.execute("""CREATE TABLE "mapset_nomination_history" ("event_id" INTEGER, "mapset_id" INTEGER, 
+        "channel_id" INTEGER)""")
+
+        c.execute("""CREATE TABLE "mod_tracking" ("mapset_id" INTEGER, "channel_id" INTEGER, "mode" INTEGER)""")
+
+        c.execute("""CREATE TABLE "mapset_notification_status" ("mapset_id" INTEGER, "map_id" INTEGER, 
+        "channel_id" INTEGER, "status" INTEGER)""")
+
+        c.execute("""CREATE TABLE "difficulty_claims" ("map_id" INTEGER, "user_id" INTEGER)""")
+        c.execute("""CREATE TABLE "restricted_users" ("guild_id" INTEGER, "osu_id" INTEGER)""")
+
+        c.execute("""CREATE TABLE "queues" ( "channel_id" INTEGER, "user_id" INTEGER, 
+        "guild_id" INTEGER, "is_creator" INTEGER)""")
+
+        c.execute("""CREATE TABLE "mapset_channels" ("channel_id" INTEGER, "role_id" INTEGER, 
+        "user_id" INTEGER, "mapset_id" INTEGER, "guild_id" INTEGER)""")
+
+        c.execute("""CREATE TABLE "member_goodbye_messages" ("message" TEXT)""")
+
         c.execute("INSERT INTO member_goodbye_messages VALUES (?)", ["%s is going for loved"])
         c.execute("INSERT INTO member_goodbye_messages VALUES (?)", ["%s was told to remap one too many times"])
+
         conn.commit()
         conn.close()

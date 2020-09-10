@@ -24,7 +24,7 @@ class MemberStatistics(commands.Cog):
         I actually don't decide what country is recognized and what is not.
         """
 
-        if not await cooldown.check(str(ctx.guild.id), "last_demographics_time", 140):
+        if not await cooldown.check(int(ctx.guild.id), "last_demographics_time", 140):
             if not await permissions.is_admin(ctx):
                 await ctx.send("slow down bruh")
                 return
@@ -39,7 +39,7 @@ class MemberStatistics(commands.Cog):
                     continue
 
                 for user_in_db in query:
-                    if str(member.id) != user_in_db[1]:
+                    if int(member.id) != int(user_in_db[1]):
                         continue
                     master_list.append(user_in_db[0])
             stats = await self.stats_calc(master_list)
@@ -76,7 +76,7 @@ class MemberStatistics(commands.Cog):
         https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
         """
 
-        if not await cooldown.check(str(ctx.author.id), "last_from_time", 10):
+        if not await cooldown.check(int(ctx.author.id), "last_from_time", 10):
             if not await permissions.is_admin(ctx):
                 await ctx.send("slow down bruh")
                 return
@@ -110,7 +110,7 @@ class MemberStatistics(commands.Cog):
                     continue
 
                 for db_user in query:
-                    if str(member.id) != str(db_user[2]):
+                    if int(member.id) != int(db_user[2]):
                         continue
 
                     master_list.append(db_user)

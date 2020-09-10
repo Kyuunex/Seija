@@ -82,10 +82,11 @@ class MemberVerification(commands.Cog):
         join_date_int = int(join_date.timestamp())
 
         await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [str(member.id)])
-        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
+        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?)",
                                   [str(member.id), str(fresh_osu_data["id"]), str(fresh_osu_data["username"]),
                                    str(join_date_int), str(fresh_osu_data["statistics"]["pp"]),
-                                   str(fresh_osu_data["country_code"]), str(ranked_amount), "0"])
+                                   str(fresh_osu_data["country_code"]), str(ranked_amount),
+                                   int(fresh_osu_data["kudosu"]["total"]), "0"])
         await self.bot.db.commit()
 
         await self.check_group_roles(ctx.channel, member, ctx.guild, fresh_osu_data)
@@ -110,8 +111,8 @@ class MemberVerification(commands.Cog):
             await ctx.send("osu account id must be all digits")
             return
 
-        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
-                                  [str(user_id), str(osu_id), username, "", "", "", "", ""])
+        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?)",
+                                  [str(user_id), str(osu_id), username, "", "", "", "", 0, ""])
         await self.bot.db.commit()
 
         await ctx.send("lol ok")
@@ -342,9 +343,9 @@ class MemberVerification(commands.Cog):
 
         embed = await osuembed.beatmapset(mapset)
         await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [str(member.id)])
-        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
+        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?)",
                                   [str(member.id), str(mapset.creator_id), str(mapset.creator), "", "", "",
-                                   str(ranked_amount), "0"])
+                                   str(ranked_amount), 0, "0"])
         await self.bot.db.commit()
 
         await channel.send(content=f"`Verified through mapset: {escape_markdown(member.name)}` \n"
@@ -418,10 +419,11 @@ class MemberVerification(commands.Cog):
         join_date_int = int(join_date.timestamp())
 
         await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [str(member.id)])
-        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?)",
+        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?)",
                                   [str(member.id), str(fresh_osu_data["id"]), str(fresh_osu_data["username"]),
                                    str(join_date_int), str(fresh_osu_data["statistics"]["pp"]),
-                                   str(fresh_osu_data["country_code"]), str(ranked_amount), "0"])
+                                   str(fresh_osu_data["country_code"]), str(ranked_amount),
+                                   int(fresh_osu_data["kudosu"]["total"]), "0"])
         await self.bot.db.commit()
         verified_message = await channel.send(content=f"`Verified: {escape_markdown(member.name)}` \n"
                                                       f"You should also read the rules if you haven't already.",

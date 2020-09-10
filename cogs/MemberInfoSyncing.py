@@ -124,10 +124,11 @@ class MemberInfoSyncing(commands.Cog):
 
                 await self.bot.db.execute("UPDATE users "
                                           "SET country = ?, pp = ?,"
-                                          "osu_username = ?, ranked_maps_amount = ? WHERE user_id = ?",
+                                          "osu_username = ?, ranked_maps_amount = ?, kudosu = ? WHERE user_id = ?",
                                           [str(fresh_osu_data["country_code"]), str(fresh_osu_data["statistics"]["pp"]),
                                            str(fresh_osu_data["username"]),
-                                           str(fresh_osu_data["ranked_and_approved_beatmapset_count"]), str(member.id)])
+                                           str(fresh_osu_data["ranked_and_approved_beatmapset_count"]),
+                                           int(fresh_osu_data["kudosu"]["total"]), str(member.id)])
                 await self.bot.db.commit()
 
             await self.restrict_unrestrict_checks(fresh_osu_data, guild, stored_user_info,

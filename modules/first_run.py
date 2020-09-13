@@ -25,10 +25,10 @@ def create_tables():
         c = conn.cursor()
         c.execute("""
         CREATE TABLE "config" (
-        "setting"    TEXT, 
-        "parent"    TEXT,
-        "value"    TEXT,
-        "flag"    TEXT
+            "setting"    TEXT, 
+            "parent"    TEXT,
+            "value"    TEXT,
+            "flag"    TEXT
         )
         """)
         c.execute("""

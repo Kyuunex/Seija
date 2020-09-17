@@ -145,7 +145,8 @@ class MemberVerification(commands.Cog):
             await ctx.send(embed=await wrappers.embed_exception(e))
 
         await self.bot.db.execute("UPDATE users SET user_id = ? WHERE user_id = ?", [int(new_id), int(old_id)])
-        await self.bot.db.execute("UPDATE difficulty_claims SET user_id = ? WHERE user_id = ?", [int(new_id), int(old_id)])
+        await self.bot.db.execute("UPDATE difficulty_claims SET user_id = ? WHERE user_id = ?",
+                                  [int(new_id), int(old_id)])
         await self.bot.db.execute("UPDATE queues SET user_id = ? WHERE user_id = ?", [int(new_id), int(old_id)])
         await self.bot.db.execute("UPDATE mapset_channels SET user_id = ? WHERE user_id = ?",
                                   [int(new_id), int(old_id)])
@@ -213,17 +214,17 @@ class MemberVerification(commands.Cog):
 
             if "https://osu.ppy.sh/u" in message.content:
                 profile_id = self.grab_osu_profile_id_from_text(message.content)
-                await self.profile_id_verification(message, profile_id)
+                await self.profile_id_verification(message.channel, message.author, profile_id)
                 return
 
             if message.content.lower() == "yes" and self.is_new_user(message.author) is False:
                 profile_id = message.author.name
-                await self.profile_id_verification(message, profile_id)
+                await self.profile_id_verification(message.channel, message.author, profile_id)
                 return
 
             if "https://osu.ppy.sh/beatmapsets/" in message.content:
                 mapset_id = self.grab_osu_mapset_id_from_text(message.content)
-                await self.mapset_id_verification(message, mapset_id)
+                await self.mapset_id_verification(message.channel, message.author, mapset_id)
                 return
 
             return
@@ -277,10 +278,7 @@ class MemberVerification(commands.Cog):
 
             await channel.send(goodbye_message[0] % f"**{escaped_member_name}**", embed=embed)
 
-    async def mapset_id_verification(self, message, mapset_id):
-        channel = message.channel
-        member = message.author
-
+    async def mapset_id_verification(self, channel, member, mapset_id):
         try:
             mapset = await self.bot.osu.get_beatmapset(s=mapset_id)
         except Exception as e:
@@ -351,9 +349,7 @@ class MemberVerification(commands.Cog):
         await channel.send(content=f"`Verified through mapset: {escape_markdown(member.name)}` \n"
                                    f"You should also read the rules if you haven't already.", embed=embed)
 
-    async def profile_id_verification(self, message, osu_id):
-        channel = message.channel
-        member = message.author
+    async def profile_id_verification(self, channel, member, osu_id):
 
         try:
             fresh_osu_data = await self.bot.osuweb.get_user_array(osu_id)
@@ -508,7 +504,7 @@ class MemberVerification(commands.Cog):
                 last_visit = dateutil.parser.parse(fresh_osu_data['last_visit'])
 
                 user_creation_ago = datetime.datetime.now().timestamp() - last_visit.timestamp()
-                if user_creation_ago/60/60/24 > 30:
+                if user_creation_ago / 60 / 60 / 24 > 30:
                     return False
 
             if fresh_osu_data["statistics"]:

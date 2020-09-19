@@ -112,8 +112,9 @@ class Queue(commands.Cog):
     async def debug_get_kudosu(self, ctx, user_id, osu_id):
         """
         Debug command for managers to print how much kudosu a member has.
-        :param user_id: Discord account ID
-        :param osu_id: osu! account ID
+
+        user_id: Discord account ID
+        osu_id: osu! account ID
         """
 
         # TODO: maybe use argparser here
@@ -137,7 +138,8 @@ class Queue(commands.Cog):
         """
         Manually restore queue permissions to a member who left and came back and I didn't pick up on it
         or maybe when they came back with a new Dicsord account
-        :param user_id: Discord account ID
+
+        user_id: Discord account ID
         """
 
         member = wrappers.get_member_guaranteed(ctx, user_id)
@@ -154,7 +156,8 @@ class Queue(commands.Cog):
     async def make_queue_channel(self, ctx, *, queue_type="std"):
         """
         This command creates a queue style channel for the person executing the command
-        :param queue_type: This specifies the type of the queue, for example std, mania, or whatever you want
+
+        queue_type: This specifies the type of the queue, for example std, mania, or whatever you want
         """
 
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",
@@ -261,7 +264,8 @@ class Queue(commands.Cog):
     async def remove_co_modder(self, ctx, user_id):
         """
         This command allows you to remove a co-modder that you added to your queue
-        :param user_id: Discord account ID
+
+        user_id: Discord account ID
         """
 
         if not await self.channel_is_a_queue(ctx):
@@ -378,8 +382,8 @@ class Queue(commands.Cog):
         This command will "open" the queue. It will change channel permissions, so that,
         anyone who is not explicitly blacklisted from the queue, can post it in.
 
-        :param args: A message you want the bot to post after opening the queue.
-                     If you use this, the message you call the command in in will be deleted.
+        args: A message you want the bot to post after opening the queue.
+              If you use this, the message you call the command in in will be deleted.
         """
 
         if not await self.channel_is_a_queue(ctx):
@@ -411,8 +415,8 @@ class Queue(commands.Cog):
         This command will "close" the queue. It will change channel permissions, so that,
         anyone (who is not explicitly banned from seeing the queue) will see it but cannot send any message in it.
 
-        :param args: A message you want the bot to post after closing the queue.
-                     If you use this, the message you call the command in in will be deleted.
+        args: A message you want the bot to post after closing the queue.
+              If you use this, the message you call the command in in will be deleted.
         """
 
         if not await self.channel_is_a_queue(ctx):
@@ -444,8 +448,8 @@ class Queue(commands.Cog):
         This command will "hide" the queue. It will change channel permissions, so that,
         other than server administrators, nobody can see it.
 
-        :param args: A message you want the bot to post after hiding the queue.
-                     If you use this, the message you call the command in in will be deleted.
+        args: A message you want the bot to post after hiding the queue.
+              If you use this, the message you call the command in in will be deleted.
         """
 
         if not await self.channel_is_a_queue(ctx):

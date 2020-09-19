@@ -36,7 +36,8 @@ class ModChecker(commands.Cog):
         """
         This tracks the mapset.
         The ID used will be the one specified upon channel creation or set using set_id command.
-        :param tracking_mode: 'timeline' or 'notification'
+
+        tracking_mode: 'timeline' or 'notification'
 
         timeline mode example: https://i.imgur.com/3pHW9FM.png
         notification mode example: https://i.imgur.com/e2LwWh2.png
@@ -252,8 +253,9 @@ class ModChecker(commands.Cog):
     async def force_track(self, ctx, mapset_id, tracking_mode=1):
         """
         Forcefully track any mapset in any channel
-        :param mapset_id: Literally the Mapset ID
-        :param tracking_mode: Tracking mode 1 or 2
+
+        mapset_id: Literally the Mapset ID
+        tracking_mode: Tracking mode 1 or 2
         """
 
         if not mapset_id.isdigit():
@@ -310,7 +312,8 @@ class ModChecker(commands.Cog):
     async def force_untrack(self, ctx, mapset_id):
         """
         Forcefully untrack any mapset from any channel
-        :param mapset_id: Literally the Mapset ID
+
+        mapset_id: Literally the Mapset ID
         """
 
         if not mapset_id.isdigit():

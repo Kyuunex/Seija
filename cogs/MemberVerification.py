@@ -31,8 +31,9 @@ class MemberVerification(commands.Cog):
     async def verify(self, ctx, user_id, osu_id):
         """
         Manually verify a member
-        :param user_id: Discord account ID
-        :param osu_id: osu! account ID
+
+        user_id: Discord account ID
+        osu_id: osu! account ID
         """
 
         if not user_id.isdigit():
@@ -98,9 +99,10 @@ class MemberVerification(commands.Cog):
     async def verify_restricted(self, ctx, user_id, osu_id, username=""):
         """
         Insert a restricted user info into the database. This command does not give any roles.
-        :param user_id: Discord account ID
-        :param osu_id: osu! account ID
-        :param username: osu! account username
+
+        user_id: Discord account ID
+        osu_id: osu! account ID
+        username: osu! account username
         """
 
         if not user_id.isdigit():
@@ -123,9 +125,10 @@ class MemberVerification(commands.Cog):
     async def update_user_discord_account(self, ctx, old_id, new_id, osu_id=""):
         """
         A command to migrate stuff from old discord account to a new one.
-        :param old_id: an ID of the old Discord account
-        :param new_id: an ID of the new Discord account
-        :param osu_id: an ID of the osu account
+
+        old_id: an ID of the old Discord account
+        new_id: an ID of the new Discord account
+        osu_id: an ID of the osu account
         """
 
         if not old_id.isdigit():
@@ -165,7 +168,8 @@ class MemberVerification(commands.Cog):
     async def unverify(self, ctx, user_id):
         """
         Unverify a member and delete it from the database
-        :param user_id: Discord account ID
+        
+        user_id: Discord account ID
         """
 
         await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [int(user_id)])

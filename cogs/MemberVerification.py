@@ -433,10 +433,6 @@ class MemberVerification(commands.Cog):
         await self.check_group_roles(channel, member, member.guild, fresh_osu_data)
 
     async def member_is_already_verified_and_just_needs_roles(self, channel, member, user_db_lookup):
-        ranked_amount = user_db_lookup[2]
-
-        role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
-        await member.add_roles(role)
         try:
             fresh_osu_data = await self.bot.osuweb.get_user_array(user_db_lookup[0])
         except Exception as e:
@@ -448,10 +444,15 @@ class MemberVerification(commands.Cog):
 
         if fresh_osu_data:
             name = fresh_osu_data["username"]
+            ranked_amount = fresh_osu_data["ranked_and_approved_beatmapset_count"]
             embed = await osuwebembed.user_array(fresh_osu_data)
         else:
             name = user_db_lookup[1]
+            ranked_amount = user_db_lookup[2]
             embed = None
+
+        role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
+        await member.add_roles(role)
 
         await member.edit(nick=name)
         verified_message = await channel.send(f"Welcome aboard {member.mention}! Since we know who you are, "

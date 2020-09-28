@@ -1,12 +1,11 @@
 import random
 
-import discord
 import sqlite3
 from discord.ext import commands
 from discord.utils import escape_markdown
 from modules import permissions
 from modules import wrappers
-import osuembed
+from modules import verification_reusables
 import osuwebembed
 import datetime
 import dateutil
@@ -226,18 +225,9 @@ class MemberVerification(commands.Cog):
                 await self.profile_id_verification(message.channel, message.author, profile_id)
                 return
 
-            if "https://osu.ppy.sh/beatmapsets/" in message.content:
-                mapset_id = self.grab_osu_mapset_id_from_text(message.content)
-                await self.mapset_id_verification(message.channel, message.author, mapset_id)
-                return
-
             return
 
     def grab_osu_profile_id_from_text(self, text):
-        split_message = text.split("/")
-        return split_message[4].split("#")[0].split(" ")[0]
-
-    def grab_osu_mapset_id_from_text(self, text):
         split_message = text.split("/")
         return split_message[4].split("#")[0].split(" ")[0]
 
@@ -282,77 +272,6 @@ class MemberVerification(commands.Cog):
 
             await channel.send(goodbye_message[0] % f"**{escaped_member_name}**", embed=embed)
 
-    async def mapset_id_verification(self, channel, member, mapset_id):
-        try:
-            mapset = await self.bot.osu.get_beatmapset(s=mapset_id)
-        except Exception as e:
-            await channel.send("i am having issues connecting to osu servers to verify you. "
-                               "try again later or wait for a manager to help",
-                               embed=await wrappers.embed_exception(e))
-            return
-
-        if not mapset:
-            await channel.send("verification failure, I can't find any map with that link")
-            return
-
-        try:
-            is_not_restricted = await self.bot.osu.get_user(u=mapset.creator_id)
-            if is_not_restricted:
-                await channel.send("verification failure, "
-                                   "verification through mapset is reserved for restricted users only. "
-                                   "this is like this to reduce confusion and errors")
-                return
-        except:
-            pass
-
-        # this won't work on restricted users, thanks peppy.
-        # member_mapsets = await self.bot.osu.get_beatmapsets(u=str(mapset.creator_id))
-        # ranked_amount = await self.count_ranked_beatmapsets(member_mapsets)
-        ranked_amount = 0
-        role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
-
-        async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [int(member.id)]) as cursor:
-            already_linked_to = await cursor.fetchone()
-        if already_linked_to:
-            if int(mapset.creator_id) != int(already_linked_to[0]):
-                await channel.send(f"{member.mention} it seems like your discord account is already in my database "
-                                   f"and is linked to <https://osu.ppy.sh/users/{already_linked_to[0]}>")
-                return
-            else:
-                try:
-                    await member.add_roles(role)
-                    await member.edit(nick=mapset.creator)
-                except:
-                    pass
-                await channel.send(content=f"{member.mention} i already know lol. here, have some roles")
-                return
-
-        async with self.bot.db.execute("SELECT user_id FROM users WHERE osu_id = ?",
-                                       [int(mapset.creator_id)]) as cursor:
-            check_if_new_discord_account = await cursor.fetchone()
-        if check_if_new_discord_account:
-            if int(check_if_new_discord_account[0]) != int(member.id):
-                old_user_id = check_if_new_discord_account[0]
-                await channel.send(f"this osu account is already linked to <@{old_user_id}> in my database. "
-                                   "if there's a problem, for example, you got a new discord account, ping kyuunex.")
-                return
-
-        try:
-            await member.add_roles(role)
-            await member.edit(nick=mapset.creator)
-        except:
-            pass
-
-        embed = await osuembed.beatmapset(mapset)
-        await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [int(member.id)])
-        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?)",
-                                  [int(member.id), int(mapset.creator_id), str(mapset.creator), 0, 0, None,
-                                   int(ranked_amount), 0, 0])
-        await self.bot.db.commit()
-
-        await channel.send(content=f"`Verified through mapset: {escape_markdown(member.name)}` \n"
-                                   f"You should also read the rules if you haven't already.", embed=embed)
-
     async def profile_id_verification(self, channel, member, osu_id):
 
         try:
@@ -378,7 +297,7 @@ class MemberVerification(commands.Cog):
             return
 
         ranked_amount = fresh_osu_data["ranked_and_approved_beatmapset_count"]
-        role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
+        role = await verification_reusables.get_role_based_on_reputation(self, member.guild, ranked_amount)
 
         async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [int(member.id)]) as cursor:
             already_linked_to = await cursor.fetchone()
@@ -451,7 +370,7 @@ class MemberVerification(commands.Cog):
             ranked_amount = user_db_lookup[2]
             embed = None
 
-        role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
+        role = await verification_reusables.get_role_based_on_reputation(self, member.guild, ranked_amount)
         await member.add_roles(role)
 
         await member.edit(nick=name)
@@ -541,20 +460,6 @@ class MemberVerification(commands.Cog):
         except Exception as e:
             print(e)
 
-    async def get_role_from_db(self, setting, guild):
-        async with self.bot.db.execute("SELECT role_id FROM roles WHERE setting = ? AND guild_id = ?",
-                                       [setting, int(guild.id)]) as cursor:
-            role_id = await cursor.fetchone()
-        return discord.utils.get(guild.roles, id=int(role_id[0]))
-
-    async def get_role_based_on_reputation(self, guild, ranked_amount):
-        if ranked_amount >= 10:
-            return await self.get_role_from_db("experienced_mapper", guild)
-        elif ranked_amount >= 1:
-            return await self.get_role_from_db("ranked_mapper", guild)
-        else:
-            return await self.get_role_from_db("mapper", guild)
-
     def is_new_user(self, user):
         user_creation_ago = datetime.datetime.utcnow() - user.created_at
         if abs(user_creation_ago).total_seconds() / 2592000 <= 1 and user.avatar is None:
@@ -564,9 +469,9 @@ class MemberVerification(commands.Cog):
 
     async def check_group_roles(self, channel, member, guild, fresh_osu_data):
         group_roles = [
-            [7, await self.get_role_from_db("nat", guild)],
-            [28, await self.get_role_from_db("bn", guild)],
-            [32, await self.get_role_from_db("bn", guild)],
+            [7, await verification_reusables.get_role_from_db(self, "nat", guild)],
+            [28, await verification_reusables.get_role_from_db(self, "bn", guild)],
+            [32, await verification_reusables.get_role_from_db(self, "bn", guild)],
         ]
 
         user_qualifies_for_these_roles = await self.get_user_qualified_group_roles(fresh_osu_data, group_roles)

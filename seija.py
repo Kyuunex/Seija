@@ -40,6 +40,7 @@ initial_extensions = [
     "cogs.MemberInfoSyncing",
     "cogs.MemberStatistics",
     "cogs.MemberVerification",
+    "cogs.MemberVerificationWithMapset",
     "cogs.ModChecker",
     "cogs.Osu",
     "cogs.Queue",

@@ -2,6 +2,7 @@ import sqlite3
 from discord.ext import commands
 from discord.utils import escape_markdown
 from modules import wrappers
+from modules import verification_reusables
 import osuembed
 
 
@@ -57,7 +58,7 @@ class MemberVerificationWithMapset(commands.Cog):
         # member_mapsets = await self.bot.osu.get_beatmapsets(u=str(mapset.creator_id))
         # ranked_amount = await self.count_ranked_beatmapsets(member_mapsets)
         ranked_amount = 0
-        role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
+        role = await verification_reusables.get_role_based_on_reputation(self, member.guild, ranked_amount)
 
         async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [int(member.id)]) as cursor:
             already_linked_to = await cursor.fetchone()

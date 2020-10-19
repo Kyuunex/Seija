@@ -304,7 +304,10 @@ class MemberVerification(commands.Cog):
         if already_linked_to:
             if int(fresh_osu_data["id"]) != int(already_linked_to[0]):
                 await channel.send(f"{member.mention} it seems like your discord account is already in my database and "
-                                   f"is linked to <https://osu.ppy.sh/users/{already_linked_to[0]}>")
+                                   f"is linked to <https://osu.ppy.sh/users/{already_linked_to[0]}>."
+                                   f"this check exists to prevent impersonation to an extent. "
+                                   f"ping kyuunex if there is a problem, "
+                                   f"for example if you multiaccounted on osu in past or something.")
                 return
             else:
                 try:
@@ -322,7 +325,9 @@ class MemberVerification(commands.Cog):
             if int(check_if_new_discord_account[0]) != int(member.id):
                 old_user_id = check_if_new_discord_account[0]
                 await channel.send(f"this osu account is already linked to <@{old_user_id}> in my database. "
-                                   "if there's a problem, for example, you got a new discord account, ping kyuunex.")
+                                   f"this check exists to prevent impersonation to an extent. "
+                                   "if there's a problem, for example, you got a new discord account, "
+                                   "or somebody impersonated you, ping kyuunex.")
                 return
 
         try:

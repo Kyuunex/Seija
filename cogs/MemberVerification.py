@@ -58,7 +58,7 @@ class MemberVerification(commands.Cog):
         ranked_amount = fresh_osu_data["ranked_and_approved_beatmapset_count"]
 
         try:
-            role = await self.get_role_based_on_reputation(member.guild, ranked_amount)
+            role = await verification_reusables.get_role_based_on_reputation(self, member.guild, ranked_amount)
         except:
             role = None
 

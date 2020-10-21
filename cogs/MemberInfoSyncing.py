@@ -27,7 +27,7 @@ class MemberInfoSyncing(commands.Cog):
             return
 
         async with self.bot.db.execute("SELECT user_id, osu_id, osu_username, osu_join_date, "
-                                       "pp, country, ranked_maps_amount, no_sync "
+                                       "pp, country, ranked_maps_amount, kudosu, no_sync "
                                        "FROM users WHERE user_id = ?", [int(after.id)]) as cursor:
             query = await cursor.fetchone()
 
@@ -66,7 +66,7 @@ class MemberInfoSyncing(commands.Cog):
                 continue
 
             async with self.bot.db.execute("SELECT user_id, osu_id, osu_username, osu_join_date, "
-                                           "pp, country, ranked_maps_amount, no_sync FROM users") as cursor:
+                                           "pp, country, ranked_maps_amount, kudosu, no_sync FROM users") as cursor:
                 stored_user_info_list = await cursor.fetchall()
 
             async with self.bot.db.execute("SELECT guild_id, osu_id FROM restricted_users") as cursor:
@@ -174,7 +174,7 @@ class MemberInfoSyncing(commands.Cog):
                 return
             if "03-31T" in str(now.isoformat()):
                 return
-            if "1" in str(stored_user_info[7]):
+            if int(stored_user_info[8]) == 1:
                 return
             try:
                 if member.guild_permissions.administrator:

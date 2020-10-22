@@ -4,6 +4,7 @@ from discord.ext import commands
 import aiosqlite
 from aioosuapi import aioosuapi
 from aioosuwebapi import aioosuwebapi
+import discord
 import sys
 import os
 
@@ -45,6 +46,9 @@ initial_extensions = [
     "cogs.Osu",
     "cogs.Queue",
 ]
+
+intents = discord.Intents.default()
+intents.members = True
 
 
 class Seija(commands.Bot):
@@ -104,5 +108,5 @@ class Seija(commands.Bot):
         await first_run.add_admins(self)
 
 
-client = Seija(command_prefix=command_prefix)
+client = Seija(command_prefix=command_prefix, intents=intents)
 client.run(bot_token)

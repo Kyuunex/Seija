@@ -330,6 +330,10 @@ class MemberVerification(commands.Cog):
                                    "or somebody impersonated you, ping kyuunex.")
                 return
 
+        if self.last_visit_check(fresh_osu_data, day_amount=60):
+            await channel.send(f"i can't verify you right now. circumstances are too suspicious")
+            return
+
         try:
             await member.add_roles(role)
             await member.edit(nick=fresh_osu_data["username"])
@@ -349,9 +353,7 @@ class MemberVerification(commands.Cog):
                                    str(fresh_osu_data["country_code"]), int(ranked_amount),
                                    int(fresh_osu_data["kudosu"]["total"]), 0])
         await self.bot.db.commit()
-        verified_message = await channel.send(content=f"`Verified: {escape_markdown(member.name)}` \n"
-                                                      f"You should also read the rules if you haven't already.",
-                                              embed=embed)
+        verified_message = await channel.send(content="Verified!", embed=embed)
 
         await self.add_obligatory_reaction(verified_message, fresh_osu_data["country_code"])
         await self.check_group_roles(channel, member, member.guild, fresh_osu_data)
@@ -410,6 +412,18 @@ class MemberVerification(commands.Cog):
                                embed=await wrappers.embed_exception(e))
             return
 
+        if self.autodetect_profile_proven(member, fresh_osu_data):
+            profile_id = member.name
+            await channel.send(f"Welcome {member.mention}! We have a verification system in this server "
+                               "so we can give you appropriate roles and keep raids/spam out. \n"
+                               "To make verification faster, I have looked up your discord username on osu "
+                               "and found this profile. \n"
+                               "Since you have specified your Discord account on osu and the 4 digits also match, "
+                               "I'll link you to that profile. "
+                               "If something is incorrect, let us know.")
+            await self.profile_id_verification(channel, member, profile_id)
+            return
+
         if self.autodetect_profile_inquiry_conditions(fresh_osu_data, member):
             await channel.send(content=f"Welcome {member.mention}! We have a verification system in this server "
                                        "so we can give you appropriate roles and keep raids/spam out. \n"
@@ -420,6 +434,12 @@ class MemberVerification(commands.Cog):
             await channel.send(f"Welcome {member.mention}! We have a verification system in this server "
                                "so we can give you appropriate roles and keep raids/spam out. \n"
                                "Please post a link to your osu! profile and I will verify you instantly.")
+
+    def autodetect_profile_proven(self, member, fresh_osu_data):
+        if fresh_osu_data['discord']:
+            if str(member) == str(fresh_osu_data['discord']):
+                return True
+        return False
 
     def autodetect_profile_inquiry_conditions(self, fresh_osu_data, member):
         try:
@@ -439,6 +459,11 @@ class MemberVerification(commands.Cog):
             if fresh_osu_data["statistics"]:
                 if float(fresh_osu_data["statistics"]["pp"]) < 100:
                     return False
+
+            # if fresh_osu_data['discord']:
+            #     if "#" in fresh_osu_data['discord']:
+            #         if str(member.discriminator) == str(((fresh_osu_data['discord']).split("#"))[-1]):
+            #             return True
 
             return True
         except:
@@ -518,9 +543,24 @@ class MemberVerification(commands.Cog):
         if account_age_seconds / 60 / 60 / 24 < 30:
             return True
 
+        if self.last_visit_check(fresh_osu_data):
+            return True
+
         if fresh_osu_data["statistics"]:
             if float(fresh_osu_data["statistics"]["pp"]) < 100:
                 return True
+
+        return False
+
+    def last_visit_check(self, fresh_osu_data, day_amount=30):
+        if not fresh_osu_data['last_visit']:
+            return False
+
+        last_visit = dateutil.parser.parse(fresh_osu_data['last_visit'])
+
+        seconds_since_last_visit = datetime.datetime.now().timestamp() - last_visit.timestamp()
+        if seconds_since_last_visit / 60 / 60 / 24 > day_amount:
+            return True
 
         return False
 

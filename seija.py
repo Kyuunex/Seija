@@ -36,7 +36,6 @@ initial_extensions = [
     "cogs.BotManagement",
     "cogs.Docs",
     "cogs.MapsetChannel",
-    "cogs.MapsetGitRepo",
     "cogs.MemberManagement",
     "cogs.MemberInfoSyncing",
     "cogs.MemberStatistics",

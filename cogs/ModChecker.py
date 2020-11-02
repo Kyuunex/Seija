@@ -101,11 +101,11 @@ class ModChecker(commands.Cog):
 
         await self.insert_nomination_history_in_db(discussions, int(ctx.channel.id))
 
-        await self.bot.db.execute("INSERT INTO mod_tracking VALUES (?,?,?)",
-                                  [int(mapset_id[0]), int(ctx.channel.id), int(tracking_mode)])
+        await self.bot.db.execute("INSERT INTO mod_tracking VALUES (?,?,?,?)",
+                                  [int(mapset_id[0]), int(ctx.channel.id), int(tracking_mode), 1800])
 
         try:
-            # TODO: this should not have to be nessasary, maybe after new api is out,
+            # TODO: this should not have to be necessary, maybe after new api is out,
             #  we can just build the embed with the discussions response
 
             beatmap_object = await self.bot.osu.get_beatmapset(s=str(mapset_id[0]))
@@ -195,8 +195,8 @@ class ModChecker(commands.Cog):
         await self.insert_mod_history_in_db(discussions, int(ctx.channel.id))
         await self.insert_nomination_history_in_db(discussions, int(ctx.channel.id))
 
-        await self.bot.db.execute("INSERT INTO mod_tracking VALUES (?,?,?)",
-                                  [int(mapset_id), int(ctx.channel.id), 3])
+        await self.bot.db.execute("INSERT INTO mod_tracking VALUES (?,?,?,?)",
+                                  [int(mapset_id), int(ctx.channel.id), 3, 1800])
 
         try:
             result = await self.bot.osu.get_beatmapset(s=mapset_id)
@@ -291,8 +291,8 @@ class ModChecker(commands.Cog):
         await self.insert_mod_history_in_db(discussions, int(ctx.channel.id))
         await self.insert_nomination_history_in_db(discussions, int(ctx.channel.id))
 
-        await self.bot.db.execute("INSERT INTO mod_tracking VALUES (?,?,?)",
-                                  [int(mapset_id), int(ctx.channel.id), tracking_mode])
+        await self.bot.db.execute("INSERT INTO mod_tracking VALUES (?,?,?,?)",
+                                  [int(mapset_id), int(ctx.channel.id), tracking_mode, 1800])
 
         try:
             result = await self.bot.osu.get_beatmapset(s=mapset_id)

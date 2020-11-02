@@ -98,7 +98,8 @@ def ensure_tables():
     CREATE TABLE IF NOT EXISTS "mod_tracking" (
         "mapset_id"    INTEGER NOT NULL,
         "channel_id"    INTEGER NOT NULL,
-        "mode"    INTEGER NOT NULL
+        "mode"    INTEGER NOT NULL,
+        "frequency"    INTEGER NOT NULL
     )
     """)
 

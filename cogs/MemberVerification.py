@@ -445,9 +445,12 @@ class MemberVerification(commands.Cog):
                                "Please post a link to your osu! profile and I will verify you instantly.")
 
     def autodetect_profile_proven(self, member, fresh_osu_data):
-        if fresh_osu_data['discord']:
-            if str(member) == str(fresh_osu_data['discord']):
-                return True
+        try:
+            if fresh_osu_data['discord']:
+                if str(member) == str(fresh_osu_data['discord']):
+                    return True
+        except KeyError:
+            pass
         return False
 
     def autodetect_profile_inquiry_conditions(self, fresh_osu_data, member):
@@ -532,16 +535,22 @@ class MemberVerification(commands.Cog):
         return return_list
 
     def get_correct_embed_trust_color(self, member, fresh_osu_data):
-        if fresh_osu_data['discord']:
-            if str(member) == str(fresh_osu_data['discord']):
-                return 0x00ff00
+        try:
+            if fresh_osu_data['discord']:
+                if str(member) == str(fresh_osu_data['discord']):
+                    return 0x00ff00
+        except KeyError:
+            pass
 
         if self.user_is_suspicious(fresh_osu_data):
             return 0xff0000
 
-        if fresh_osu_data['discord']:
-            if str(member) != str(fresh_osu_data['discord']):
-                return 0xff5500
+        try:
+            if fresh_osu_data['discord']:
+                if str(member) != str(fresh_osu_data['discord']):
+                    return 0xff5500
+        except KeyError:
+            pass
 
         return 0xffbb00
 

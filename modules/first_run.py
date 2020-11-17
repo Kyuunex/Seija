@@ -146,7 +146,7 @@ def ensure_tables():
 
     c.execute("""
     CREATE TABLE IF NOT EXISTS "member_goodbye_messages" (
-        "message"    TEXT NOT NULL
+        "message"    TEXT NOT NULL UNIQUE
     )
     """)
 
@@ -157,8 +157,8 @@ def ensure_tables():
     )
     """)
 
-    c.execute("INSERT INTO member_goodbye_messages VALUES (?)", ["%s is going for loved"])
-    c.execute("INSERT INTO member_goodbye_messages VALUES (?)", ["%s was told to remap one too many times"])
+    c.execute("INSERT OR IGNORE INTO member_goodbye_messages VALUES (?)", ["%s is going for loved"])
+    c.execute("INSERT OR IGNORE INTO member_goodbye_messages VALUES (?)", ["%s was told to remap one too many times"])
 
     conn.commit()
     conn.close()

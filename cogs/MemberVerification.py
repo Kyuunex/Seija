@@ -472,6 +472,9 @@ class MemberVerification(commands.Cog):
                 if float(fresh_osu_data["statistics"]["pp"]) < 100:
                     return False
 
+            if str(member.name).lower() != str(fresh_osu_data["username"]).lower():
+                return False
+
             # if fresh_osu_data['discord']:
             #     if "#" in fresh_osu_data['discord']:
             #         if str(member.discriminator) == str(((fresh_osu_data['discord']).split("#"))[-1]):

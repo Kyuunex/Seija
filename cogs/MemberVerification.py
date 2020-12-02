@@ -391,7 +391,7 @@ class MemberVerification(commands.Cog):
 
         await member.edit(nick=name)
         verified_message = await channel.send(f"Welcome aboard {member.mention}! Since we know who you are, "
-                                              "I have automatically gave you appropriate roles. "
+                                              "I have automatically given you appropriate roles. "
                                               "Enjoy your stay!",
                                               embed=embed)
 

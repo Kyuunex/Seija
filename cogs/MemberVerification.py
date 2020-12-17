@@ -358,14 +358,14 @@ class MemberVerification(commands.Cog):
         await self.add_obligatory_reaction(verified_message, fresh_osu_data["country_code"])
         await self.check_group_roles(channel, member, member.guild, fresh_osu_data)
 
-        await self.send_post_verification_message(channel, member.guild)
+        await self.send_post_verification_message(channel, member, member.guild)
 
-    async def send_post_verification_message(self, channel, guild):
+    async def send_post_verification_message(self, channel, member, guild):
         async with self.bot.db.execute("SELECT message FROM post_verification_messages WHERE guild_id = ?",
                                        [int(guild.id)]) as cursor:
             post_verification_message = await cursor.fetchone()
         if post_verification_message:
-            await channel.send(post_verification_message[0])
+            await channel.send((post_verification_message[0]).replace("(mention)", member.mention))
 
     async def member_is_already_verified_and_just_needs_roles(self, channel, member, user_db_lookup):
         try:

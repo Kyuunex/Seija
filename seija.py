@@ -44,6 +44,7 @@ initial_extensions = [
     "cogs.ModChecker",
     "cogs.Osu",
     "cogs.Queue",
+    "cogs.QueueMaintenance",
 ]
 
 intents = discord.Intents.default()

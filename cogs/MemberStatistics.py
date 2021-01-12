@@ -2,7 +2,8 @@ import discord
 from discord.ext import commands
 from discord.utils import escape_markdown
 from modules import permissions
-from modules import wrappers
+from reusables import exceptions
+from reusables import send_large_message
 from modules import cooldown
 from collections import Counter
 import operator
@@ -63,7 +64,7 @@ class MemberStatistics(commands.Cog):
 
             embed = discord.Embed(color=0xbd3661)
             embed.set_author(name="Server Demographics")
-        await wrappers.send_large_embed(ctx.channel, embed, buffer)
+        await send_large_message.send_large_embed(ctx.channel, embed, buffer)
 
     @commands.command(name="from", brief="Get a list of members from specified country")
     @commands.guild_only()
@@ -97,7 +98,7 @@ class MemberStatistics(commands.Cog):
                                "You can also try searching with Alpha-2 and Alpha-3 codes. \n"
                                "If you are not sure what this means, have a look at this "
                                "<https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2>",
-                               embed=await wrappers.embed_exception(e))
+                               embed=await exceptions.embed_exception(e))
                 return
 
             master_list = []
@@ -124,7 +125,7 @@ class MemberStatistics(commands.Cog):
 
             embed = discord.Embed(color=0xbd3661)
             embed.set_author(name="Country Demographics")
-        await wrappers.send_large_embed(ctx.channel, embed, contents)
+        await send_large_message.send_large_embed(ctx.channel, embed, contents)
 
     async def stats_calc(self, data):
         results = dict(Counter(data))

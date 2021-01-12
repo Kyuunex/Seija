@@ -4,8 +4,8 @@ import sqlite3
 from discord.ext import commands
 from discord.utils import escape_markdown
 from modules import permissions
-from modules import wrappers
-from modules import verification_reusables
+from reusables import exceptions
+from reusables import verification as verification_reusables
 import osuwebembed
 import datetime
 import dateutil
@@ -48,7 +48,7 @@ class MemberVerification(commands.Cog):
             fresh_osu_data = await self.bot.osuweb.get_user_array(osu_id)
         except Exception as e:
             await ctx.send("i have connection issues with osu servers. so i can't do that right now",
-                           embed=await wrappers.embed_exception(e))
+                           embed=await exceptions.embed_exception(e))
             return
 
         if not fresh_osu_data:
@@ -69,12 +69,12 @@ class MemberVerification(commands.Cog):
         try:
             await member.add_roles(role)
         except Exception as e:
-            await ctx.send("i can't give the role", embed=await wrappers.embed_exception(e))
+            await ctx.send("i can't give the role", embed=await exceptions.embed_exception(e))
 
         try:
             await member.edit(nick=fresh_osu_data["username"])
         except Exception as e:
-            await ctx.send("i can't update the nickname of this user", embed=await wrappers.embed_exception(e))
+            await ctx.send("i can't update the nickname of this user", embed=await exceptions.embed_exception(e))
 
         embed = await osuwebembed.user_array(fresh_osu_data)
 
@@ -144,7 +144,7 @@ class MemberVerification(commands.Cog):
                 await ctx.send("kicking old account")
                 await old_account.kick()
         except Exception as e:
-            await ctx.send(embed=await wrappers.embed_exception(e))
+            await ctx.send(embed=await exceptions.embed_exception(e))
 
         await self.bot.db.execute("UPDATE users SET user_id = ? WHERE user_id = ?", [int(new_id), int(old_id)])
         await self.bot.db.execute("UPDATE difficulty_claims SET user_id = ? WHERE user_id = ?",
@@ -184,7 +184,7 @@ class MemberVerification(commands.Cog):
             await member.edit(nick=None)
             await ctx.send("removed nickname and roles")
         except Exception as e:
-            await ctx.send("no perms to change nickname and/or remove roles", embed=await wrappers.embed_exception(e))
+            await ctx.send("no perms to change nickname and/or remove roles", embed=await exceptions.embed_exception(e))
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -279,7 +279,7 @@ class MemberVerification(commands.Cog):
         except Exception as e:
             await channel.send("i am having issues connecting to osu servers to verify you. "
                                "try again later or wait for a manager to help",
-                               embed=await wrappers.embed_exception(e))
+                               embed=await exceptions.embed_exception(e))
             return
 
         if not fresh_osu_data:
@@ -374,7 +374,7 @@ class MemberVerification(commands.Cog):
             await channel.send("okay, i also can't check your osu profile. "
                                "although i do have your osu profile info in my database. "
                                "I'll just use the cached info then",
-                               embed=await wrappers.embed_exception(e))
+                               embed=await exceptions.embed_exception(e))
             fresh_osu_data = None
 
         if fresh_osu_data:
@@ -418,7 +418,7 @@ class MemberVerification(commands.Cog):
                                "wait patiently a little bit and then link your profile again. "
                                "worse case, managers will have to manually let you in. "
                                "it will just take time. ignore the error bellow, this is for the managers. ",
-                               embed=await wrappers.embed_exception(e))
+                               embed=await exceptions.embed_exception(e))
             return
 
         if self.autodetect_profile_proven(member, fresh_osu_data):

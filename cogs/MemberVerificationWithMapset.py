@@ -1,8 +1,8 @@
 import sqlite3
 from discord.ext import commands
 from discord.utils import escape_markdown
-from modules import wrappers
-from modules import verification_reusables
+from reusables import exceptions
+from reusables import verification as verification_reusables
 import osuembed
 
 
@@ -37,7 +37,7 @@ class MemberVerificationWithMapset(commands.Cog):
         except Exception as e:
             await channel.send("i am having issues connecting to osu servers to verify you. "
                                "try again later or wait for a manager to help",
-                               embed=await wrappers.embed_exception(e))
+                               embed=await exceptions.embed_exception(e))
             return
 
         if not mapset:

@@ -1,6 +1,8 @@
 from cogs.Docs import Docs
 from modules import permissions
-from modules import wrappers
+from reusables import exceptions
+from reusables import get_member_helpers
+from reusables import send_large_message
 import discord
 from discord.ext import commands
 import random
@@ -42,7 +44,7 @@ class MapsetChannel(commands.Cog):
         to a user who left and maybe returned with a different account.
         """
 
-        member = wrappers.get_member_guaranteed(ctx, user_id)
+        member = get_member_helpers.get_member_guaranteed(ctx, user_id)
         if not member:
             await ctx.send("no member found with that name")
             return
@@ -74,9 +76,9 @@ class MapsetChannel(commands.Cog):
 
             embed = discord.Embed(color=0xadff2f)
             embed.set_author(name="Mapset members")
-            await wrappers.send_large_embed(ctx.channel, embed, buffer)
+            await send_large_message.send_large_embed(ctx.channel, embed, buffer)
         except Exception as e:
-            await ctx.send(embed=await wrappers.embed_exception(e))
+            await ctx.send(embed=await exceptions.embed_exception(e))
 
     @commands.command(name="add", brief="Add a user in the current mapset channel")
     @commands.check(permissions.is_not_ignored)
@@ -93,7 +95,7 @@ class MapsetChannel(commands.Cog):
             await ctx.send("not your mapset channel")
             return
 
-        member = wrappers.get_member_guaranteed(ctx, user_name)
+        member = get_member_helpers.get_member_guaranteed(ctx, user_name)
         if not member:
             await ctx.send("No member found with what you specified. Try using a Discord account ID.")
             return
@@ -103,7 +105,7 @@ class MapsetChannel(commands.Cog):
             await member.add_roles(role, reason="added to mapset")
             await ctx.send(f"added {member.mention} in this channel")
         except Exception as e:
-            await ctx.send(embed=await wrappers.embed_exception(e))
+            await ctx.send(embed=await exceptions.embed_exception(e))
 
     @commands.command(name="remove", brief="Remove a user from the current mapset channel")
     @commands.check(permissions.is_not_ignored)
@@ -120,7 +122,7 @@ class MapsetChannel(commands.Cog):
             await ctx.send("not your mapset channel")
             return
 
-        member = wrappers.get_member_guaranteed(ctx, user_name)
+        member = get_member_helpers.get_member_guaranteed(ctx, user_name)
         if not member:
             await ctx.send("No member found with what you specified. Try using a Discord account ID.")
             return
@@ -130,7 +132,7 @@ class MapsetChannel(commands.Cog):
             await member.remove_roles(role, reason="removed from mapset")
             await ctx.send(f"removed {member.mention} from this channel")
         except Exception as e:
-            await ctx.send(embed=await wrappers.embed_exception(e))
+            await ctx.send(embed=await exceptions.embed_exception(e))
 
     @commands.command(name="claim_diff", brief="Claim a beatmapset difficulty")
     @commands.guild_only()
@@ -188,7 +190,7 @@ class MapsetChannel(commands.Cog):
             await ctx.channel.edit(reason="mapset abandoned", category=archive_category)
             await ctx.send("moved to archive")
         except Exception as e:
-            await ctx.send(embed=await wrappers.embed_exception(e))
+            await ctx.send(embed=await exceptions.embed_exception(e))
 
     @commands.command(name="set_id", brief="Set a mapset id for this channel")
     @commands.guild_only()
@@ -217,7 +219,7 @@ class MapsetChannel(commands.Cog):
         except Exception as e:
             await ctx.send("i have connection issues with osu servers "
                            "so i can't verify if the id you specified is legit. "
-                           "try again later", embed=await wrappers.embed_exception(e))
+                           "try again later", embed=await exceptions.embed_exception(e))
             return
 
         await self.bot.db.execute("UPDATE mapset_channels SET mapset_id = ? WHERE channel_id = ?",
@@ -280,7 +282,7 @@ class MapsetChannel(commands.Cog):
 
         embed = discord.Embed(color=0xff6781)
 
-        await wrappers.send_large_embed(ctx.channel, embed, buffer)
+        await send_large_message.send_large_embed(ctx.channel, embed, buffer)
 
     @commands.command(name="nuke", brief="Nuke a mapset channel")
     @commands.check(permissions.is_admin)
@@ -314,7 +316,7 @@ class MapsetChannel(commands.Cog):
             await role.delete(reason="manually nuked the role due to abuse")
             await ctx.channel.delete(reason="manually nuked the channel due to abuse")
         except Exception as e:
-            await ctx.send(embed=await wrappers.embed_exception(e))
+            await ctx.send(embed=await exceptions.embed_exception(e))
 
     @commands.command(name="request_mapset_channel", brief="Request a mapset channel")
     @commands.guild_only()

@@ -1,6 +1,6 @@
 from cogs.Docs import Docs
 from modules import permissions
-from modules import wrappers
+from reusables import exceptions
 import discord
 from discord.ext import commands
 
@@ -83,7 +83,7 @@ class Queue(commands.Cog):
             await ctx.message.delete()
         except Exception as e:
             await ctx.send(f"{ctx.author.mention} I don't seem to have permissions to purge this queue",
-                           embed=await wrappers.embed_exception(e))
+                           embed=await exceptions.embed_exception(e))
             return
 
         async with ctx.channel.typing():
@@ -100,7 +100,7 @@ class Queue(commands.Cog):
                 deleted = await ctx.channel.purge(limit=int(amount), check=is_message_offtopic)
             except Exception as e:
                 await ctx.send(f"{ctx.author.mention} something went wrong while attempting to purge messages", 
-                               embed=await wrappers.embed_exception(e))
+                               embed=await exceptions.embed_exception(e))
                 return
 
         await ctx.send(f"Deleted {len(deleted)} message(s)")
@@ -181,7 +181,7 @@ class Queue(commands.Cog):
                                                       overwrites=channel_overwrites, category=category)
         except Exception as e:
             await ctx.send(f"{ctx.author.mention} i am unable to create the channel, idk why, maybe no perms. "
-                           f"managers will have to look into this", embed=await wrappers.embed_exception(e))
+                           f"managers will have to look into this", embed=await exceptions.embed_exception(e))
             return
 
         await self.bot.db.execute("INSERT INTO queues VALUES (?, ?, ?, ?)",
@@ -213,7 +213,7 @@ class Queue(commands.Cog):
             await ctx.send(f"{ctx.author.mention} you are not allowed to manage this queue")
             return
 
-        member = wrappers.get_member_guaranteed(ctx, user_id)
+        member = get_member_helpers.get_member_guaranteed(ctx, user_id)
         if not member:
             await ctx.send("no member found with that name")
             return
@@ -231,7 +231,7 @@ class Queue(commands.Cog):
         except Exception as e:
             await ctx.send(f"{ctx.author.mention} i am unable to edit the channel permissions, "
                            f"idk why, maybe permissions error",
-                           embed=await wrappers.embed_exception(e))
+                           embed=await exceptions.embed_exception(e))
             return
 
         await ctx.send(f"{member.mention} is now the co-owner of this queue!")
@@ -254,7 +254,7 @@ class Queue(commands.Cog):
             await ctx.send(f"{ctx.author.mention} you are not allowed to manage this queue")
             return
 
-        member = wrappers.get_member_guaranteed(ctx, user_id)
+        member = get_member_helpers.get_member_guaranteed(ctx, user_id)
         if not member:
             await ctx.send("no member found with that name")
             return
@@ -273,7 +273,7 @@ class Queue(commands.Cog):
         except Exception as e:
             await ctx.send(f"{ctx.author.mention} i am unable to edit the channel permissions, "
                            f"idk why, maybe permissions error", 
-                           embed=await wrappers.embed_exception(e))
+                           embed=await exceptions.embed_exception(e))
             return
 
         await ctx.send(f"{member.mention} is no longer a co-owner of this queue!")
@@ -311,7 +311,7 @@ class Queue(commands.Cog):
             buffer += "\n"
         embed = discord.Embed(color=0xff6781)
 
-        await wrappers.send_large_embed(ctx.channel, embed, buffer)
+        await send_large_message.send_large_embed(ctx.channel, embed, buffer)
 
     @commands.command(name="give_queue", brief="Give your creator permissions of the queue to someone.")
     @commands.guild_only()
@@ -331,7 +331,7 @@ class Queue(commands.Cog):
             await ctx.send(f"{ctx.author.mention} you are not allowed to manage this queue")
             return
 
-        member = wrappers.get_member_guaranteed(ctx, user_id)
+        member = get_member_helpers.get_member_guaranteed(ctx, user_id)
         if not member:
             await ctx.send("no member found with that name")
             return
@@ -347,7 +347,7 @@ class Queue(commands.Cog):
         except Exception as e:
             await ctx.send(f"{ctx.author.mention} i am unable to edit the channel permissions, "
                            f"idk why, maybe permissions error, although i made the change in the database already", 
-                           embed=await wrappers.embed_exception(e))
+                           embed=await exceptions.embed_exception(e))
             return
 
         await ctx.send(f"You have given the queue creator permissions to {member.mention}")
@@ -539,7 +539,7 @@ class Queue(commands.Cog):
             buffer += "\n"
 
         embed = discord.Embed(color=0xff6781)
-        await wrappers.send_large_embed(ctx.channel, embed, buffer)
+        await send_large_message.send_large_embed(ctx.channel, embed, buffer)
 
     async def get_category_id(self, guild, setting):
         async with self.bot.db.execute("SELECT category_id FROM categories WHERE setting = ? AND guild_id = ?",

@@ -3,7 +3,8 @@ import asyncio
 import dateutil
 import discord
 from discord.ext import commands
-from modules import wrappers
+from reusables import exceptions
+from reusables import list_helpers
 from modules import permissions
 import json
 import osuembed
@@ -85,7 +86,7 @@ class ModChecker(commands.Cog):
             discussions = await self.bot.osuweb.scrape_beatmapset_discussions_array(str(mapset_id[0]))
         except Exception as e:
             await ctx.send("I am having connection issues with osu servers, try again later", 
-                           embed=await wrappers.embed_exception(e))
+                           embed=await exceptions.embed_exception(e))
             return
 
         if not discussions:
@@ -113,7 +114,7 @@ class ModChecker(commands.Cog):
         except Exception as e:
             embed = None
             await ctx.send("I am having connection issues but i still managed to track this idk what happened lol",
-                           embed=await wrappers.embed_exception(e))
+                           embed=await exceptions.embed_exception(e))
 
         await ctx.send("Tracked", embed=embed)
 
@@ -121,7 +122,7 @@ class ModChecker(commands.Cog):
             await self.unarchive_channel(ctx, "mapset")
         except Exception as e:
             await ctx.send("I seem to be having a problem unarchiving the channel. maybe permissions are messed up??",
-                           embed=await wrappers.embed_exception(e))
+                           embed=await exceptions.embed_exception(e))
 
         await self.bot.db.commit()
 
@@ -181,7 +182,7 @@ class ModChecker(commands.Cog):
             discussions = await self.bot.osuweb.scrape_beatmapset_discussions_array(int(mapset_id))
         except Exception as e:
             await ctx.send("i am having connection issues with osu servers to do this",
-                           embed=await wrappers.embed_exception(e))
+                           embed=await exceptions.embed_exception(e))
             return
 
         if not discussions:
@@ -206,7 +207,7 @@ class ModChecker(commands.Cog):
         except Exception as e:
             # same, as in .track command, no need to do the separate spi call for the embed thingy later on
             await ctx.send("tracked",
-                           embed=await wrappers.embed_exception(e))
+                           embed=await exceptions.embed_exception(e))
 
         await self.bot.db.commit()
 
@@ -242,7 +243,7 @@ class ModChecker(commands.Cog):
             embed = await osuembed.beatmapset(result)
             await ctx.send("I untracked this mapset in this channel", embed=embed)
         except Exception as e:
-            await ctx.send("done", embed=await wrappers.embed_exception(e))
+            await ctx.send("done", embed=await exceptions.embed_exception(e))
 
         await self.bot.db.commit()
 
@@ -277,7 +278,7 @@ class ModChecker(commands.Cog):
         try:
             discussions = await self.bot.osuweb.scrape_beatmapset_discussions_array(int(mapset_id))
         except Exception as e:
-            await ctx.send("connection issues bla bla bla", embed=await wrappers.embed_exception(e))
+            await ctx.send("connection issues bla bla bla", embed=await exceptions.embed_exception(e))
             return
 
         if not discussions:
@@ -301,7 +302,7 @@ class ModChecker(commands.Cog):
             await ctx.send(f"forcefully tracked in {tracking_mode} mode", embed=embed)
         except Exception as e:
             # same as in track
-            await ctx.send("tracked", embed=await wrappers.embed_exception(e))
+            await ctx.send("tracked", embed=await exceptions.embed_exception(e))
 
         await self.bot.db.commit()
 
@@ -332,7 +333,7 @@ class ModChecker(commands.Cog):
             embed = await osuembed.beatmapset(result)
             await ctx.send("I untracked this mapset in this channel", embed=embed)
         except Exception as e:
-            await ctx.send("done", embed=await wrappers.embed_exception(e))
+            await ctx.send("done", embed=await exceptions.embed_exception(e))
 
         await self.bot.db.commit()
 
@@ -357,7 +358,7 @@ class ModChecker(commands.Cog):
                 result = await self.bot.osu.get_beatmapset(s=str(mapset[0]))
                 embed = await osuembed.beatmapset(result)
             except Exception as e:
-                await ctx.send("Connection issues?", embed=await wrappers.embed_exception(e))
+                await ctx.send("Connection issues?", embed=await exceptions.embed_exception(e))
                 embed = None
             await ctx.send(content="mapset_id `%s` | channel <#%s> | tracking_mode `%s`" % mapset, embed=embed)
 
@@ -381,7 +382,7 @@ class ModChecker(commands.Cog):
                 result = await self.bot.osu.get_beatmapset(s=str(mapset[0]))
                 embed = await osuembed.beatmapset(result)
             except Exception as e:
-                await ctx.send("Connection issues?", embed=await wrappers.embed_exception(e))
+                await ctx.send("Connection issues?", embed=await exceptions.embed_exception(e))
                 embed = None
             await ctx.send(content="mapset_id `%s` | channel <#%s> | tracking_mode `%s`" % mapset, embed=embed)
 
@@ -467,7 +468,7 @@ class ModChecker(commands.Cog):
         for event in discussions["beatmapset"]["events"]:
             if event:
                 if self.get_icon(event["type"]):
-                    if not wrappers.in_db_list(history, int(event["id"])):
+                    if not list_helpers.in_db_list(history, int(event["id"])):
                         await self.bot.db.execute("INSERT INTO mapset_nomination_history VALUES (?,?,?)",
                                                   [int(event["id"]), int(mapset_id), int(channel_id)])
         await self.bot.db.commit()
@@ -543,7 +544,7 @@ class ModChecker(commands.Cog):
                 if "posts" in mod:
                     for post in mod["posts"]:
                         if post:
-                            if not wrappers.in_db_list(history, int(post["id"])):
+                            if not list_helpers.in_db_list(history, int(post["id"])):
                                 await self.bot.db.execute("INSERT INTO mod_post_history VALUES (?,?,?)",
                                                           [int(post["id"]), int(mapset_id), int(channel.id)])
                                 await self.bot.db.commit()
@@ -602,7 +603,7 @@ class ModChecker(commands.Cog):
         for event in discussions["beatmapset"]["events"]:
             if event:
                 if self.get_icon(event["type"]):
-                    if not wrappers.in_db_list(history, int(event["id"])):
+                    if not list_helpers.in_db_list(history, int(event["id"])):
                         await self.bot.db.execute("INSERT INTO mapset_nomination_history VALUES (?,?,?)",
                                                   [int(event["id"]), int(mapset_id), int(channel.id)])
                         await self.bot.db.commit()

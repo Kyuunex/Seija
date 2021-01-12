@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import osuembed
 from modules import permissions
-from modules import wrappers
+from reusables import exceptions
 import osuwebembed
 
 
@@ -17,7 +17,7 @@ class Osu(commands.Cog):
             result = await self.bot.osu.get_beatmapset(s=mapset_id)
         except Exception as e:
             await ctx.send("Connection problems?",
-                           embed=await wrappers.embed_exception(e))
+                           embed=await exceptions.embed_exception(e))
             return
 
         embed = await osuembed.beatmapset(result)
@@ -34,7 +34,7 @@ class Osu(commands.Cog):
             result = await self.bot.osuweb.get_user_array(username)
         except Exception as e:
             await ctx.send("Connection problems?", 
-                           embed=await wrappers.embed_exception(e))
+                           embed=await exceptions.embed_exception(e))
             return
 
         if not result:

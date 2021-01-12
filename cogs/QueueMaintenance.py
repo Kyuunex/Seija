@@ -1,5 +1,5 @@
 from modules import permissions
-from modules import wrappers
+from reusables import get_member_helpers
 import discord
 from discord.ext import commands
 
@@ -33,7 +33,7 @@ class QueueMaintenance(commands.Cog):
         user_id: Discord account ID
         """
 
-        member = wrappers.get_member_guaranteed(ctx, user_id)
+        member = get_member_helpers.get_member_guaranteed(ctx, user_id)
         if not member:
             await ctx.send("no member found with that name")
             return

@@ -510,10 +510,12 @@ class Queue(commands.Cog):
         if ctx.channel.category_id == archive_category.id:
             await ctx.send("queue is already archived!")
             return
-
-        await ctx.channel.edit(reason=None, category=archive_category)
-        await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False)
-        await ctx.send("queue archived!")
+        try:
+            await ctx.channel.edit(reason=None, category=archive_category)
+            await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False)
+            await ctx.send("queue archived!")
+        except Exception as e:
+            await ctx.send(embed=exceptions.embed_exception(e))
 
     @commands.command(name="list_open_queues", brief="List open queues", aliases=['loq'])
     @commands.guild_only()

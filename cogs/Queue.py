@@ -515,7 +515,7 @@ class Queue(commands.Cog):
             await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False)
             await ctx.send("queue archived!")
         except Exception as e:
-            await ctx.send(embed=exceptions.embed_exception(e))
+            await ctx.send(embed=await exceptions.embed_exception(e))
 
     @commands.command(name="list_open_queues", brief="List open queues", aliases=['loq'])
     @commands.guild_only()

@@ -1,6 +1,8 @@
 from cogs.Docs import Docs
 from modules import permissions
 from reusables import exceptions
+from reusables import send_large_message
+from reusables import get_member_helpers
 import discord
 from discord.ext import commands
 

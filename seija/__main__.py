@@ -49,6 +49,8 @@ class Seija(commands.Bot):
         self.background_tasks = []
 
         self.app_version = VERSION
+        self.project_contributors = CONTRIBUTORS
+
         self.description = f"Seija {self.app_version}"
         self.database_file = database_file
         self.osu = aioosuapi(osu_api_key)

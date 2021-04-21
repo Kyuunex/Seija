@@ -1,5 +1,5 @@
-from modules import permissions
-from reusables import get_member_helpers
+from seija.modules import permissions
+from seija.reusables import get_member_helpers
 import discord
 from discord.ext import commands
 

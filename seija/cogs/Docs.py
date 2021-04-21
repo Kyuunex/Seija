@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from modules import permissions
+from seija.modules import permissions
 
 
 class Docs(commands.Cog):

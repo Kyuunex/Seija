@@ -2,11 +2,10 @@ import discord
 import os
 import time
 import psutil
-import json
 from discord.ext import commands
-from modules import permissions
-from reusables import send_large_message
-from modules.connections import database_file as database_file
+from momiji.modules import permissions
+from momiji.reusables import send_large_message
+from momiji.modules.storage_management import database_file as database_file
 
 script_start_time = time.time()
 
@@ -122,21 +121,6 @@ class BotManagement(commands.Cog):
         await ctx.send("Restarting")
 
         await self.bot.close()
-
-    @commands.command(name="update", brief="Update the bot")
-    @commands.check(permissions.is_owner)
-    @commands.check(permissions.is_not_ignored)
-    async def update(self, ctx):
-        """
-        Update the bot.
-        This relies on the bot being installed by cloning the repository
-        and uses "git pull" command to achieve this functionality.
-        This also relies on the bot running in a loop.
-        """
-
-        os.system("git pull")
-
-        await ctx.send("Updates fetched, restart to apply")
 
     @commands.command(name="sql", brief="Execute an SQL query")
     @commands.check(permissions.is_owner)
@@ -277,11 +261,9 @@ class BotManagement(commands.Cog):
         buffer += f"**Memory usage:** {memory_usage} MB\n"
         buffer += f"\n"
 
-        with open(".contributors.json") as contributors_file:
-            contributor_list = json.load(contributors_file)
         buffer += f"**Bot contributors:**\n"
-        for contributor in contributor_list:
-            buffer += f"[{contributor['name']}]({contributor['url']})\n"
+        for contributor in self.bot.project_contributors:
+            buffer += f"[{contributor['name']}]({contributor['url']}) **({contributor['role']})**\n"
 
         embed = discord.Embed(title="About this bot", color=0xe95e62)
         await send_large_message.send_large_embed(ctx.channel, embed, buffer)

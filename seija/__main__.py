@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sqlite3
 
 from discord.ext import commands
 import aiosqlite
@@ -9,21 +10,12 @@ import sys
 import os
 
 
-from modules import first_run
+from seija.modules import first_run
+from seija.manifest import *
 
-from modules.connections import bot_token as bot_token
-from modules.connections import osu_api_key as osu_api_key
-from modules.connections import client_id as client_id
-from modules.connections import client_secret as client_secret
-from modules.connections import database_file as database_file
+from seija.modules.storage_management import *
+from seija.modules.connections import *
 
-user_extensions_directory = "user_extensions"
-
-if not os.path.exists("data"):
-    print("Please configure this bot according to readme file.")
-    sys.exit("data folder and it's contents are missing")
-if not os.path.exists(user_extensions_directory):
-    os.makedirs(user_extensions_directory)
 
 if os.environ.get('SEIJA_PREFIX'):
     command_prefix = os.environ.get('SEIJA_PREFIX')
@@ -33,18 +25,18 @@ else:
 first_run.ensure_tables()
 
 initial_extensions = [
-    "cogs.BotManagement",
-    "cogs.Docs",
-    "cogs.MapsetChannel",
-    "cogs.MemberManagement",
-    "cogs.MemberInfoSyncing",
-    "cogs.MemberStatistics",
-    "cogs.MemberVerification",
-    "cogs.MemberVerificationWithMapset",
-    "cogs.ModChecker",
-    "cogs.Osu",
-    "cogs.Queue",
-    "cogs.QueueMaintenance",
+    "seija.cogs.BotManagement",
+    "seija.cogs.Docs",
+    "seija.cogs.MapsetChannel",
+    "seija.cogs.MemberManagement",
+    "seija.cogs.MemberInfoSyncing",
+    "seija.cogs.MemberStatistics",
+    "seija.cogs.MemberVerification",
+    "seija.cogs.MemberVerificationWithMapset",
+    "seija.cogs.ModChecker",
+    "seija.cogs.Osu",
+    "seija.cogs.Queue",
+    "seija.cogs.QueueMaintenance",
 ]
 
 intents = discord.Intents.default()
@@ -55,26 +47,30 @@ class Seija(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.background_tasks = []
-        self.app_version = (open(".version", "r+").read()).strip()
+
+        self.app_version = VERSION
         self.description = f"Seija {self.app_version}"
         self.database_file = database_file
         self.osu = aioosuapi(osu_api_key)
         self.osuweb = aioosuwebapi(client_id, client_secret)
+
+        conn = sqlite3.connect(self.database_file)
+        c = conn.cursor()
+        self.user_extensions = tuple(c.execute("SELECT extension_name FROM user_extensions"))
+        conn.close()
 
         for extension in initial_extensions:
             try:
                 self.load_extension(extension)
             except Exception as e:
                 print(e)
-        for user_extension in os.listdir(user_extensions_directory):
-            if not user_extension.endswith(".py"):
-                continue
-            extension_name = user_extension.replace(".py", "")
+
+        for user_extension in self.user_extensions:
             try:
-                self.load_extension(f"{user_extensions_directory}.{extension_name}")
-                print(f"User extension {extension_name} loaded")
-            except Exception as e:
-                print(e)
+                self.load_extension(user_extension[0])
+                print(f"User extension {user_extension[0]} loaded")
+            except discord.ext.commands.errors.ExtensionNotFound as ex:
+                print(ex)
 
     async def start(self, *args, **kwargs):
         self.db = await aiosqlite.connect(self.database_file)

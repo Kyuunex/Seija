@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
 import osuembed
-from modules import permissions
-from reusables import exceptions
+from seija.modules import permissions
+from seija.reusables import exceptions
 import osuwebembed
 
 

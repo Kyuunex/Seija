@@ -1,4 +1,4 @@
-from modules.connections import database_file as database_file
+from seija.modules.storage_management import *
 import sqlite3
 
 admin_list = []

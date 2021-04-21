@@ -1,8 +1,8 @@
 import sqlite3
 from discord.ext import commands
 from discord.utils import escape_markdown
-from reusables import exceptions
-from reusables import verification as verification_reusables
+from seija.reusables import exceptions
+from seija.reusables import verification as verification_reusables
 import osuembed
 
 

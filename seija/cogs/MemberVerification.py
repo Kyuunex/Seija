@@ -3,9 +3,9 @@ import random
 import sqlite3
 from discord.ext import commands
 from discord.utils import escape_markdown
-from modules import permissions
-from reusables import exceptions
-from reusables import verification as verification_reusables
+from seija.modules import permissions
+from seija.reusables import exceptions
+from seija.reusables import verification as verification_reusables
 import osuwebembed
 import datetime
 import dateutil

@@ -3,9 +3,9 @@ import asyncio
 import dateutil
 import discord
 from discord.ext import commands
-from reusables import exceptions
-from reusables import list_helpers
-from modules import permissions
+from seija.reusables import exceptions
+from seija.reusables import list_helpers
+from seija.modules import permissions
 import json
 import osuembed
 

@@ -1,5 +1,5 @@
 import sqlite3
-from modules.connections import database_file as database_file
+from seija.modules.storage_management import *
 
 
 async def add_admins(self):
@@ -53,6 +53,11 @@ def ensure_tables():
         "ranked_maps_amount"    INTEGER,
         "kudosu"    INTEGER,
         "no_sync"    INTEGER
+    )
+    """)
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS "user_extensions" (
+        "extension_name"     TEXT
     )
     """)
 

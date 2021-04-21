@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
-from modules import permissions
-from reusables import exceptions
-from reusables import send_large_message
+from seija.modules import permissions
+from seija.reusables import exceptions
+from seija.reusables import send_large_message
 import osuwebembed
 
 

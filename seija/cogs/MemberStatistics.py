@@ -1,10 +1,10 @@
 import discord
 from discord.ext import commands
 from discord.utils import escape_markdown
-from modules import permissions
-from reusables import exceptions
-from reusables import send_large_message
-from modules import cooldown
+from seija.modules import permissions
+from seija.reusables import exceptions
+from seija.reusables import send_large_message
+from seija.modules import cooldown
 from collections import Counter
 import operator
 import pycountry

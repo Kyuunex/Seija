@@ -28,6 +28,7 @@ setup(
         'psutil',
         'aioosuapi @ git+https://github.com/Kyuunex/aioosuapi.git@v1',
         'aioosuwebapi @ git+https://github.com/Kyuunex/aioosuapi.git@v2',
-        'python-dateutil'
+        'python-dateutil',
+        'appdirs'
     ],
 )

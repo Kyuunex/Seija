@@ -3,9 +3,9 @@ import os
 import time
 import psutil
 from discord.ext import commands
-from momiji.modules import permissions
-from momiji.reusables import send_large_message
-from momiji.modules.storage_management import database_file as database_file
+from seija.modules import permissions
+from seija.reusables import send_large_message
+from seija.modules.storage_management import database_file as database_file
 
 script_start_time = time.time()
 

@@ -17,12 +17,14 @@ After you install `git` you'll also get a third choice called Git bash.
 + On GNU/Linux - `/home/username/.local/share/Seija`
 + On Mac - `/Users/username/Library/Application Support/Seija` (I think, I am not 100% sure because I don't have a mac)
 
+If you are restoring a database backup, it goes into this folder.
+
 ## API keys and tokens
 You need to either put them in the respective text files in the bot's data folder or 
 supply them via environment variables. if you do both, env vars will be used  
 | text file  | environment variables | where to get |
 | ------------- | ------------- | ------------- |
-| token.txt  | SEIJA_TOKEN  | [create a new app here and make a bot acc](https://discord.com/developers/applications/) |
+| token.txt  | SEIJA_TOKEN  | [create a new appuse here and make a bot acc](https://discord.com/developers/applications/) |
 | osu_api_key.txt  | SEIJA_OSU_API_KEY  | [create a new app here](https://osu.ppy.sh/p/api/) |
 | client_id.txt  | SEIJA_CLIENT_ID  | [register a new app on your account edit page](https://osu.ppy.sh/home/account/edit) |
 | client_secret.txt  | SEIJA_CLIENT_SECRET  | [register a new app on your account edit page](https://osu.ppy.sh/home/account/edit) |

@@ -7,6 +7,7 @@ setup(
     packages=[
         'seija',
         'seija.cogs',
+        'seija.embeds',
         'seija.modules',
         'seija.reusables'
     ],

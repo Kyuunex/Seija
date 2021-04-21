@@ -1,9 +1,9 @@
 import discord
 from discord.ext import commands
-import osuembed
+from seija.embeds import oldembeds as osuembed
 from seija.modules import permissions
 from seija.reusables import exceptions
-import osuwebembed
+from seija.embeds import newembeds as osuwebembed
 
 
 class Osu(commands.Cog):

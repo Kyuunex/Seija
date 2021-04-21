@@ -7,7 +7,7 @@ from seija.reusables import exceptions
 from seija.reusables import list_helpers
 from seija.modules import permissions
 import json
-import osuembed
+from seija.embeds import oldembeds as osuembed
 
 
 class ModChecker(commands.Cog):

@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord.utils import escape_markdown
 from seija.reusables import exceptions
 from seija.reusables import verification as verification_reusables
-import osuembed
+from seija.embeds import oldembeds as osuembed
 
 
 class MemberVerificationWithMapset(commands.Cog):

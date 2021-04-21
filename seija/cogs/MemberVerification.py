@@ -6,7 +6,7 @@ from discord.utils import escape_markdown
 from seija.modules import permissions
 from seija.reusables import exceptions
 from seija.reusables import verification as verification_reusables
-import osuwebembed
+from seija.embeds import newembeds as osuwebembed
 import datetime
 import dateutil
 

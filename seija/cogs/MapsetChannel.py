@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 import random
 import asyncio
-import osuembed
+from seija.embeds import oldembeds as osuembed
 
 
 class MapsetChannel(commands.Cog):

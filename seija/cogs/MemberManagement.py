@@ -3,7 +3,7 @@ from discord.ext import commands
 from seija.modules import permissions
 from seija.reusables import exceptions
 from seija.reusables import send_large_message
-import osuwebembed
+from seija.embeds import newembeds as osuwebembed
 
 
 class MemberManagement(commands.Cog):

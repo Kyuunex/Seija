@@ -28,8 +28,6 @@ setup(
         'psutil',
         'git+https://github.com/Kyuunex/aioosuapi.git@v1',
         'git+https://github.com/Kyuunex/aioosuapi.git@v2',
-        'git+https://github.com/Kyuunex/osudiscordpyembed.git@v1',
-        'git+https://github.com/Kyuunex/osudiscordpyembed.git@v2',
         'python-dateutil'
     ],
 )

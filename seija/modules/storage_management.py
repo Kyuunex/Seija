@@ -17,12 +17,10 @@ else:
     dirs = AppDirs("Seija", "Kyuunex")
 
 exports_directory = dirs.user_data_dir + "/exports"
-art_directory = dirs.user_data_dir + "/art"
 
 Path(dirs.user_data_dir).mkdir(parents=True, exist_ok=True)
 Path(dirs.user_cache_dir).mkdir(parents=True, exist_ok=True)
 Path(dirs.user_log_dir).mkdir(parents=True, exist_ok=True)
 Path(exports_directory).mkdir(parents=True, exist_ok=True)
-# Path(art_directory).mkdir(parents=True, exist_ok=True)
 
 database_file = dirs.user_data_dir + "/maindb.sqlite3"

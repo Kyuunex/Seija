@@ -24,7 +24,7 @@ You need to either put them in the respective text files in the bot's data folde
 supply them via environment variables. if you do both, env vars will be used  
 | text file  | environment variables | where to get |
 | ------------- | ------------- | ------------- |
-| token.txt  | SEIJA_TOKEN  | [create a new appuse here and make a bot acc](https://discord.com/developers/applications/) |
+| token.txt  | SEIJA_TOKEN  | [create a new app, make a bot acc](https://discord.com/developers/applications/) |
 | osu_api_key.txt  | SEIJA_OSU_API_KEY  | [create a new app here](https://osu.ppy.sh/p/api/) |
 | client_id.txt  | SEIJA_CLIENT_ID  | [register a new app on your account edit page](https://osu.ppy.sh/home/account/edit) |
 | client_secret.txt  | SEIJA_CLIENT_SECRET  | [register a new app on your account edit page](https://osu.ppy.sh/home/account/edit) |
@@ -58,7 +58,7 @@ Restart=always
 RestartSec=5
 User=pi
 Type=simple
-ExecStart=/usr/bin/python3 -m seija.py
+ExecStart=/usr/bin/python3 -m seija
 
 [Install]
 WantedBy=multi-user.target

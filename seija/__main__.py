@@ -11,10 +11,14 @@ import os
 
 
 from seija.modules import first_run
-from seija.manifest import *
+from seija.manifest import VERSION
+from seija.manifest import CONTRIBUTORS
 
-from seija.modules.storage_management import *
-from seija.modules.connections import *
+from seija.modules.storage_management import database_file
+from seija.modules.connections import bot_token
+from seija.modules.connections import osu_api_key
+from seija.modules.connections import client_id
+from seija.modules.connections import client_secret
 
 
 if os.environ.get('SEIJA_PREFIX'):

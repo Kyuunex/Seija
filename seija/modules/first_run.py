@@ -1,5 +1,5 @@
 import sqlite3
-from seija.modules.storage_management import *
+from seija.modules.storage_management import database_file
 
 
 async def add_admins(self):

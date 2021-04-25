@@ -1,5 +1,5 @@
 import os
-from seija.modules.storage_management import *
+from seija.modules.storage_management import dirs
 
 
 if os.environ.get('SEIJA_TOKEN'):

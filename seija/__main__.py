@@ -6,7 +6,6 @@ import aiosqlite
 from aioosuapi import aioosuapi
 from aioosuwebapi import aioosuwebapi
 import discord
-import sys
 import os
 
 

@@ -12,7 +12,7 @@ setup(
         'seija.reusables'
     ],
     version=VERSION,
-    description='Asynchronous osu! api wrapper',
+    description='The heart of The Mapset Management Server on Discord.',
     author='Kyuunex',
     author_email='kyuunex@protonmail.ch',
     url='https://github.com/Kyuunex/Seija',

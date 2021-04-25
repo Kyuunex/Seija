@@ -41,7 +41,7 @@ echo "REPLACE_THIS_WITH_CLIENT_ID" | tee $HOME/.local/share/Seija/client_id.txt
 echo "REPLACE_THIS_WITH_CLIENT_SECRET" | tee $HOME/.local/share/Seija/client_secret.txt
 ```
 
-After that, you can move into installing this bot as a systemd service. 
+After that, you can move onto installing this bot as a systemd service. 
 
 ## Installing the bot as a systemd service
 

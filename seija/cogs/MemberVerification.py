@@ -272,7 +272,7 @@ class MemberVerification(commands.Cog):
 
             await channel.send(goodbye_message[0] % f"**{escaped_member_name}**", embed=embed)
 
-    async def profile_id_verification(self, channel, member, osu_id):
+    async def profile_id_verification(self, channel, member, osu_id, confirmed=False):
 
         try:
             fresh_osu_data = await self.bot.osuweb.get_user_array(osu_id)
@@ -318,17 +318,18 @@ class MemberVerification(commands.Cog):
                 await channel.send(content=f"{member.mention} i already know lol. here, have some roles")
                 return
 
-        async with self.bot.db.execute("SELECT user_id FROM users WHERE osu_id = ?",
-                                       [int(fresh_osu_data["id"])]) as cursor:
-            check_if_new_discord_account = await cursor.fetchone()
-        if check_if_new_discord_account:
-            if int(check_if_new_discord_account[0]) != int(member.id):
-                old_user_id = check_if_new_discord_account[0]
-                await channel.send(f"this osu account is already linked to <@{old_user_id}> in my database. "
-                                   f"this check exists to prevent impersonation to an extent. "
-                                   "if there's a problem, for example, you got a new discord account, "
-                                   "or somebody impersonated you, ping kyuunex.")
-                return
+        if not confirmed:
+            async with self.bot.db.execute("SELECT user_id FROM users WHERE osu_id = ?",
+                                           [int(fresh_osu_data["id"])]) as cursor:
+                check_if_new_discord_account = await cursor.fetchone()
+            if check_if_new_discord_account:
+                if int(check_if_new_discord_account[0]) != int(member.id):
+                    old_user_id = check_if_new_discord_account[0]
+                    await channel.send(f"this osu account is already linked to <@{old_user_id}> in my database. "
+                                       f"this check exists to prevent impersonation to an extent. "
+                                       "if there's a problem, for example, you got a new discord account, "
+                                       "or somebody impersonated you, ping kyuunex.")
+                    return
 
         if self.last_visit_check(fresh_osu_data, day_amount=60):
             await channel.send(f"i can't verify you right now. circumstances are too suspicious")
@@ -430,7 +431,7 @@ class MemberVerification(commands.Cog):
                                "Since you have specified your Discord account on osu and the 4 digits also match, "
                                "I'll link you to that profile. "
                                "If something is incorrect, let us know.")
-            await self.profile_id_verification(channel, member, profile_id)
+            await self.profile_id_verification(channel, member, profile_id, True)
             return
 
         if self.autodetect_profile_inquiry_conditions(fresh_osu_data, member):

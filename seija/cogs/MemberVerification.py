@@ -82,11 +82,11 @@ class MemberVerification(commands.Cog):
         join_date_int = int(join_date.timestamp())
 
         await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [int(member.id)])
-        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?)",
+        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?,?)",
                                   [int(member.id), int(fresh_osu_data["id"]), str(fresh_osu_data["username"]),
                                    int(join_date_int), int(fresh_osu_data["statistics"]["pp"]),
                                    str(fresh_osu_data["country_code"]), int(ranked_amount),
-                                   int(fresh_osu_data["kudosu"]["total"]), 0])
+                                   int(fresh_osu_data["kudosu"]["total"]), 0, 0])
         await self.bot.db.commit()
 
         await self.check_group_roles(ctx.channel, member, ctx.guild, fresh_osu_data)
@@ -112,8 +112,8 @@ class MemberVerification(commands.Cog):
             await ctx.send("osu account id must be all digits")
             return
 
-        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?)",
-                                  [int(user_id), int(osu_id), str(username), 0, 0, None, 0, 0, 0])
+        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?,?)",
+                                  [int(user_id), int(osu_id), str(username), 0, 0, None, 0, 0, 0, 0])
         await self.bot.db.commit()
 
         await ctx.send("lol ok")
@@ -360,11 +360,11 @@ class MemberVerification(commands.Cog):
         join_date_int = int(join_date.timestamp())
 
         await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [int(member.id)])
-        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?)",
+        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?,?)",
                                   [int(member.id), int(fresh_osu_data["id"]), str(fresh_osu_data["username"]),
                                    int(join_date_int), int(fresh_osu_data["statistics"]["pp"]),
                                    str(fresh_osu_data["country_code"]), int(ranked_amount),
-                                   int(fresh_osu_data["kudosu"]["total"]), 0])
+                                   int(fresh_osu_data["kudosu"]["total"]), 0, 0])
         await self.bot.db.commit()
         verified_message = await channel.send(content="Verified!", embed=embed)
 

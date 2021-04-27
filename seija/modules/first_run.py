@@ -52,7 +52,8 @@ def ensure_tables():
         "country"    TEXT,
         "ranked_maps_amount"    INTEGER,
         "kudosu"    INTEGER,
-        "no_sync"    INTEGER
+        "no_sync"    INTEGER,
+        "confirmed"    INTEGER
     )
     """)
     c.execute("""

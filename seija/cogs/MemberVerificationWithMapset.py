@@ -94,9 +94,9 @@ class MemberVerificationWithMapset(commands.Cog):
 
         embed = await osuembed.beatmapset(mapset)
         await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [int(member.id)])
-        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?)",
+        await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?,?)",
                                   [int(member.id), int(mapset.creator_id), str(mapset.creator), 0, 0, None,
-                                   int(ranked_amount), 0, 0])
+                                   int(ranked_amount), 0, 0, 0])
         await self.bot.db.commit()
 
         await channel.send(content=f"`Verified through mapset: {escape_markdown(member.name)}` \n"

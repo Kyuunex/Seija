@@ -325,15 +325,20 @@ class MemberVerification(commands.Cog):
                 await channel.send(content=f"{member.mention} i already know lol. here, have some roles")
                 return
 
-        if not confirmed:
-            async with self.bot.db.execute("SELECT user_id FROM users WHERE osu_id = ?",
-                                           [int(fresh_osu_data["id"])]) as cursor:
-                check_if_new_discord_account = await cursor.fetchone()
-            if check_if_new_discord_account:
-                if int(check_if_new_discord_account[0]) != int(member.id):
-                    old_user_id = check_if_new_discord_account[0]
+        async with self.bot.db.execute("SELECT user_id FROM users WHERE osu_id = ?",
+                                       [int(fresh_osu_data["id"])]) as cursor:
+            check_if_new_discord_account = await cursor.fetchone()
+        if check_if_new_discord_account:
+            if int(check_if_new_discord_account[0]) != int(member.id):
+                old_user_id = check_if_new_discord_account[0]
+                if confirmed:
+                    await channel.send(f"i found a discord account <@{old_user_id}> in my database "
+                                       "that seems to be linked to your osu! account. "
+                                       "if it is or was yours, you can safely ignore this message. "
+                                       "if it wasn't, ping kyuunex.")
+                else:
                     await channel.send(f"this osu account is already linked to <@{old_user_id}> in my database. "
-                                       f"this check exists to prevent impersonation to an extent. "
+                                       "this check exists to prevent impersonation to an extent. "
                                        "if there's a problem, for example, you got a new discord account, "
                                        "or somebody impersonated you, ping kyuunex.")
                     return

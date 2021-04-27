@@ -299,6 +299,13 @@ class MemberVerification(commands.Cog):
         ranked_amount = fresh_osu_data["ranked_and_approved_beatmapset_count"]
         role = await verification_reusables.get_role_based_on_reputation(self, member.guild, ranked_amount)
 
+        try:
+            if fresh_osu_data['discord']:
+                if str(member) == str(fresh_osu_data['discord']):
+                    confirmed = True
+        except KeyError:
+            pass
+
         async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [int(member.id)]) as cursor:
             already_linked_to = await cursor.fetchone()
         if already_linked_to:

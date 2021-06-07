@@ -1,6 +1,8 @@
 import random
 
 import sqlite3
+
+import discord
 from discord.ext import commands
 from discord.utils import escape_markdown
 from seija.modules import permissions
@@ -270,7 +272,15 @@ class MemberVerification(commands.Cog):
 
             goodbye_message = random.choice(member_goodbye_messages)
 
-            await channel.send(goodbye_message[0] % f"**{escaped_member_name}**", embed=embed)
+            try:
+                about_this_ban = await member.guild.fetch_ban(member)
+                ban_reason_string = about_this_ban.reason
+                await channel.send(f"**{escaped_member_name}** has been banned for the reason of '{ban_reason_string}'",
+                                   embed=embed)
+            except discord.NotFound:
+                await channel.send(goodbye_message[0] % f"**{escaped_member_name}**", embed=embed)
+            except discord.Forbidden:
+                await channel.send(goodbye_message[0] % f"**{escaped_member_name}**", embed=embed)
 
     async def profile_id_verification(self, channel, member, osu_id, confirmed=False):
 

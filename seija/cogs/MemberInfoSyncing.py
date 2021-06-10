@@ -65,8 +65,8 @@ class MemberInfoSyncing(commands.Cog):
                 await asyncio.sleep(14400)
                 continue
 
-            async with self.bot.db.execute("SELECT user_id, osu_id, osu_username, osu_join_date, "
-                                           "pp, country, ranked_maps_amount, kudosu, no_sync FROM users") as cursor:
+            async with self.bot.db.execute("SELECT user_id, osu_id, osu_username, osu_join_date, pp, country, "
+                                           "ranked_maps_amount, kudosu, no_sync, confirmed FROM users") as cursor:
                 stored_user_info_list = await cursor.fetchall()
 
             async with self.bot.db.execute("SELECT guild_id, osu_id FROM restricted_users") as cursor:
@@ -130,6 +130,16 @@ class MemberInfoSyncing(commands.Cog):
                                            int(fresh_osu_data["ranked_and_approved_beatmapset_count"]),
                                            int(fresh_osu_data["kudosu"]["total"]),
                                            int(member.id)])
+
+                try:
+                    if fresh_osu_data['discord']:
+                        if str(member) == str(fresh_osu_data['discord']):
+                            if not int(stored_user_info[9]) == 1:
+                                await self.bot.db.execute("UPDATE users SET confirmed = ? WHERE user_id = ?",
+                                                          [1, int(member.id)])
+                except KeyError:
+                    pass
+
                 await self.bot.db.commit()
 
             await self.restrict_unrestrict_checks(fresh_osu_data, guild, stored_user_info,

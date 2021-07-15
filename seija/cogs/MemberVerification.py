@@ -231,8 +231,8 @@ class MemberVerification(commands.Cog):
                 return
 
             if message.content.lower() == "yes" and self.is_new_user(message.author) is False:
-                profile_id = message.author.name
-                await self.profile_id_verification(message.channel, message.author, profile_id)
+                # profile_id = message.author.name
+                # await self.profile_id_verification(message.channel, message.author, profile_id)
                 return
 
             return
@@ -307,9 +307,7 @@ class MemberVerification(commands.Cog):
                                    "if you are restricted, link any of your recently uploaded maps (new site only)")
             else:
                 await channel.send("verification failure, "
-                                   "either your discord username does not match a username of any osu account "
-                                   "at the time you typed 'yes', "
-                                   "or you linked an incorrect profile. "
+                                   "you most likely linked an incorrect profile. "
                                    "this error also pops up if you are restricted, in that case, "
                                    "link any of your recently uploaded maps (ranked with the latest name preferred)")
             return
@@ -473,11 +471,12 @@ class MemberVerification(commands.Cog):
             return
 
         if self.autodetect_profile_inquiry_conditions(fresh_osu_data, member):
-            await channel.send(content=f"Welcome {member.mention}! We have a verification system in this server "
-                                       "so we can give you appropriate roles and keep raids/spam out. \n"
-                                       "Is this your osu! profile? "
-                                       "If yes, type `yes`, if not, post a link to your profile.",
-                               embed=await osuwebembed.small_user_array(fresh_osu_data))
+            # await channel.send(content=f"Welcome {member.mention}! We have a verification system in this server "
+            #                            "so we can give you appropriate roles and keep raids/spam out. \n"
+            #                            "Is this your osu! profile? "
+            #                            "If yes, type `yes`, if not, post a link to your profile.",
+            #                    embed=await osuwebembed.small_user_array(fresh_osu_data))
+            return
         else:
             await channel.send(f"Welcome {member.mention}! We have a verification system in this server "
                                "so we can give you appropriate roles and keep raids/spam out. \n"

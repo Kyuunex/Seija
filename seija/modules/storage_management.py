@@ -2,25 +2,29 @@ from appdirs import AppDirs
 from pathlib import Path
 import os
 
-
-class FakeDirs:
-    def __init__(self, data_dir):
-        self.user_data_dir = data_dir
-        self.user_cache_dir = data_dir + "/cache"
-        self.user_log_dir = data_dir + "/logs"
-
+dirs = AppDirs("Seija", "Kyuunex")
 
 if os.environ.get('SEIJA_DATA_DIR'):
-    seija_data_dir = os.environ.get('SEIJA_DATA_DIR')
-    dirs = FakeDirs(seija_data_dir)
+    BOT_DATA_DIR = os.environ.get('SEIJA_DATA_DIR')
 else:
-    dirs = AppDirs("Seija", "Kyuunex")
+    BOT_DATA_DIR = dirs.user_data_dir
 
-exports_directory = dirs.user_data_dir + "/exports"
+if os.environ.get('SEIJA_CACHE_DIR'):
+    BOT_CACHE_DIR = os.environ.get('SEIJA_CACHE_DIR')
+else:
+    BOT_CACHE_DIR = dirs.user_cache_dir
 
-Path(dirs.user_data_dir).mkdir(parents=True, exist_ok=True)
-Path(dirs.user_cache_dir).mkdir(parents=True, exist_ok=True)
-Path(dirs.user_log_dir).mkdir(parents=True, exist_ok=True)
-Path(exports_directory).mkdir(parents=True, exist_ok=True)
+if os.environ.get('SEIJA_LOG_DIR'):
+    BOT_LOG_DIR = os.environ.get('SEIJA_LOG_DIR')
+else:
+    BOT_LOG_DIR = dirs.user_log_dir
 
-database_file = dirs.user_data_dir + "/maindb.sqlite3"
+
+BOT_EXPORTS_DIR = BOT_DATA_DIR + "/exports"
+
+Path(BOT_DATA_DIR).mkdir(parents=True, exist_ok=True)
+Path(BOT_CACHE_DIR).mkdir(parents=True, exist_ok=True)
+Path(BOT_LOG_DIR).mkdir(parents=True, exist_ok=True)
+Path(BOT_EXPORTS_DIR).mkdir(parents=True, exist_ok=True)
+
+database_file = BOT_DATA_DIR + "/maindb.sqlite3"

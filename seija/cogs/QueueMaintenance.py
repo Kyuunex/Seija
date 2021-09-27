@@ -28,7 +28,7 @@ class QueueMaintenance(commands.Cog):
     async def restore_queue_permissions(self, ctx, user_id):
         """
         Manually restore queue permissions to a member who left and came back and I didn't pick up on it
-        or maybe when they came back with a new Dicsord account
+        or maybe when they came back with a new Discord account
 
         user_id: Discord account ID
         """

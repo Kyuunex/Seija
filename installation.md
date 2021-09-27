@@ -1,7 +1,7 @@
 # Installation
 After making sure you have `git` and Python 3.6+ installed, 
 type the following in the command line to install the bot  
-`python3 -m pip install git+https://github.com/MapsetManagementServer/Seija.git`  
+`python3 -m pip install git+https://github.com/Kyuunex/Seija.git`  
 To update the bot from an older version, simply append `--upgrade` to the command above.
 
 To run the bot, type `python3 -m seija` in the command line  
@@ -33,7 +33,7 @@ supply them via environment variables. if you do both, env vars will be used
 ### If you are SSHing into a GNU/Linux server, you can just type these to quickly set the bot up.
 
 ```sh
-python3 -m pip install git+https://github.com/MapsetManagementServer/Seija.git
+python3 -m pip install git+https://github.com/Kyuunex/Seija.git
 mkdir -p $HOME/.local/share/Seija
 # wget -O $HOME/.local/share/Seija/maindb.sqlite3 REPLACE_THIS_WITH_DIRECT_FILE_LINK # only do if you are restoring a backup
 echo "REPLACE_THIS_WITH_BOT_TOKEN" | tee $HOME/.local/share/Seija/token.txt

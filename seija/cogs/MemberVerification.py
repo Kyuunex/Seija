@@ -355,8 +355,13 @@ class MemberVerification(commands.Cog):
                 else:
                     await channel.send(f"this osu account is already linked to <@{old_user_id}> in my database. "
                                        "this check exists to prevent impersonation to an extent. "
-                                       "if there's a problem, for example, you got a new discord account, "
-                                       "or somebody impersonated you, ping kyuunex.")
+                                       "if you are using a new discord account, you can specify it on your osu profile "
+                                       "through the osu website settings "
+                                       "at this link <https://osu.ppy.sh/home/account/edit>, "
+                                       "in the discord field, post the link again and i will let you in. "
+                                       "(you are not required to keep it specified after verification) \n\n"
+                                       "On the other hand, "
+                                       "if there's a problem, for example, somebody impersonated you, ping kyuunex.")
                     return
 
         if self.last_visit_check(fresh_osu_data, day_amount=60):

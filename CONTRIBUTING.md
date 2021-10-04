@@ -1,6 +1,6 @@
 # Contributing
 
-Getting started on contributing to this project is not rocket science, 
+Contributing to this project is not rocket science, 
 but it may be if you have never written a piece of code beyond 'Hello World' in your life.  
 While we are not expecting you to write a professional grade code, whatever that means, 
 we do have some quality standards because we don't want to deal with cleaning up someone's mess down the road.  
@@ -15,8 +15,14 @@ that are planned to be done.
 
 # Ok, so how do you get started?
 Simply go through the Trello board and see if you can find the relevant parts of the code that need to be changed 
-to perform the given task. If you think you have it figured out, send us a pull request,
-but before you do, make sure you test what you make.
+to perform the given task. 
+If you think you have it figured out, and managed to implement the given thing, you can move onto sending us your code.
+But before you do, make sure you test your code.
+
+### How to send your code to us
+You can choose between these two options:
+1. Send us a pull request
+2. Generate a patch and upload it to #bot_dev channel in our Discord
 
 # Code of Conduct
 

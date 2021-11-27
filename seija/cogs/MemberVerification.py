@@ -11,6 +11,7 @@ from seija.reusables import verification as verification_reusables
 from seija.embeds import newembeds as osuwebembed
 import datetime
 import dateutil
+import re
 
 
 class MemberVerification(commands.Cog):
@@ -238,8 +239,29 @@ class MemberVerification(commands.Cog):
             return
 
     def grab_osu_profile_id_from_text(self, text):
-        split_message = text.split("/")
-        return split_message[4].split("#")[0].split(" ")[0]
+        """
+        Gets the osu! profile ID or Username from a profile URL.
+
+        Parameters
+        ----------
+        text : String
+            osu! profile URL.
+
+        Returns
+        -------
+        String
+            UserID or Username, or None if no match
+        """
+
+        pattern = re.compile(r"""(?:osu|old)    # allow old site
+                                \.ppy\.sh\/    # domain
+                                (?:u|users)\/  # u/ or users/, non-capturing
+                                ([^\s\/]+)     # one or more non-whitespace non-forward-slash characters
+                                \/?$           # optional trailing slash at the end of the string
+                            """, re.X)
+        matches = re.search(pattern, text) 
+        # group 0 returns the full string if matched, 1..n return capture groups
+        return matches and matches.group(1)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):

@@ -4,6 +4,7 @@ from discord.utils import escape_markdown
 from seija.reusables import exceptions
 from seija.reusables import verification as verification_reusables
 from seija.embeds import oldembeds as osuembed
+import re
 
 
 class MemberVerificationWithMapset(commands.Cog):
@@ -103,8 +104,29 @@ class MemberVerificationWithMapset(commands.Cog):
                                    f"You should also read the rules if you haven't already.", embed=embed)
 
     def grab_osu_mapset_id_from_text(self, text):
-        split_message = text.split("/")
-        return split_message[4].split("#")[0].split(" ")[0]
+        """
+        Gets the osu! mapset ID from a mapset URL.
+
+        Parameters
+        ----------
+        text : String
+            osu! mapset URL.
+
+        Returns
+        -------
+        String
+            MapsetID, or None if no match
+        """
+
+        pattern = re.compile(r"""osu                    # only new site
+                                 \.ppy\.sh\/            # domain
+                                 (?:s|beatmapsets)\/    # valid set links
+                                 (\d+)                  # mapset ID (1 or more digits)
+                                 .*$                    # allow any trailing chars
+                            """, re.X)
+        matches = re.search(pattern, text) 
+        # group 0 returns the full string if matched, 1..n return capture groups
+        return matches and matches.group(1)
 
 
 def setup(bot):

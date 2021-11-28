@@ -16,6 +16,3 @@ This bot does many things in our osu! mapping related Discord server, including:
 + and many more!
 
 This bot is built using discord.py rewrite library and uses sqlite3 database.
-
-**Please read the LICENSE before using or modifying.** 
-It is a copyleft license that requires your modifications to be made available under the same conditions.

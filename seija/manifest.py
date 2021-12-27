@@ -1,4 +1,4 @@
-VERSION = "2.0.0"
+VERSION = "2.0.2"
 
 CONTRIBUTORS = [
     {
@@ -15,5 +15,10 @@ CONTRIBUTORS = [
         "name": "eenpersoon64",
         "url": "https://github.com/eenpersoon64",
         "role": "few lines of code"
+    },
+    {
+        "name": "Sylvarus",
+        "url": "https://github.com/MzudemO",
+        "role": "regex and stuff"
     }
 ]

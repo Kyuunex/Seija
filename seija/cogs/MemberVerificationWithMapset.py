@@ -122,7 +122,7 @@ class MemberVerificationWithMapset(commands.Cog):
                                  \.ppy\.sh\/            # domain
                                  (?:s|beatmapsets)\/    # valid set links
                                  (\d+)                  # mapset ID (1 or more digits)
-                                 .*$                    # allow any trailing chars
+                                 .*                    # allow any trailing chars
                             """, re.X)
         matches = re.search(pattern, text) 
         # group 0 returns the full string if matched, 1..n return capture groups

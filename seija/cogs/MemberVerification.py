@@ -257,7 +257,7 @@ class MemberVerification(commands.Cog):
                                 \.ppy\.sh\/    # domain
                                 (?:u|users)\/  # u/ or users/, non-capturing
                                 ([^\s\/]+)     # one or more non-whitespace non-forward-slash characters
-                                \/?$           # optional trailing slash at the end of the string
+                                \/?           # optional trailing slash at the end of the string
                             """, re.X)
         matches = re.search(pattern, text) 
         # group 0 returns the full string if matched, 1..n return capture groups

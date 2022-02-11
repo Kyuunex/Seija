@@ -16,3 +16,6 @@ This bot does many things in our osu! mapping related Discord server, including:
 + and many more!
 
 This bot is built using discord.py rewrite library and uses sqlite3 database.
+
+This branch of Seija is version 2.x and is not expected to work beyond Python 3.8, 
+as discord.py is discontinued and does not install beyond Python 3.8.

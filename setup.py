@@ -17,7 +17,7 @@ setup(
     author_email='kyuunex@protonmail.ch',
     url='https://github.com/Kyuunex/Seija',
     install_requires=[
-        'discord.py[voice]',
+        'discord.py[voice]==1.7.3',
         'upsidedown',
         'pycountry',
         'Pillow',
@@ -26,8 +26,8 @@ setup(
         'aiohttp',
         'beautifulsoup4',
         'psutil',
-        'aioosuapi @ git+https://github.com/Kyuunex/aioosuapi.git@v1',
-        'aioosuwebapi @ git+https://github.com/Kyuunex/aioosuapi.git@v2',
+        'aioosuapi @ git+https://github.com/Kyuunex/aioosuapi.git@1.2.1',
+        'aioosuwebapi @ git+https://github.com/Kyuunex/aioosuapi.git@2.0.0-placeholder.5',
         'python-dateutil',
         'appdirs'
     ],

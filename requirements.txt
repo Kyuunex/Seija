@@ -7,7 +7,7 @@ bs4
 aiohttp
 beautifulsoup4
 psutil
-git+https://github.com/Kyuunex/aioosuapi.git@1.2.1
-git+https://github.com/Kyuunex/aioosuapi.git@2.0.0-placeholder.5
+git+https://github.com/Kyuunex/aioosuapi.git@1.2.4
+git+https://github.com/Kyuunex/aioosuapi.git@2.0.0-dev6
 python-dateutil
 appdirs

@@ -100,6 +100,7 @@ class MemberInfoSyncing(commands.Cog):
             [7, await self.get_role_from_db("nat", guild)],
             [28, await self.get_role_from_db("bn", guild)],
             [32, await self.get_role_from_db("bn", guild)],
+            [35, await self.get_role_from_db("fa", guild)],
         ]
 
         for member in guild.members:

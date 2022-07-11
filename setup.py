@@ -17,11 +17,7 @@ setup(
     author_email='kyuunex@protonmail.ch',
     url='https://github.com/Kyuunex/Seija',
     install_requires=[
-<<<<<<< HEAD
         'py-cord==2.0.0b4',
-=======
-        'discord.py[voice]',
->>>>>>> parent of 1da952a (bump to version 3, switch to py-cord)
         'upsidedown',
         'pycountry',
         'Pillow',

@@ -1,4 +1,4 @@
-py-cord==2.0.0b4
+discord.py[voice]
 upsidedown
 pycountry
 Pillow

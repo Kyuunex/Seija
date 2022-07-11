@@ -17,7 +17,7 @@ setup(
     author_email='kyuunex@protonmail.ch',
     url='https://github.com/Kyuunex/Seija',
     install_requires=[
-        'py-cord==2.0.0b4',
+        'discord.py[voice]',
         'upsidedown',
         'pycountry',
         'Pillow',

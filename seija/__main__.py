@@ -58,11 +58,14 @@ class Seija(commands.Bot):
         self.description = f"Seija {self.app_version}"
         self.database_file = database_file
         self.db = None
-        self.osu = aioosuapi(osu_api_key)
-        self.osuweb = aioosuwebapi(client_id, client_secret)
+        self.osu = None
+        self.osuweb = None
 
     async def setup_hook(self):
         self.db = await aiosqlite.connect(self.database_file)
+
+        self.osu = aioosuapi(osu_api_key)
+        self.osuweb = aioosuwebapi(client_id, client_secret)
 
         await first_run.add_admins(self)
 

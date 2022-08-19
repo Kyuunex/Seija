@@ -80,5 +80,5 @@ class Osu(commands.Cog):
             print(e)
 
 
-def setup(bot):
-    bot.add_cog(Osu(bot))
+async def setup(bot):
+    await bot.add_cog(Osu(bot))

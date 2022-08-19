@@ -129,5 +129,5 @@ class MemberVerificationWithMapset(commands.Cog):
         return matches and matches.group(1)
 
 
-def setup(bot):
-    bot.add_cog(MemberVerificationWithMapset(bot))
+async def setup(bot):
+    await bot.add_cog(MemberVerificationWithMapset(bot))

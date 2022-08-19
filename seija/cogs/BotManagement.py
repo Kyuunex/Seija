@@ -281,5 +281,5 @@ class BotManagement(commands.Cog):
         return "%d:%02d:%02d" % (hour, minutes, seconds)
 
 
-def setup(bot):
-    bot.add_cog(BotManagement(bot))
+async def setup(bot):
+    await bot.add_cog(BotManagement(bot))

@@ -122,5 +122,5 @@ class QueueMaintenance(commands.Cog):
         return None
 
 
-def setup(bot):
-    bot.add_cog(QueueMaintenance(bot))
+async def setup(bot):
+    await bot.add_cog(QueueMaintenance(bot))

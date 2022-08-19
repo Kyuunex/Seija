@@ -473,5 +473,5 @@ class MapsetChannel(commands.Cog):
             await channel.send("channel archived")
 
 
-def setup(bot):
-    bot.add_cog(MapsetChannel(bot))
+async def setup(bot):
+    await bot.add_cog(MapsetChannel(bot))

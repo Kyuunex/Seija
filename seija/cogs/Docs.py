@@ -232,5 +232,5 @@ class Docs(commands.Cog):
         return embed
 
 
-def setup(bot):
-    bot.add_cog(Docs(bot))
+async def setup(bot):
+    await bot.add_cog(Docs(bot))

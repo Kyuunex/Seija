@@ -132,5 +132,5 @@ class MemberStatistics(commands.Cog):
         return reversed(sorted(results.items(), key=operator.itemgetter(1)))
 
 
-def setup(bot):
-    bot.add_cog(MemberStatistics(bot))
+async def setup(bot):
+    await bot.add_cog(MemberStatistics(bot))

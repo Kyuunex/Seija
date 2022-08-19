@@ -881,5 +881,5 @@ class ModChecker(commands.Cog):
             return False
 
 
-def setup(bot):
-    bot.add_cog(ModChecker(bot))
+async def setup(bot):
+    await bot.add_cog(ModChecker(bot))

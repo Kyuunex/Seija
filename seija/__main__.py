@@ -75,6 +75,7 @@ class Seija(commands.Bot):
             await self.load_extension(extension)
 
         for user_extension in user_extensions:
+            await self.load_extension(user_extension[0])
             print(f"User extension {user_extension[0]} loaded")
 
     async def close(self):

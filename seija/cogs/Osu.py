@@ -13,12 +13,7 @@ class Osu(commands.Cog):
     @commands.command(name="mapset", brief="Show mapset info")
     @commands.check(permissions.is_not_ignored)
     async def mapset(self, ctx, mapset_id: str):
-        try:
-            result = await self.bot.osu.get_beatmapset(s=mapset_id)
-        except Exception as e:
-            await ctx.send("Connection problems?",
-                           embed=await exceptions.embed_exception(e))
-            return
+        result = await self.bot.osu.get_beatmapset(s=mapset_id)
 
         embed = await osuembed.beatmapset(result)
         if not embed:
@@ -30,12 +25,7 @@ class Osu(commands.Cog):
     @commands.command(name="user", brief="Show osu user info")
     @commands.check(permissions.is_not_ignored)
     async def user(self, ctx, *, username):
-        try:
-            result = await self.bot.osuweb.get_user_array(username)
-        except Exception as e:
-            await ctx.send("Connection problems?", 
-                           embed=await exceptions.embed_exception(e))
-            return
+        result = await self.bot.osuweb.get_user_array(username)
 
         if not result:
             await ctx.send(content="`No user found with that username`")

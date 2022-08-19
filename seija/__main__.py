@@ -84,7 +84,8 @@ class Seija(commands.Bot):
             task.cancel()
 
         # Close osu web api session
-        await self.osuweb.close()
+        if self.osuweb:
+            await self.osuweb.close()
 
         # Close connection to the database
         if self.db:

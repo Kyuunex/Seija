@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import sqlite3
 
 from discord.ext import commands
 import aiosqlite

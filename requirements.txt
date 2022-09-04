@@ -1,4 +1,4 @@
-discord.py[voice]==2.0.0
+discord.py[voice]==2.0.1
 upsidedown
 pycountry
 Pillow

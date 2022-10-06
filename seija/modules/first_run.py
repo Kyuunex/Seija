@@ -14,7 +14,7 @@ async def add_admins(self):
         await self.db.commit()
 
 
-def ensure_tables(db):
+async def ensure_tables(db):
     await db.execute("""
     CREATE TABLE IF NOT EXISTS "config" (
         "setting"    TEXT, 

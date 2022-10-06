@@ -1,7 +1,3 @@
-import sqlite3
-from seija.modules.storage_management import database_file
-
-
 async def add_admins(self):
     async with await self.db.execute("SELECT user_id, permissions FROM admins") as cursor:
         admin_list = await cursor.fetchall()
@@ -18,10 +14,8 @@ async def add_admins(self):
         await self.db.commit()
 
 
-def ensure_tables():
-    conn = sqlite3.connect(database_file)
-    c = conn.cursor()
-    c.execute("""
+def ensure_tables(db):
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "config" (
         "setting"    TEXT, 
         "parent"    TEXT,
@@ -29,20 +23,20 @@ def ensure_tables():
         "flag"    TEXT
     )
     """)
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "admins" (
         "user_id"    INTEGER NOT NULL UNIQUE,
         "permissions"    INTEGER NOT NULL
     )
     """)
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "ignored_users" (
         "user_id"    INTEGER NOT NULL UNIQUE,
         "reason"    TEXT
     )
     """)
 
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "users" (
         "user_id"    INTEGER NOT NULL UNIQUE,
         "osu_id"    INTEGER NOT NULL,
@@ -56,27 +50,27 @@ def ensure_tables():
         "confirmed"    INTEGER
     )
     """)
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "user_extensions" (
         "extension_name"     TEXT
     )
     """)
 
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "channels" (
         "setting"    TEXT NOT NULL,
         "guild_id"    INTEGER NOT NULL,
         "channel_id"    INTEGER NOT NULL
     )
     """)
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "categories" (
         "setting"    TEXT NOT NULL,
         "guild_id"    INTEGER NOT NULL,
         "category_id"    INTEGER NOT NULL
     )
     """)
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "roles" (
         "setting"    TEXT NOT NULL,
         "guild_id"    INTEGER NOT NULL,
@@ -84,7 +78,7 @@ def ensure_tables():
     )
     """)
 
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "mod_post_history" (
         "post_id"    INTEGER NOT NULL,
         "mapset_id"    INTEGER NOT NULL,
@@ -92,7 +86,7 @@ def ensure_tables():
     )
     """)
 
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "mapset_nomination_history" (
         "event_id"    INTEGER NOT NULL,
         "mapset_id"    INTEGER NOT NULL,
@@ -100,7 +94,7 @@ def ensure_tables():
     )
     """)
 
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "mod_tracking" (
         "mapset_id"    INTEGER NOT NULL,
         "channel_id"    INTEGER NOT NULL,
@@ -109,7 +103,7 @@ def ensure_tables():
     )
     """)
 
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "mapset_notification_status" (
         "mapset_id"    INTEGER NOT NULL,
         "map_id"    INTEGER,
@@ -118,20 +112,20 @@ def ensure_tables():
     )
     """)
 
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "difficulty_claims" (
         "map_id"    INTEGER NOT NULL,
         "user_id"    INTEGER NOT NULL
     )
     """)
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "restricted_users" (
         "guild_id"    INTEGER NOT NULL,
         "osu_id"    INTEGER NOT NULL
     )
     """)
 
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "queues" (
         "channel_id"    INTEGER NOT NULL,
         "user_id"    INTEGER NOT NULL,
@@ -140,7 +134,7 @@ def ensure_tables():
     )
     """)
 
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "mapset_channels" (
         "channel_id"    INTEGER NOT NULL UNIQUE,
         "role_id"    INTEGER NOT NULL UNIQUE,
@@ -150,21 +144,21 @@ def ensure_tables():
     )
     """)
 
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "member_goodbye_messages" (
         "message"    TEXT NOT NULL UNIQUE
     )
     """)
 
-    c.execute("""
+    await db.execute("""
     CREATE TABLE IF NOT EXISTS "post_verification_messages" (
         "guild_id"    INTEGER NOT NULL,
         "message"    TEXT NOT NULL
     )
     """)
 
-    c.execute("INSERT OR IGNORE INTO member_goodbye_messages VALUES (?)", ["%s is going for loved"])
-    c.execute("INSERT OR IGNORE INTO member_goodbye_messages VALUES (?)", ["%s was told to remap one too many times"])
+    await db.execute("INSERT OR IGNORE INTO member_goodbye_messages VALUES (?)", ["%s is going for loved"])
+    await db.execute("INSERT OR IGNORE INTO member_goodbye_messages VALUES (?)",
+                     ["%s was told to remap one too many times"])
 
-    conn.commit()
-    conn.close()
+    await db.commit()

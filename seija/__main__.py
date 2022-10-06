@@ -24,7 +24,6 @@ if os.environ.get('SEIJA_PREFIX'):
 else:
     command_prefix = "."
 
-first_run.ensure_tables()
 
 initial_extensions = [
     "seija.cogs.BotManagement",
@@ -62,6 +61,8 @@ class Seija(commands.Bot):
 
     async def setup_hook(self):
         self.db = await aiosqlite.connect(self.database_file)
+
+        await first_run.ensure_tables(self.db)
 
         self.osu = aioosuapi(osu_api_key)
         self.osuweb = aioosuwebapi(client_id, client_secret)

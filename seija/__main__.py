@@ -9,6 +9,7 @@ import os
 
 
 from seija.modules import first_run
+from seija.modules import permissions
 from seija.manifest import VERSION
 from seija.manifest import CONTRIBUTORS
 
@@ -63,11 +64,11 @@ class Seija(commands.Bot):
         self.db = await aiosqlite.connect(self.database_file)
 
         await first_run.ensure_tables(self.db)
+        await first_run.add_admins(self)
+        await permissions.load_users(self.db)
 
         self.osu = aioosuapi(osu_api_key)
         self.osuweb = aioosuwebapi(client_id, client_secret)
-
-        await first_run.add_admins(self)
 
         async with self.db.execute("SELECT extension_name FROM user_extensions") as cursor:
             user_extensions = await cursor.fetchall()

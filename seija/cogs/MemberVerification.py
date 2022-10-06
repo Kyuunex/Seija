@@ -1,7 +1,5 @@
 import random
 
-import sqlite3
-
 import discord
 from discord.ext import commands
 from discord.utils import escape_markdown
@@ -15,13 +13,9 @@ import re
 
 
 class MemberVerification(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot, verify_channel_list):
         self.bot = bot
-        conn = sqlite3.connect(self.bot.database_file)
-        c = conn.cursor()
-        self.verify_channel_list = tuple(c.execute("SELECT channel_id, guild_id FROM channels WHERE setting = ?",
-                                                   ["verify"]))
-        conn.close()
+        self.verify_channel_list = verify_channel_list
         self.post_verification_emotes = [
             ["FR", "🥖"],
         ]
@@ -259,7 +253,7 @@ class MemberVerification(commands.Cog):
                                 ([^\s\/]+)     # one or more non-whitespace non-forward-slash characters
                                 \/?           # optional trailing slash at the end of the string
                             """, re.X)
-        matches = re.search(pattern, text) 
+        matches = re.search(pattern, text)
         # group 0 returns the full string if matched, 1..n return capture groups
         return matches and matches.group(1)
 
@@ -652,4 +646,7 @@ class MemberVerification(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(MemberVerification(bot))
+    async with bot.db.execute("SELECT channel_id, guild_id FROM channels WHERE setting = ?", ["verify"]) as cursor:
+        verify_channel_list = await cursor.fetchall()
+
+    await bot.add_cog(MemberVerification(bot, verify_channel_list))

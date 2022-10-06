@@ -1,4 +1,3 @@
-import sqlite3
 from discord.ext import commands
 from discord.utils import escape_markdown
 from seija.reusables import exceptions
@@ -8,13 +7,9 @@ import re
 
 
 class MemberVerificationWithMapset(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot, verify_channel_list):
         self.bot = bot
-        conn = sqlite3.connect(self.bot.database_file)
-        c = conn.cursor()
-        self.verify_channel_list = tuple(c.execute("SELECT channel_id, guild_id FROM channels WHERE setting = ?",
-                                                   ["verify"]))
-        conn.close()
+        self.verify_channel_list = verify_channel_list
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -130,4 +125,7 @@ class MemberVerificationWithMapset(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(MemberVerificationWithMapset(bot))
+    async with bot.db.execute("SELECT channel_id, guild_id FROM channels WHERE setting = ?", ["verify"]) as cursor:
+        verify_channel_list = await cursor.fetchall()
+
+    await bot.add_cog(MemberVerificationWithMapset(bot, verify_channel_list))

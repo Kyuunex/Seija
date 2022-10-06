@@ -61,7 +61,7 @@ class Osu(commands.Cog):
         )
         embed.set_author(
             name=ctx.author.display_name,
-            icon_url=ctx.author.avatar_url
+            icon_url=ctx.author.display_avatar.url
         )
         try:
             await ctx.send(embed=embed)

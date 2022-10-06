@@ -304,7 +304,7 @@ class NoticesEmbeds:
         embed.add_field(name="current_osu_username", value=fresh_osu_data["username"], inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
         embed.add_field(name="old_nickname", value=old_nickname, inline=False)
-        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_thumbnail(url=member.display_avatar.url)
         return embed
 
     @staticmethod
@@ -320,7 +320,7 @@ class NoticesEmbeds:
         embed.add_field(name="current_osu_username", value=fresh_osu_data["username"], inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
         embed.add_field(name="old_nickname", value=old_nickname, inline=False)
-        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_thumbnail(url=member.display_avatar.url)
         return embed
 
     @staticmethod
@@ -335,7 +335,7 @@ class NoticesEmbeds:
         embed.add_field(name="old_osu_username", value=db_user[2], inline=False)
         embed.add_field(name="new_osu_username", value=fresh_osu_data["username"], inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
-        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_thumbnail(url=member.display_avatar.url)
         if int(db_user[1]) == 4116573:
             embed.set_footer(text="btw, this is bor. yes, i actually added this specific message for bor.")
         return embed
@@ -353,7 +353,7 @@ class NoticesEmbeds:
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
         embed.add_field(name="added group role", value=changes[0], inline=False)
         embed.add_field(name="removed group role", value=changes[1], inline=False)
-        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_thumbnail(url=member.display_avatar.url)
         return embed
 
     @staticmethod
@@ -369,7 +369,7 @@ class NoticesEmbeds:
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
         embed.add_field(name="added mapper role", value=changes[0], inline=False)
         embed.add_field(name="removed mapper role", value=changes[1], inline=False)
-        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_thumbnail(url=member.display_avatar.url)
         return embed
 
     @staticmethod
@@ -383,7 +383,7 @@ class NoticesEmbeds:
         embed.add_field(name="user", value=member.mention, inline=False)
         embed.add_field(name="osu_username", value=db_user[2], inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
-        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_thumbnail(url=member.display_avatar.url)
         return embed
 
     @staticmethod
@@ -397,7 +397,7 @@ class NoticesEmbeds:
         embed.add_field(name="user", value=member.mention, inline=False)
         embed.add_field(name="osu_username", value=db_user[2], inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
-        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_thumbnail(url=member.display_avatar.url)
         return embed
 
 

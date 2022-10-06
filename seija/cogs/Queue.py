@@ -620,7 +620,7 @@ class Queue(commands.Cog):
             embed_description = " ".join(args)
         embed = discord.Embed(title=embed_title, description=embed_description, color=0xbd3661)
         embed.set_author(name=ctx.author.display_name,
-                         icon_url=ctx.author.avatar_url_as(static_format="jpg", size=128))
+                         icon_url=ctx.author.display_avatar.url)
         await ctx.message.delete()
         return embed
 

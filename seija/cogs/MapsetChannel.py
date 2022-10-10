@@ -68,13 +68,13 @@ class MapsetChannel(commands.Cog):
             return
 
         role = ctx.guild.get_role(int(role_id_list[0]))
-        buffer = ""
 
-        if role:
-            for member in role.members:
-                buffer += f"{member.display_name}\n"
-        else:
-            buffer += f"None"
+        if not role:
+            await ctx.reply("Looks like the role for this mapset channel no longer exists.")
+
+        buffer = ""
+        for member in role.members:
+            buffer += f"{member.display_name}\n"
 
         embed = discord.Embed(color=0xadff2f)
         embed.set_author(name="Mapset members")

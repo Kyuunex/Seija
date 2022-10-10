@@ -419,15 +419,12 @@ class MapsetChannel(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, deleted_channel):
-        try:
-            await self.bot.db.execute("DELETE FROM mapset_channels WHERE channel_id = ?", [int(deleted_channel.id)])
-            await self.bot.db.execute("DELETE FROM mod_tracking WHERE channel_id = ?", [int(deleted_channel.id)])
-            await self.bot.db.execute("DELETE FROM mod_post_history WHERE channel_id = ?", [int(deleted_channel.id)])
-            await self.bot.db.commit()
-            print(f"channel {deleted_channel.name} is deleted, "
-                  f"just in case it's a mapset channel, i'll ran sql commands")
-        except Exception as e:
-            print(e)
+        await self.bot.db.execute("DELETE FROM mapset_channels WHERE channel_id = ?", [int(deleted_channel.id)])
+        await self.bot.db.execute("DELETE FROM mod_tracking WHERE channel_id = ?", [int(deleted_channel.id)])
+        await self.bot.db.execute("DELETE FROM mod_post_history WHERE channel_id = ?", [int(deleted_channel.id)])
+        await self.bot.db.commit()
+        print(f"channel {deleted_channel.name} is deleted, "
+              f"just in case it's a mapset channel, i'll ran sql commands")
 
     @commands.Cog.listener()
     async def on_member_join(self, member):

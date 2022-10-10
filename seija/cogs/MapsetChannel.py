@@ -71,6 +71,7 @@ class MapsetChannel(commands.Cog):
 
         if not role:
             await ctx.reply("Looks like the role for this mapset channel no longer exists.")
+            return
 
         buffer = ""
         for member in role.members:

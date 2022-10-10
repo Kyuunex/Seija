@@ -68,7 +68,7 @@ class MapsetChannel(commands.Cog):
             return
 
         try:
-            role = discord.utils.get(ctx.guild.roles, id=int(role_id_list[0]))
+            role = ctx.guild.get_role(int(role_id_list[0]))
             buffer = ""
 
             for member in role.members:
@@ -101,7 +101,7 @@ class MapsetChannel(commands.Cog):
             return
 
         try:
-            role = discord.utils.get(ctx.guild.roles, id=int(role_id_list[0]))
+            role = ctx.guild.get_role(int(role_id_list[0]))
             await member.add_roles(role, reason="added to mapset")
             await ctx.send(f"added {member.mention} in this channel")
         except Exception as e:
@@ -128,7 +128,7 @@ class MapsetChannel(commands.Cog):
             return
 
         try:
-            role = discord.utils.get(ctx.guild.roles, id=int(role_id_list[0]))
+            role = ctx.guild.get_role(int(role_id_list[0]))
             await member.remove_roles(role, reason="removed from mapset")
             await ctx.send(f"removed {member.mention} from this channel")
         except Exception as e:
@@ -304,7 +304,7 @@ class MapsetChannel(commands.Cog):
         try:
             await ctx.send("nuking channel and role in 2 seconds! untracking also")
             await asyncio.sleep(2)
-            role = discord.utils.get(ctx.guild.roles, id=int(role_id[0]))
+            role = ctx.guild.get_role(int(role_id[0]))
 
             await self.bot.db.execute("DELETE FROM mod_tracking WHERE channel_id = ?", [int(ctx.channel.id)])
             await self.bot.db.execute("DELETE FROM mod_post_history WHERE channel_id = ?", [int(ctx.channel.id)])
@@ -431,7 +431,7 @@ class MapsetChannel(commands.Cog):
                 # if this is the case, the channel may have been deleted but there's still a DB record of it????
                 continue
 
-            role = discord.utils.get(channel.guild.roles, id=int(mapset[1]))
+            role = channel.guild.get_role(int(mapset[1]))
             if not role:
                 # if this is the case, the role may have been deleted but there's still a DB record of it????
                 continue

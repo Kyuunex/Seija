@@ -569,7 +569,7 @@ class Queue(commands.Cog):
         if not role_id:
             return None
 
-        role = discord.utils.get(guild.roles, id=int(role_id[0]))
+        role = guild.get_role(int(role_id[0]))
         return role
 
     async def unarchive_queue(self, ctx, member):

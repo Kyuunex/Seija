@@ -87,7 +87,7 @@ class MemberInfoSyncing(commands.Cog):
             role_id = await cursor.fetchone()
         if not role_id:
             raise ValueError(f"CONFIGURE ROLES FOR GUILD {str(guild.id)} PLEASE")
-        return discord.utils.get(guild.roles, id=int(role_id[0]))
+        return guild.get_role(int(role_id[0]))
 
     async def sync_the_guild(self, guild, notices_channel, restricted_user_list, stored_user_info_list):
         mapper_roles = {

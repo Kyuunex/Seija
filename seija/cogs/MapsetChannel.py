@@ -67,18 +67,18 @@ class MapsetChannel(commands.Cog):
             await ctx.send("not your mapset channel")
             return
 
-        try:
-            role = ctx.guild.get_role(int(role_id_list[0]))
-            buffer = ""
+        role = ctx.guild.get_role(int(role_id_list[0]))
+        buffer = ""
 
+        if role:
             for member in role.members:
                 buffer += f"{member.display_name}\n"
+        else:
+            buffer += f"None"
 
-            embed = discord.Embed(color=0xadff2f)
-            embed.set_author(name="Mapset members")
-            await send_large_message.send_large_embed(ctx.channel, embed, buffer)
-        except Exception as e:
-            await ctx.send(embed=await exceptions.embed_exception(e))
+        embed = discord.Embed(color=0xadff2f)
+        embed.set_author(name="Mapset members")
+        await send_large_message.send_large_embed(ctx.channel, embed, buffer)
 
     @commands.command(name="add", brief="Add a user in the current mapset channel")
     @commands.check(permissions.is_not_ignored)

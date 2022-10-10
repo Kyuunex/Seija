@@ -194,11 +194,15 @@ class MapsetChannel(commands.Cog):
         await self.bot.db.commit()
         await ctx.send("untracked everything in this channel")
 
+        archive_category = ctx.guild.get_channel(int(guild_archive_category_id[0]))
+        if not archive_category:
+            await ctx.reply("i am unable to locate the archive category. it was probably deleted.")
+            return
+
         try:
-            archive_category = self.bot.get_channel(int(guild_archive_category_id[0]))
             await ctx.channel.edit(reason="mapset abandoned", category=archive_category)
             await ctx.send("moved to archive")
-        except Exception as e:
+        except (discord.Forbidden, discord.HTTPException) as e:
             await ctx.send(embed=await exceptions.embed_exception(e))
 
     @commands.command(name="set_id", brief="Set a mapset id for this channel")

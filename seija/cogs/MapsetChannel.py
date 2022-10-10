@@ -101,12 +101,16 @@ class MapsetChannel(commands.Cog):
             await ctx.send("No member found with what you specified. Try using a Discord account ID.")
             return
 
+        role = ctx.guild.get_role(int(role_id_list[0]))
+        if not role:
+            await ctx.reply("Looks like the role for this mapset channel no longer exists.")
+            return
+
         try:
-            role = ctx.guild.get_role(int(role_id_list[0]))
             await member.add_roles(role, reason="added to mapset")
             await ctx.send(f"added {member.mention} in this channel")
-        except Exception as e:
-            await ctx.send(embed=await exceptions.embed_exception(e))
+        except discord.Forbidden:
+            await ctx.reply("I do not have permissions to add roles.")
 
     @commands.command(name="remove", brief="Remove a user from the current mapset channel")
     @commands.check(permissions.is_not_ignored)
@@ -128,12 +132,16 @@ class MapsetChannel(commands.Cog):
             await ctx.send("No member found with what you specified. Try using a Discord account ID.")
             return
 
+        role = ctx.guild.get_role(int(role_id_list[0]))
+        if not role:
+            await ctx.reply("Looks like the role for this mapset channel no longer exists.")
+            return
+
         try:
-            role = ctx.guild.get_role(int(role_id_list[0]))
             await member.remove_roles(role, reason="removed from mapset")
             await ctx.send(f"removed {member.mention} from this channel")
-        except Exception as e:
-            await ctx.send(embed=await exceptions.embed_exception(e))
+        except discord.Forbidden:
+            await ctx.reply("I do not have permissions to remove roles.")
 
     @commands.command(name="claim_diff", brief="Claim a beatmapset difficulty")
     @commands.guild_only()

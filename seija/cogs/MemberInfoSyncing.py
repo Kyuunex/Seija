@@ -187,10 +187,7 @@ class MemberInfoSyncing(commands.Cog):
                 return
             if int(stored_user_info[8]) == 1:
                 return
-            try:
-                if member.guild_permissions.administrator:
-                    return
-            except:
+            if member.guild_permissions.administrator:
                 return
 
             old_nickname = member.display_name

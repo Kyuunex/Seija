@@ -195,7 +195,7 @@ class MemberInfoSyncing(commands.Cog):
                 await member.edit(nick=fresh_osu_data["username"])
                 embed = await NoticesEmbeds.nickname_updated(stored_user_info, member, old_nickname, fresh_osu_data)
                 await notices_channel.send(embed=embed)
-            except:
+            except discord.Forbidden:
                 embed = await NoticesEmbeds.error_name_change(stored_user_info, member, old_nickname, fresh_osu_data)
                 await notices_channel.send(embed=embed)
 

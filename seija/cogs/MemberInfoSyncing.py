@@ -216,16 +216,16 @@ class MemberInfoSyncing(commands.Cog):
                 try:
                     await member.remove_roles(role_to_remove)
                     changes[1] = role_to_remove
-                except:
-                    pass
+                except discord.Forbidden:
+                    print(f"no permissions to remove {role_to_remove.name} from {member.display_name}")
 
         if user_qualifies_for_these_roles:
             for role_to_add in user_qualifies_for_these_roles:
                 try:
                     await member.add_roles(role_to_add)
                     changes[0] = role_to_add
-                except:
-                    pass
+                except discord.Forbidden:
+                    print(f"no permissions to add {role_to_add.name} to {member.display_name}")
 
         embed = await NoticesEmbeds.group_role_change(stored_user_info, member, changes)
         await notices_channel.send(embed=embed)
@@ -259,15 +259,15 @@ class MemberInfoSyncing(commands.Cog):
             try:
                 await member.remove_roles(user_already_has_this_role)
                 changes[1] = user_already_has_this_role
-            except:
-                pass
+            except discord.Forbidden:
+                print(f"no permissions to remove {user_already_has_this_role.name} from {member.display_name}")
 
         if user_qualifies_for_this_role:
             try:
                 await member.add_roles(user_qualifies_for_this_role)
                 changes[0] = user_qualifies_for_this_role
-            except:
-                pass
+            except discord.Forbidden:
+                print(f"no permissions to add {user_qualifies_for_this_role.name} to {member.display_name}")
 
         embed = await NoticesEmbeds.mapper_role_change(stored_user_info, member, changes)
         await notices_channel.send(embed=embed)

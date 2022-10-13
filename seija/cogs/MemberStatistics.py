@@ -53,11 +53,12 @@ class MemberStatistics(commands.Cog):
                 rank += 1
                 amount = str(stat[1]) + " Members"
                 percentage = str(round(float(int(stat[1]) * 100 / member_amount), 2))
-                try:
-                    country_object = pycountry.countries.get(alpha_2=stat[0])
+
+                country_object = pycountry.countries.get(alpha_2=stat[0])
+                if country_object:
                     country_name = country_object.name
                     country_flag = f":flag_{stat[0].lower()}:"
-                except:
+                else:
                     country_flag = ":flag_white:"
                     country_name = "??" + stat[0]
                 buffer += f"**[{rank}]** : {country_flag} **{country_name}** : {amount} : {percentage} % \n"

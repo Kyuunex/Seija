@@ -83,9 +83,8 @@ class Queue(commands.Cog):
 
         try:
             await ctx.message.delete()
-        except Exception as e:
-            await ctx.send(f"{ctx.author.mention} I don't seem to have permissions to purge this queue",
-                           embed=await exceptions.embed_exception(e))
+        except discord.Forbidden:
+            await ctx.send(f"{ctx.author.mention} I don't seem to have permissions to purge this queue")
             return
 
         async with ctx.channel.typing():
@@ -100,9 +99,8 @@ class Queue(commands.Cog):
 
             try:
                 deleted = await ctx.channel.purge(limit=int(amount), check=is_message_offtopic)
-            except Exception as e:
-                await ctx.send(f"{ctx.author.mention} something went wrong while attempting to purge messages", 
-                               embed=await exceptions.embed_exception(e))
+            except discord.Forbidden:
+                await ctx.send(f"{ctx.author.mention} something went wrong while attempting to purge messages")
                 return
 
         await ctx.send(f"Deleted {len(deleted)} message(s)")

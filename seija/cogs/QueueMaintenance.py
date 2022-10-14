@@ -43,12 +43,9 @@ class QueueMaintenance(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, deleted_channel):
-        try:
-            await self.bot.db.execute("DELETE FROM queues WHERE channel_id = ?", [int(deleted_channel.id)])
-            await self.bot.db.commit()
-            print(f"channel {deleted_channel.name} is deleted. maybe not a queue")
-        except Exception as e:
-            print(e)
+        await self.bot.db.execute("DELETE FROM queues WHERE channel_id = ?", [int(deleted_channel.id)])
+        await self.bot.db.commit()
+        print(f"channel {deleted_channel.name} is deleted. maybe not a queue")
 
     @commands.Cog.listener()
     async def on_member_join(self, member):

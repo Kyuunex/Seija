@@ -50,7 +50,7 @@ class Osu(commands.Cog):
             timestamp_link = (timestamp_data[0]).strip().replace(" ", "_")
             try:
                 timestamp_desc = "- " + timestamp_data[1]
-            except:
+            except IndexError:
                 timestamp_desc = ""
         else:
             timestamp_link = string.strip().replace(" ", "_")
@@ -63,11 +63,12 @@ class Osu(commands.Cog):
             name=ctx.author.display_name,
             icon_url=ctx.author.display_avatar.url
         )
+        await ctx.send(embed=embed)
+
         try:
-            await ctx.send(embed=embed)
             await ctx.message.delete()
-        except Exception as e:
-            print(e)
+        except discord.Forbidden:
+            pass
 
 
 async def setup(bot):

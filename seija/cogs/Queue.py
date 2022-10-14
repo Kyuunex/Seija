@@ -179,7 +179,7 @@ class Queue(commands.Cog):
         try:
             channel = await guild.create_text_channel(channel_name,
                                                       overwrites=channel_overwrites, category=category)
-        except Exception as e:
+        except (discord.Forbidden, discord.HTTPException) as e:
             await ctx.send(f"{ctx.author.mention} i am unable to create the channel, idk why, maybe no perms. "
                            f"managers will have to look into this", embed=await exceptions.embed_exception(e))
             return
@@ -228,10 +228,9 @@ class Queue(commands.Cog):
 
         try:
             await ctx.channel.set_permissions(member, overwrite=self.queue_owner_default_permissions)
-        except Exception as e:
+        except discord.Forbidden:
             await ctx.send(f"{ctx.author.mention} i am unable to edit the channel permissions, "
-                           f"idk why, maybe permissions error",
-                           embed=await exceptions.embed_exception(e))
+                           f"idk why, maybe permissions error")
             return
 
         await ctx.send(f"{member.mention} is now the co-owner of this queue!")
@@ -270,10 +269,9 @@ class Queue(commands.Cog):
 
         try:
             await ctx.channel.set_permissions(member, overwrite=None)
-        except Exception as e:
+        except discord.Forbidden:
             await ctx.send(f"{ctx.author.mention} i am unable to edit the channel permissions, "
-                           f"idk why, maybe permissions error", 
-                           embed=await exceptions.embed_exception(e))
+                           f"idk why, maybe permissions error")
             return
 
         await ctx.send(f"{member.mention} is no longer a co-owner of this queue!")
@@ -344,10 +342,9 @@ class Queue(commands.Cog):
 
         try:
             await ctx.channel.set_permissions(member, overwrite=self.queue_owner_default_permissions)
-        except Exception as e:
+        except discord.Forbidden:
             await ctx.send(f"{ctx.author.mention} i am unable to edit the channel permissions, "
-                           f"idk why, maybe permissions error, although i made the change in the database already", 
-                           embed=await exceptions.embed_exception(e))
+                           f"idk why, maybe permissions error, although i made the change in the database already")
             return
 
         await ctx.send(f"You have given the queue creator permissions to {member.mention}")
@@ -514,7 +511,7 @@ class Queue(commands.Cog):
             await ctx.channel.edit(reason=None, category=archive_category)
             await ctx.channel.set_permissions(ctx.guild.default_role, read_messages=False, send_messages=False)
             await ctx.send("queue archived!")
-        except Exception as e:
+        except discord.Forbidden as e:
             await ctx.send(embed=await exceptions.embed_exception(e))
 
     @commands.command(name="list_open_queues", brief="List open queues", aliases=['loq'])

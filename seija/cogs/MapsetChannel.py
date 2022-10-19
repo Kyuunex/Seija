@@ -8,6 +8,7 @@ from discord.ext import commands
 import random
 import asyncio
 from seija.embeds import oldembeds as osuembed
+from aioosuapi import exceptions as aioosuapi_exceptions
 
 
 class MapsetChannel(commands.Cog):
@@ -229,7 +230,7 @@ class MapsetChannel(commands.Cog):
             if not mapset:
                 await ctx.send("I can't find any mapset with that id")
                 return
-        except Exception as e:
+        except aioosuapi_exceptions.ConnectionError as e:
             await ctx.send("i have connection issues with osu servers "
                            "so i can't verify if the id you specified is legit. "
                            "try again later", embed=await exceptions.embed_exception(e))
@@ -362,10 +363,11 @@ class MapsetChannel(commands.Cog):
                 if not mapset:
                     await ctx.send("you specified incorrect mapset id. "
                                    "you can correct this with `.set_id` command in the mapset channel")
-                if int(mapset.approved) == 1 or int(mapset.approved) == 2:
-                    await ctx.send("This map is ranked, you are not supposed to make a channel for it")
-                    return
-            except Exception as e:
+                if mapset:
+                    if int(mapset.approved) == 1 or int(mapset.approved) == 2:
+                        await ctx.send("This map is ranked, you are not supposed to make a channel for it")
+                        return
+            except aioosuapi_exceptions.ConnectionError as e:
                 mapset = None
                 print(e)
                 await ctx.send("looks like there are connection issues to osu servers, "

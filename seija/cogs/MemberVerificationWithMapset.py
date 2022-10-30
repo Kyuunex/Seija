@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 from discord.utils import escape_markdown
 from seija.reusables import exceptions
@@ -67,9 +68,9 @@ class MemberVerificationWithMapset(commands.Cog):
                 try:
                     await member.add_roles(role)
                     await member.edit(nick=mapset.creator)
-                except:
-                    pass
-                await channel.send(content=f"{member.mention} i already know lol. here, have some roles")
+                    await channel.send(content=f"{member.mention} i already know lol. here, have some roles")
+                except discord.Forbidden:
+                    await channel.send(content=f"{member.mention} i have no perms to do this for some reason")
                 return
 
         async with self.bot.db.execute("SELECT user_id FROM users WHERE osu_id = ?",
@@ -85,7 +86,7 @@ class MemberVerificationWithMapset(commands.Cog):
         try:
             await member.add_roles(role)
             await member.edit(nick=mapset.creator)
-        except:
+        except discord.Forbidden:
             pass
 
         embed = await osuembed.beatmapset(mapset)

@@ -352,9 +352,9 @@ class MemberVerification(commands.Cog):
                 try:
                     await member.add_roles(role)
                     await member.edit(nick=fresh_osu_data["username"])
-                except:
-                    pass
-                await channel.send(content=f"{member.mention} i already know lol. here, have some roles")
+                    await channel.send(content=f"{member.mention} i already know lol. here, have some roles")
+                except discord.Forbidden:
+                    await channel.send(content=f"{member.mention} i don't seem to have perms to do this")
                 return
 
         async with self.bot.db.execute("SELECT user_id FROM users WHERE osu_id = ?",
@@ -387,7 +387,7 @@ class MemberVerification(commands.Cog):
         try:
             await member.add_roles(role)
             await member.edit(nick=fresh_osu_data["username"])
-        except:
+        except discord.Forbidden:
             pass
 
         embed_color = self.get_correct_embed_trust_color(member, fresh_osu_data)
@@ -585,7 +585,7 @@ class MemberVerification(commands.Cog):
                 try:
                     await member.add_roles(role_to_add)
                     await channel.send(f"additionally, i applied the {role_to_add} role")
-                except:
+                except discord.Forbidden:
                     pass
 
     async def get_user_qualified_group_roles(self, fresh_osu_data, group_roles):

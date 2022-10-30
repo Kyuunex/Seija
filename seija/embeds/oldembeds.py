@@ -11,11 +11,8 @@ async def beatmapset(mapset, color=default_embed_color):
         body = f""
 
         for beatmap in sorted(mapset.beatmaps, key=lambda x: x.difficulty_rating, reverse=False):
-            try:
-                short_dec = str(round(float(beatmap.difficultyrating), 2))
-                body += f"{short_dec} ☆ {beatmap.version} [{beatmap.gamemode}] \n"
-            except:
-                pass
+            short_dec = str(round(float(beatmap.difficultyrating), 2))
+            body += f"{short_dec} ☆ {beatmap.version} [{beatmap.gamemode}] \n"
         if len(body) > 2048:
             body = ""
         escaped_body = escape_markdown(body)
@@ -46,12 +43,10 @@ async def user(user, color=default_embed_color, custom_footer=""):
         body = ""
 
         if user.country:
-            try:
-                country = pycountry.countries.get(alpha_2=user.country.upper())
+            country = pycountry.countries.get(alpha_2=user.country.upper())
+            if country:
                 country_flag_emote = f":flag_{country.alpha_2.lower()}:"
                 body += f"{country_flag_emote} {country.name}\n"
-            except:
-                pass
 
         if user.pp:
             body += f"{user.pp}pp (#{user.rank})\n"

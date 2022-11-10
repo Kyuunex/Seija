@@ -3,6 +3,7 @@ from seija.modules import permissions
 from seija.reusables import exceptions
 from seija.reusables import send_large_message
 from seija.reusables import get_member_helpers
+from aioosuwebapi import exceptions as aioosuwebapi_exceptions
 import discord
 from discord.ext import commands
 
@@ -601,7 +602,7 @@ class Queue(commands.Cog):
         try:
             user = await self.bot.osuweb.get_user_array(str(osu_id))
             return user["kudosu"]["total"]
-        except:
+        except aioosuwebapi_exceptions.HTTPException:
             return 0
 
     async def generate_queue_event_embed(self, ctx, args):

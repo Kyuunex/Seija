@@ -11,11 +11,8 @@ async def beatmapset_array(mapset, color=default_embed_color):
 
         sorted_diffs = sorted(mapset["beatmaps"], key=lambda k: k["difficulty_rating"])
         for beatmap in sorted_diffs:
-            try:
-                short_dec = str(beatmap["difficulty_rating"])
-                body += f"{short_dec} ☆ {beatmap['version']} [{beatmap['mode']}] \n"
-            except:
-                pass
+            short_dec = str(beatmap["difficulty_rating"])
+            body += f"{short_dec} ☆ {beatmap['version']} [{beatmap['mode']}] \n"
         if len(body) > 2048:
             body = ""
         embed = discord.Embed(

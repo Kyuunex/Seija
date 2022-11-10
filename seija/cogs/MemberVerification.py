@@ -7,6 +7,7 @@ from seija.modules import permissions
 from seija.reusables import exceptions
 from seija.reusables import verification as verification_reusables
 from seija.embeds import newembeds as osuwebembed
+from aioosuwebapi import exceptions as aioosuwebapi_exceptions
 import datetime
 import dateutil
 import re
@@ -54,10 +55,7 @@ class MemberVerification(commands.Cog):
 
         ranked_amount = fresh_osu_data["ranked_and_approved_beatmapset_count"]
 
-        try:
-            role = await verification_reusables.get_role_based_on_reputation(self, member.guild, ranked_amount)
-        except:
-            role = None
+        role = await verification_reusables.get_role_based_on_reputation(self, member.guild, ranked_amount)
 
         if not role:
             await ctx.send("i can't find a role to give. something is misconfigured")
@@ -281,7 +279,7 @@ class MemberVerification(commands.Cog):
                     fresh_osu_data = await self.bot.osuweb.get_user_array(osu_id[0])
                     embed = await osuwebembed.small_user_array(fresh_osu_data, 0xffffff, "User left")
                     member_name = fresh_osu_data["username"]
-                except:
+                except aioosuwebapi_exceptions.HTTPException:
                     print("Connection issues?")
                     embed = None
                     member_name = member.name
@@ -513,35 +511,32 @@ class MemberVerification(commands.Cog):
         return False
 
     def autodetect_profile_inquiry_conditions(self, fresh_osu_data, member):
-        try:
-            if self.is_new_user(member):
-                return False
-
-            if not fresh_osu_data:
-                return False
-
-            if fresh_osu_data['last_visit']:
-                last_visit = dateutil.parser.parse(fresh_osu_data['last_visit'])
-
-                user_creation_ago = datetime.datetime.now().timestamp() - last_visit.timestamp()
-                if user_creation_ago / 60 / 60 / 24 > 30:
-                    return False
-
-            if fresh_osu_data["statistics"]:
-                if float(fresh_osu_data["statistics"]["pp"]) < 100:
-                    return False
-
-            if str(member.name).lower() != str(fresh_osu_data["username"]).lower():
-                return False
-
-            # if fresh_osu_data['discord']:
-            #     if "#" in fresh_osu_data['discord']:
-            #         if str(member.discriminator) == str(((fresh_osu_data['discord']).split("#"))[-1]):
-            #             return True
-
-            return True
-        except:
+        if self.is_new_user(member):
             return False
+
+        if not fresh_osu_data:
+            return False
+
+        if fresh_osu_data['last_visit']:
+            last_visit = dateutil.parser.parse(fresh_osu_data['last_visit'])
+
+            user_creation_ago = datetime.datetime.now().timestamp() - last_visit.timestamp()
+            if user_creation_ago / 60 / 60 / 24 > 30:
+                return False
+
+        if fresh_osu_data["statistics"]:
+            if float(fresh_osu_data["statistics"]["pp"]) < 100:
+                return False
+
+        if str(member.name).lower() != str(fresh_osu_data["username"]).lower():
+            return False
+
+        # if fresh_osu_data['discord']:
+        #     if "#" in fresh_osu_data['discord']:
+        #         if str(member.discriminator) == str(((fresh_osu_data['discord']).split("#"))[-1]):
+        #             return True
+
+        return True
 
     async def count_ranked_beatmapsets(self, beatmapsets):
         try:

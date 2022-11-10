@@ -702,13 +702,10 @@ class ModChecker(commands.Cog):
         embed.set_thumbnail(
             url=f"https://b.ppy.sh/thumb/{discussions['beatmapset']['id']}l.jpg"
         )
-        try:
-            created_at = dateutil.parser.parse(event['created_at'])
-            embed.set_footer(
-                text=str(created_at.isoformat(' ')),
-            )
-        except:
-            pass
+        created_at = dateutil.parser.parse(event['created_at'])
+        embed.set_footer(
+            text=str(created_at.isoformat(' ')),
+        )
         return embed
 
     async def mod_post_embed(self, post, discussions, mod, tracking_mode):

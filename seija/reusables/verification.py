@@ -14,4 +14,6 @@ async def get_role_from_db(self, setting, guild):
     async with self.bot.db.execute("SELECT role_id FROM roles WHERE setting = ? AND guild_id = ?",
                                    [setting, int(guild.id)]) as cursor:
         role_id = await cursor.fetchone()
+    if not role_id:
+        return None
     return guild.get_role(int(role_id[0]))

@@ -4,6 +4,7 @@ from discord.utils import escape_markdown
 from seija.reusables import exceptions
 from seija.reusables import verification as verification_reusables
 from seija.embeds import oldembeds as osuembed
+from aioosuapi import exceptions as aioosuapi_exceptions
 import re
 
 
@@ -48,7 +49,7 @@ class MemberVerificationWithMapset(commands.Cog):
                                    "verification through mapset is reserved for restricted users only. "
                                    "this is like this to reduce confusion and errors")
                 return
-        except:
+        except aioosuapi_exceptions.HTTPException:
             pass
 
         # this won't work on restricted users, thanks peppy.

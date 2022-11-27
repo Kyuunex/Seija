@@ -83,7 +83,7 @@ class ModChecker(commands.Cog):
             return
 
         try:
-            discussions = await self.bot.osuweb.scrape_beatmapset_discussions_array(str(mapset_id[0]))
+            discussions = await self.bot.osuscraper.scrape_beatmapset_discussions_array(str(mapset_id[0]))
         except Exception as e:
             await ctx.send("I am having connection issues with osu servers, try again later", 
                            embed=await exceptions.embed_exception(e))
@@ -179,7 +179,7 @@ class ModChecker(commands.Cog):
             return
 
         try:
-            discussions = await self.bot.osuweb.scrape_beatmapset_discussions_array(int(mapset_id))
+            discussions = await self.bot.osuscraper.scrape_beatmapset_discussions_array(int(mapset_id))
         except Exception as e:
             await ctx.send("i am having connection issues with osu servers to do this",
                            embed=await exceptions.embed_exception(e))
@@ -276,7 +276,7 @@ class ModChecker(commands.Cog):
             return
 
         try:
-            discussions = await self.bot.osuweb.scrape_beatmapset_discussions_array(int(mapset_id))
+            discussions = await self.bot.osuscraper.scrape_beatmapset_discussions_array(int(mapset_id))
         except Exception as e:
             await ctx.send("connection issues bla bla bla", embed=await exceptions.embed_exception(e))
             return
@@ -425,7 +425,7 @@ class ModChecker(commands.Cog):
                     continue
 
                 try:
-                    discussions = await self.bot.osuweb.scrape_beatmapset_discussions_array(mapset_id)
+                    discussions = await self.bot.osuscraper.scrape_beatmapset_discussions_array(mapset_id)
                     if not discussions:
                         # if we are here,
                         # it means the mapset someone got tracked but there is no discussions page for it
@@ -475,7 +475,11 @@ class ModChecker(commands.Cog):
 
     async def check_status(self, channel, mapset_id, discussions):
         # TODO: add back embeds here, when new api comes out maybe, could reuse some api requests
-        status = discussions["beatmapset"]["status"]
+        if not discussions:
+            status = "deleted"
+        else:
+            status = discussions["beatmapset"]["status"]
+
         if (status == "wip") or (status == "qualified") or (status == "pending"):
             return True
         elif status == "graveyard":

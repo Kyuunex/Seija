@@ -4,6 +4,7 @@ from discord.ext import commands
 import aiosqlite
 from aioosuapi import aioosuapi
 from aioosuwebapi import aioosuwebapi
+from aioosuwebapi.scraper import aioosuwebscraper
 import discord
 import os
 
@@ -59,6 +60,7 @@ class Seija(commands.Bot):
         self.db = None
         self.osu = None
         self.osuweb = None
+        self.osuscraper = None
 
     async def setup_hook(self):
         self.db = await aiosqlite.connect(self.database_file)
@@ -69,6 +71,7 @@ class Seija(commands.Bot):
 
         self.osu = aioosuapi(osu_api_key)
         self.osuweb = aioosuwebapi(client_id, client_secret)
+        self.osuscraper = aioosuwebscraper()
 
         async with self.db.execute("SELECT extension_name FROM user_extensions") as cursor:
             user_extensions = await cursor.fetchall()

@@ -14,16 +14,7 @@ class Docs(commands.Cog):
         A custom help command written to look more friendly to end users.
         """
 
-        if sub_help == "veto":
-            async with self.bot.db.execute("SELECT channel_id FROM channels "
-                                           "WHERE setting = ? AND channel_id = ?",
-                                           ["veto", int(ctx.channel.id)]) as cursor:
-                is_veto_channel = await cursor.fetchone()
-            if not is_veto_channel:
-                embed = await self.main(ctx)
-            else:
-                embed = await self.veto()
-        elif sub_help == "mapset_channel":
+        if sub_help == "mapset_channel":
             embed = await Docs.mapset_channel()
         elif sub_help == "queue":
             embed = await Docs.queue(ctx.author)
@@ -57,14 +48,6 @@ class Docs(commands.Cog):
                         value="Show queue channel management commands.",
                         inline=False)
 
-        async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND channel_id = ?",
-                                       ["veto", int(ctx.channel.id)]) as cursor:
-            is_veto_channel = await cursor.fetchone()
-        if is_veto_channel:
-            embed.add_field(name=".docs veto",
-                            value="Commands for tracking a mapset in veto mode.",
-                            inline=True)
-
         embed.add_field(name=".from (country_name)",
                         value="Retrieve a list of server members who are from the specified country. "
                               "Takes Alpha-2, Alpha-3 codes and full country names.",
@@ -77,20 +60,6 @@ class Docs(commands.Cog):
                         value="Send a clickable timestamp for the osu! editor. "
                               "The message must start with a timestamp.",
                         inline=False)
-        return embed
-
-    @staticmethod
-    async def veto():
-        embed = discord.Embed(title="~~BNS PLS MUTUAL ME~~",
-                              description="**Veto tracking commands:**",
-                              color=0xbd3661)
-        embed.add_field(name=".veto <mapset_id>",
-                        value="Track a mapset in this channel in veto mode.",
-                        inline=False)
-        embed.add_field(name=".unveto <mapset_id>",
-                        value="Untrack a mapset in this channel in veto mode.",
-                        inline=False)
-
         return embed
 
     @staticmethod

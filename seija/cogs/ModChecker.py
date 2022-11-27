@@ -151,103 +151,6 @@ class ModChecker(commands.Cog):
 
         await self.bot.db.commit()
 
-    @commands.command(name="veto", brief="Track a mapset in the current channel in veto mode")
-    @commands.guild_only()
-    @commands.check(permissions.is_not_ignored)
-    async def veto(self, ctx, mapset_id):
-        """
-        This command will track the specified mapset in a veto mode.
-        This feature is deprecated pretty much, no-one uses it
-        """
-
-        async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND channel_id = ?",
-                                       ["veto", int(ctx.channel.id)]) as cursor:
-            is_veto_channel = await cursor.fetchall()
-
-        if not is_veto_channel:
-            await ctx.send(f"{ctx.author.mention} this command only works in veto channels")
-            return
-
-        if not mapset_id.isdigit():
-            await ctx.send("a mapset_id is supposed to be all numbers")
-            return
-
-        async with self.bot.db.execute("SELECT mapset_id FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
-                                       [int(mapset_id), int(ctx.channel.id)]) as cursor:
-            mapset_is_already_tracked = await cursor.fetchone()
-        if mapset_is_already_tracked:
-            await ctx.send("This mapset is already tracked in this channel")
-            return
-
-        try:
-            discussions = await self.bot.osuscraper.scrape_beatmapset_discussions_array(int(mapset_id))
-        except HTTPException as e:
-            await ctx.send("i am having connection issues with osu servers to do this",
-                           embed=await exceptions.embed_exception(e))
-            return
-
-        if not discussions:
-            await ctx.send("I am unable to find a modding v2 page for this mapset")
-            return
-
-        if discussions["beatmapset"]["status"] == "graveyard" or discussions["beatmapset"]["status"] == "ranked":
-            await ctx.send("i refuse to track graveyarded and ranked sets")
-            return None
-
-        await self.insert_mod_history_in_db(discussions, int(ctx.channel.id))
-        await self.insert_nomination_history_in_db(discussions, int(ctx.channel.id))
-
-        await self.bot.db.execute("INSERT INTO mod_tracking VALUES (?,?,?,?)",
-                                  [int(mapset_id), int(ctx.channel.id), 3, 1800])
-
-        try:
-            result = await self.bot.osu.get_beatmapset(s=mapset_id)
-            embed = await osuembed.beatmapset(result)
-
-            await ctx.send("Tracked in veto mode", embed=embed)
-        except HTTPException as e:
-            # same, as in .track command, no need to do the separate spi call for the embed thingy later on
-            await ctx.send("tracked",
-                           embed=await exceptions.embed_exception(e))
-
-        await self.bot.db.commit()
-
-    @commands.command(name="unveto", brief="Untrack a mapset in the current channel in veto mode")
-    @commands.guild_only()
-    @commands.check(permissions.is_not_ignored)
-    async def unveto(self, ctx, mapset_id):
-        """
-        Untrack a mapset that is tracked in a veto mode
-        """
-
-        async with self.bot.db.execute("SELECT channel_id FROM channels WHERE setting = ? AND channel_id = ?",
-                                       ["veto", int(ctx.channel.id)]) as cursor:
-            is_veto_channel = await cursor.fetchall()
-
-        if not is_veto_channel:
-            await ctx.send(f"{ctx.author.mention} this command only works in veto channels")
-            return
-
-        if not mapset_id.isdigit():
-            await ctx.send("a mapset_id is supposed to be all numbers")
-            return
-
-        await self.bot.db.execute("DELETE FROM mod_tracking WHERE mapset_id = ? AND channel_id = ?",
-                                  [int(mapset_id), int(ctx.channel.id)])
-        await self.bot.db.execute("DELETE FROM mod_post_history WHERE mapset_id = ? AND channel_id = ?",
-                                  [int(mapset_id), int(ctx.channel.id)])
-        await self.bot.db.execute("DELETE FROM mapset_nomination_history WHERE mapset_id = ? AND channel_id = ?",
-                                  [int(mapset_id), int(ctx.channel.id)])
-
-        try:
-            result = await self.bot.osu.get_beatmapset(s=mapset_id)
-            embed = await osuembed.beatmapset(result)
-            await ctx.send("I untracked this mapset in this channel", embed=embed)
-        except Exception as e:
-            await ctx.send("done", embed=await exceptions.embed_exception(e))
-
-        await self.bot.db.commit()
-
     @commands.command(name="force_track", brief="Forcefully track a mapset in the current channel")
     @commands.guild_only()
     @commands.check(permissions.is_admin)
@@ -363,30 +266,6 @@ class ModChecker(commands.Cog):
                 embed = None
             await ctx.send(content="mapset_id `%s` | channel <#%s> | tracking_mode `%s`" % mapset, embed=embed)
 
-    @commands.command(name="veto_list", brief="List all vetoed mapsets everywhere", description="")
-    @commands.check(permissions.is_not_ignored)
-    async def veto_list(self, ctx):
-        """
-        List all vetoed mapsets everywhere
-        """
-
-        async with self.bot.db.execute("SELECT mapset_id, channel_id, mode FROM mod_tracking WHERE mode = ?",
-                                       [3]) as cursor:
-            vetoed_sets = await cursor.fetchall()
-        if not vetoed_sets:
-            await ctx.send("Nothing is tracked in veto mode at this moment")
-            return
-
-        # TODO: SAME AS ABOVE
-        for mapset in vetoed_sets:
-            try:
-                result = await self.bot.osu.get_beatmapset(s=str(mapset[0]))
-                embed = await osuembed.beatmapset(result)
-            except HTTPException as e:
-                await ctx.send("Connection issues?", embed=await exceptions.embed_exception(e))
-                embed = None
-            await ctx.send(content="mapset_id `%s` | channel <#%s> | tracking_mode `%s`" % mapset, embed=embed)
-
     async def mod_checker_background_loop(self):
         print("Mod checking Background Loop launched!")
         await self.bot.wait_until_ready()
@@ -441,7 +320,7 @@ class ModChecker(commands.Cog):
                 if not await self.check_status(channel, mapset_id, discussions):
                     continue
 
-                if tracking_mode == 3 or tracking_mode == 1:
+                if tracking_mode == 1:
                     await self.timeline_mode_tracking(discussions, channel, mapset_id, tracking_mode)
                 elif tracking_mode == 2:
                     await self.notification_mode_tracking(discussions, channel, mapset_id)
@@ -678,11 +557,7 @@ class ModChecker(commands.Cog):
         if not event:
             return None
 
-        if tracking_mode == 3:
-            mapset_title = str(discussions["beatmapset"]["title"])
-            title = mapset_title
-        else:
-            title = ""
+        title = ""
 
         icon = self.get_icon(event["type"])
 
@@ -712,16 +587,7 @@ class ModChecker(commands.Cog):
             return None
 
         mapset_diff_name = str(self.get_diff_name(discussions["beatmapset"]["beatmaps"], mod["beatmap_id"]))
-        if tracking_mode == 3:
-            if mod["message_type"] == "hype":
-                return None
-            elif mod["message_type"] == "praise":
-                return None
-
-            mapset_title = str(discussions["beatmapset"]["title"])
-            title = f"{mapset_title} [{mapset_diff_name}]"
-        else:
-            title = mapset_diff_name
+        title = mapset_diff_name
 
         footer = self.get_mod_type(mod)
 

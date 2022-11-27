@@ -8,6 +8,7 @@ from seija.reusables import list_helpers
 from seija.modules import permissions
 import json
 from seija.embeds import oldembeds as osuembed
+from aioosuwebapi.exceptions import HTTPException
 
 
 class ModChecker(commands.Cog):
@@ -84,7 +85,7 @@ class ModChecker(commands.Cog):
 
         try:
             discussions = await self.bot.osuscraper.scrape_beatmapset_discussions_array(str(mapset_id[0]))
-        except Exception as e:
+        except HTTPException as e:
             await ctx.send("I am having connection issues with osu servers, try again later", 
                            embed=await exceptions.embed_exception(e))
             return
@@ -180,7 +181,7 @@ class ModChecker(commands.Cog):
 
         try:
             discussions = await self.bot.osuscraper.scrape_beatmapset_discussions_array(int(mapset_id))
-        except Exception as e:
+        except HTTPException as e:
             await ctx.send("i am having connection issues with osu servers to do this",
                            embed=await exceptions.embed_exception(e))
             return
@@ -204,7 +205,7 @@ class ModChecker(commands.Cog):
             embed = await osuembed.beatmapset(result)
 
             await ctx.send("Tracked in veto mode", embed=embed)
-        except Exception as e:
+        except HTTPException as e:
             # same, as in .track command, no need to do the separate spi call for the embed thingy later on
             await ctx.send("tracked",
                            embed=await exceptions.embed_exception(e))
@@ -277,7 +278,7 @@ class ModChecker(commands.Cog):
 
         try:
             discussions = await self.bot.osuscraper.scrape_beatmapset_discussions_array(int(mapset_id))
-        except Exception as e:
+        except HTTPException as e:
             await ctx.send("connection issues bla bla bla", embed=await exceptions.embed_exception(e))
             return
 
@@ -381,7 +382,7 @@ class ModChecker(commands.Cog):
             try:
                 result = await self.bot.osu.get_beatmapset(s=str(mapset[0]))
                 embed = await osuembed.beatmapset(result)
-            except Exception as e:
+            except HTTPException as e:
                 await ctx.send("Connection issues?", embed=await exceptions.embed_exception(e))
                 embed = None
             await ctx.send(content="mapset_id `%s` | channel <#%s> | tracking_mode `%s`" % mapset, embed=embed)
@@ -431,7 +432,7 @@ class ModChecker(commands.Cog):
                         # it means the mapset someone got tracked but there is no discussions page for it
                         # TODO: i'll deal with this when the new api comes out
                         continue
-                except Exception as e:
+                except HTTPException as e:
                     # pretty much connection issues
                     print(e)
                     await asyncio.sleep(300)
@@ -558,10 +559,7 @@ class ModChecker(commands.Cog):
                                         (not post["message"] == "resolved")):
                                     post_to_post = await self.mod_post_embed(post, discussions, mod, tracking_mode)
                                     if post_to_post:
-                                        try:
-                                            await channel.send(embed=post_to_post)
-                                        except Exception as e:
-                                            print(e)
+                                        await channel.send(embed=post_to_post)
 
     async def notification_mode_tracking(self, discussions, channel, mapset_id):
         diffs_lol = discussions["beatmapset"]["beatmaps"]
@@ -613,10 +611,7 @@ class ModChecker(commands.Cog):
                         await self.bot.db.commit()
                         event_to_post = await self.nomnom_embed(event, discussions, tracking_mode)
                         if event_to_post:
-                            try:
-                                await channel.send(embed=event_to_post)
-                            except Exception as e:
-                                print(e)
+                            await channel.send(embed=event_to_post)
 
         return None
 

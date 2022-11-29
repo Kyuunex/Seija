@@ -115,6 +115,9 @@ class MemberInfoSyncing(commands.Cog):
             try:
                 fresh_osu_data = await self.bot.osuweb.get_user_array(stored_user_info[1])
             except aioosuwebapi_exceptions.HTTPException as e:
+                print(time.strftime("%Y/%m/%d %H:%M:%S %Z"))
+                print("in sync_the_guild, connection issues to osu api v2 servers")
+                print("sleeping for 120 seconds")
                 print(e)
                 await asyncio.sleep(120)
                 break

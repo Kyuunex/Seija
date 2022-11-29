@@ -1,3 +1,5 @@
+import time
+
 import discord
 from discord.ext import commands
 from seija.modules import permissions
@@ -90,20 +92,28 @@ class MemberManagement(commands.Cog):
         async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [int(user_id)]) as cursor:
             osu_id = await cursor.fetchone()
         if not osu_id:
+            await ctx.reply("the specified discord user id does not link with any osu accounts")
             return
 
         try:
             result = await self.bot.osuweb.get_user_array(osu_id[0])
         except aioosuwebapi_exceptions.HTTPException as e:
-            await ctx.send("Connection problems?",
-                           embed=await exceptions.embed_exception(e))
+            print(time.strftime("%Y/%m/%d %H:%M:%S %Z"))
+            print("in get_member_osu_profile, connection issues to osu api v2 servers")
+            print(e)
+            await ctx.reply(f"I found a record of this user's osu account in my database, "
+                            f"but I seem to be having connection problems with osu api v2 servers. "
+                            f"Their profile url should be <https://osu.ppy.sh/users/{osu_id[0]}>")
             return
+
         if not result:
-            await ctx.send(f"<https://osu.ppy.sh/users/{osu_id[0]}>")
+            await ctx.reply(f"I found a record of this user's osu account in my database, "
+                            f"but osu api v2 servers seem to not return anything about them. "
+                            f"Their profile url should be <https://osu.ppy.sh/users/{osu_id[0]}>")
             return
 
         embed = await osuwebembed.user_array(result)
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
 
 
 async def setup(bot):

@@ -360,8 +360,10 @@ class NoticesEmbeds:
         embed.add_field(name="user", value=member.mention, inline=False)
         embed.add_field(name="osu_username", value=db_user[2], inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
-        embed.add_field(name="added group role", value=changes[0], inline=False)
-        embed.add_field(name="removed group role", value=changes[1], inline=False)
+        if changes[0]:
+            embed.add_field(name="added group role", value=changes[0], inline=False)
+        if changes[1]:
+            embed.add_field(name="removed group role", value=changes[1], inline=False)
         embed.set_thumbnail(url=member.display_avatar.url)
         return embed
 
@@ -376,8 +378,10 @@ class NoticesEmbeds:
         embed.add_field(name="user", value=member.mention, inline=False)
         embed.add_field(name="osu_username", value=db_user[2], inline=False)
         embed.add_field(name="osu_id", value=db_user[1], inline=False)
-        embed.add_field(name="added mapper role", value=changes[0], inline=False)
-        embed.add_field(name="removed mapper role", value=changes[1], inline=False)
+        if changes[0]:
+            embed.add_field(name="added mapper role", value=changes[0], inline=False)
+        if changes[1]:
+            embed.add_field(name="removed mapper role", value=changes[1], inline=False)
         embed.set_thumbnail(url=member.display_avatar.url)
         return embed
 

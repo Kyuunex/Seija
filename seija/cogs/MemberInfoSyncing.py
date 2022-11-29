@@ -136,15 +136,11 @@ class MemberInfoSyncing(commands.Cog):
                                            int(fresh_osu_data["kudosu"]["total"]),
                                            int(member.id)])
 
-                try:
-                    if fresh_osu_data['discord']:
-                        if str(member) == str(fresh_osu_data['discord']):
-                            if not int(stored_user_info[9]) == 1:
-                                await self.bot.db.execute("UPDATE users SET confirmed = ? WHERE user_id = ?",
-                                                          [1, int(member.id)])
-                except KeyError as e:
-                    print("in sync_the_guild, in fresh_osu_data")
-                    print(e)
+                if fresh_osu_data.get('discord'):
+                    if str(member) == str(fresh_osu_data.get('discord')):
+                        if not int(stored_user_info[9]) == 1:
+                            await self.bot.db.execute("UPDATE users SET confirmed = ? WHERE user_id = ?",
+                                                      [1, int(member.id)])
 
                 await self.bot.db.commit()
 

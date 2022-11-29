@@ -57,7 +57,7 @@ class MemberInfoSyncing(commands.Cog):
         while not self.bot.is_closed():
             await asyncio.sleep(10)
 
-            print(time.strftime("%X %x %Z") + " | member_name_syncing_loop start")
+            print(time.strftime("%Y/%m/%d %H:%M:%S %Z") + " | member_name_syncing_loop start")
 
             async with self.bot.db.execute("SELECT guild_id, channel_id FROM channels WHERE setting = ?",
                                            ["notices"]) as cursor:
@@ -79,7 +79,7 @@ class MemberInfoSyncing(commands.Cog):
 
                 await self.sync_the_guild(guild, notices_channel, restricted_user_list, stored_user_info_list)
 
-            print(time.strftime("%X %x %Z") + " | member_name_syncing_loop finished")
+            print(time.strftime("%Y/%m/%d %H:%M:%S %Z") + " | member_name_syncing_loop finished")
             await asyncio.sleep(14400)
 
     async def get_role_from_db(self, setting, guild):

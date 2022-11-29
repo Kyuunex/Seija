@@ -329,7 +329,7 @@ class MapsetChannel(commands.Cog):
             await self.bot.db.commit()
             await role.delete(reason="manually nuked the role due to abuse")
             await ctx.channel.delete(reason="manually nuked the channel due to abuse")
-        except Exception as e:
+        except discord.Forbidden as e:
             await ctx.send(embed=await exceptions.embed_exception(e))
 
     @commands.command(name="request_mapset_channel", brief="Request a mapset channel")

@@ -44,7 +44,7 @@ class MemberVerification(commands.Cog):
 
         try:
             fresh_osu_data = await self.bot.osuweb.get_user_array(osu_id)
-        except Exception as e:
+        except aioosuwebapi_exceptions.HTTPException as e:
             await ctx.send("i have connection issues with osu servers. so i can't do that right now",
                            embed=await exceptions.embed_exception(e))
             return
@@ -63,12 +63,12 @@ class MemberVerification(commands.Cog):
 
         try:
             await member.add_roles(role)
-        except Exception as e:
+        except discord.Forbidden as e:
             await ctx.send("i can't give the role", embed=await exceptions.embed_exception(e))
 
         try:
             await member.edit(nick=fresh_osu_data["username"])
-        except Exception as e:
+        except discord.Forbidden as e:
             await ctx.send("i can't update the nickname of this user", embed=await exceptions.embed_exception(e))
 
         embed = await osuwebembed.user_array(fresh_osu_data)
@@ -81,8 +81,9 @@ class MemberVerification(commands.Cog):
             if fresh_osu_data['discord']:
                 if str(member) == str(fresh_osu_data['discord']):
                     confirmed2 = 1
-        except KeyError:
-            pass
+        except KeyError as e:
+            print("in verify, can't find key discord")
+            print(e)
 
         await self.bot.db.execute("DELETE FROM users WHERE user_id = ?", [int(member.id)])
         await self.bot.db.execute("INSERT INTO users VALUES (?,?,?,?,?,?,?,?,?,?)",
@@ -146,7 +147,7 @@ class MemberVerification(commands.Cog):
             if old_account:
                 await ctx.send("kicking old account")
                 await old_account.kick()
-        except Exception as e:
+        except discord.Forbidden as e:
             await ctx.send(embed=await exceptions.embed_exception(e))
 
         await self.bot.db.execute("UPDATE users SET user_id = ? WHERE user_id = ?", [int(new_id), int(old_id)])
@@ -186,7 +187,7 @@ class MemberVerification(commands.Cog):
             await member.edit(roles=[])
             await member.edit(nick=None)
             await ctx.send("removed nickname and roles")
-        except Exception as e:
+        except discord.Forbidden as e:
             await ctx.send("no perms to change nickname and/or remove roles", embed=await exceptions.embed_exception(e))
 
     @commands.Cog.listener()
@@ -308,7 +309,7 @@ class MemberVerification(commands.Cog):
 
         try:
             fresh_osu_data = await self.bot.osuweb.get_user_array(osu_id)
-        except Exception as e:
+        except aioosuwebapi_exceptions.HTTPException as e:
             await channel.send("i am having issues connecting to osu servers to verify you. "
                                "try again later or wait for a manager to help",
                                embed=await exceptions.embed_exception(e))
@@ -333,8 +334,9 @@ class MemberVerification(commands.Cog):
             if fresh_osu_data['discord']:
                 if str(member) == str(fresh_osu_data['discord']):
                     confirmed = True
-        except KeyError:
-            pass
+        except KeyError as e:
+            print("in profile_id_verification, in can't find discord")
+            print(e)
 
         async with self.bot.db.execute("SELECT osu_id FROM users WHERE user_id = ?", [int(member.id)]) as cursor:
             already_linked_to = await cursor.fetchone()
@@ -426,7 +428,7 @@ class MemberVerification(commands.Cog):
     async def member_is_already_verified_and_just_needs_roles(self, channel, member, user_db_lookup):
         try:
             fresh_osu_data = await self.bot.osuweb.get_user_array(user_db_lookup[0])
-        except Exception as e:
+        except aioosuwebapi_exceptions.HTTPException as e:
             await channel.send("okay, i also can't check your osu profile. "
                                "although i do have your osu profile info in my database. "
                                "I'll just use the cached info then",
@@ -464,7 +466,7 @@ class MemberVerification(commands.Cog):
 
         try:
             fresh_osu_data = await self.bot.osuweb.get_user_array(member.name)
-        except Exception as e:
+        except aioosuwebapi_exceptions.HTTPException as e:
             # connection issues
             await channel.send(f"Welcome {member.mention}! in this server, we have a verification system "
                                "for purposes of giving correct roles and dealing with raids. "
@@ -546,7 +548,7 @@ class MemberVerification(commands.Cog):
                     if int(beatmapset.approved) == 1 or int(beatmapset.approved) == 2:
                         count += 1
             return count
-        except Exception as e:
+        except ValueError as e:
             print(e)
             return 0
 
@@ -556,7 +558,7 @@ class MemberVerification(commands.Cog):
                 for stereotype in self.post_verification_emotes:
                     if country == stereotype[0]:
                         await message.add_reaction(stereotype[1])
-        except Exception as e:
+        except discord.Forbidden as e:
             print(e)
 
     def is_new_user(self, user):

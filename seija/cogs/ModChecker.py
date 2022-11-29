@@ -8,7 +8,8 @@ from seija.reusables import list_helpers
 from seija.modules import permissions
 import json
 from seija.embeds import oldembeds as osuembed
-from aioosuwebapi.exceptions import HTTPException
+from aioosuapi import exceptions as aioosuapi_exceptions
+from aioosuwebapi import exceptions as aioosuwebapi_exceptions
 
 
 class ModChecker(commands.Cog):
@@ -85,7 +86,7 @@ class ModChecker(commands.Cog):
 
         try:
             discussions = await self.bot.osuscraper.scrape_beatmapset_discussions_array(str(mapset_id[0]))
-        except HTTPException as e:
+        except aioosuwebapi_exceptions.HTTPException as e:
             await ctx.send("I am having connection issues with osu servers, try again later", 
                            embed=await exceptions.embed_exception(e))
             return
@@ -112,7 +113,7 @@ class ModChecker(commands.Cog):
 
             beatmap_object = await self.bot.osu.get_beatmapset(s=str(mapset_id[0]))
             embed = await osuembed.beatmapset(beatmap_object)
-        except Exception as e:
+        except aioosuapi_exceptions.HTTPException as e:
             embed = None
             await ctx.send("I am having connection issues but i still managed to track this idk what happened lol",
                            embed=await exceptions.embed_exception(e))
@@ -121,7 +122,7 @@ class ModChecker(commands.Cog):
 
         try:
             await self.unarchive_channel(ctx, "mapset")
-        except Exception as e:
+        except discord.Forbidden as e:
             await ctx.send("I seem to be having a problem unarchiving the channel. maybe permissions are messed up??",
                            embed=await exceptions.embed_exception(e))
 
@@ -181,7 +182,7 @@ class ModChecker(commands.Cog):
 
         try:
             discussions = await self.bot.osuscraper.scrape_beatmapset_discussions_array(int(mapset_id))
-        except HTTPException as e:
+        except aioosuwebapi_exceptions.HTTPException as e:
             await ctx.send("connection issues bla bla bla", embed=await exceptions.embed_exception(e))
             return
 
@@ -204,7 +205,7 @@ class ModChecker(commands.Cog):
             embed = await osuembed.beatmapset(result)
 
             await ctx.send(f"forcefully tracked in {tracking_mode} mode", embed=embed)
-        except Exception as e:
+        except aioosuapi_exceptions.HTTPException as e:
             # same as in track
             await ctx.send("tracked", embed=await exceptions.embed_exception(e))
 
@@ -236,7 +237,7 @@ class ModChecker(commands.Cog):
             result = await self.bot.osu.get_beatmapset(s=mapset_id)
             embed = await osuembed.beatmapset(result)
             await ctx.send("I untracked this mapset in this channel", embed=embed)
-        except Exception as e:
+        except aioosuapi_exceptions.HTTPException as e:
             await ctx.send("done", embed=await exceptions.embed_exception(e))
 
         await self.bot.db.commit()
@@ -261,7 +262,7 @@ class ModChecker(commands.Cog):
             try:
                 result = await self.bot.osu.get_beatmapset(s=str(mapset[0]))
                 embed = await osuembed.beatmapset(result)
-            except Exception as e:
+            except aioosuapi_exceptions.HTTPException as e:
                 await ctx.send("Connection issues?", embed=await exceptions.embed_exception(e))
                 embed = None
             await ctx.send(content="mapset_id `%s` | channel <#%s> | tracking_mode `%s`" % mapset, embed=embed)
@@ -311,7 +312,7 @@ class ModChecker(commands.Cog):
                         # it means the mapset someone got tracked but there is no discussions page for it
                         # TODO: i'll deal with this when the new api comes out
                         continue
-                except HTTPException as e:
+                except aioosuwebapi_exceptions.HTTPException as e:
                     # pretty much connection issues
                     print(e)
                     await asyncio.sleep(300)
@@ -618,7 +619,7 @@ class ModChecker(commands.Cog):
             try:
                 parse_this_retarded_json = json.loads(str(post["message"]))
                 mod_post_contents = await self.review_to_wall_of_text(discussions, parse_this_retarded_json)
-            except Exception as e:
+            except KeyError as e:
                 print(f"in build mod post contents {str(e)}")
                 mod_post_contents = str(post["message"])
         else:

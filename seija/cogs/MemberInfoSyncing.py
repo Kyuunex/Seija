@@ -4,6 +4,7 @@ import discord
 import time
 import asyncio
 import datetime
+from aioosuwebapi import exceptions as aioosuwebapi_exceptions
 
 
 class MemberInfoSyncing(commands.Cog):
@@ -113,7 +114,7 @@ class MemberInfoSyncing(commands.Cog):
 
             try:
                 fresh_osu_data = await self.bot.osuweb.get_user_array(stored_user_info[1])
-            except Exception as e:
+            except aioosuwebapi_exceptions.HTTPException as e:
                 print(e)
                 await asyncio.sleep(120)
                 break
@@ -138,8 +139,9 @@ class MemberInfoSyncing(commands.Cog):
                             if not int(stored_user_info[9]) == 1:
                                 await self.bot.db.execute("UPDATE users SET confirmed = ? WHERE user_id = ?",
                                                           [1, int(member.id)])
-                except KeyError:
-                    pass
+                except KeyError as e:
+                    print("in sync_the_guild, in fresh_osu_data")
+                    print(e)
 
                 await self.bot.db.commit()
 

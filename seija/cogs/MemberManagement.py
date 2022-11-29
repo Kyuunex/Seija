@@ -4,6 +4,7 @@ from seija.modules import permissions
 from seija.reusables import exceptions
 from seija.reusables import send_large_message
 from seija.embeds import newembeds as osuwebembed
+from aioosuwebapi import exceptions as aioosuwebapi_exceptions
 
 
 class MemberManagement(commands.Cog):
@@ -93,7 +94,7 @@ class MemberManagement(commands.Cog):
 
         try:
             result = await self.bot.osuweb.get_user_array(osu_id[0])
-        except Exception as e:
+        except aioosuwebapi_exceptions.HTTPException as e:
             await ctx.send("Connection problems?",
                            embed=await exceptions.embed_exception(e))
             return

@@ -32,7 +32,7 @@ class MemberVerificationWithMapset(commands.Cog):
     async def mapset_id_verification(self, channel, member, mapset_id):
         try:
             mapset = await self.bot.osu.get_beatmapset(s=mapset_id)
-        except Exception as e:
+        except aioosuapi_exceptions.HTTPException as e:
             await channel.send("i am having issues connecting to osu servers to verify you. "
                                "try again later or wait for a manager to help",
                                embed=await exceptions.embed_exception(e))

@@ -67,8 +67,9 @@ class Osu(commands.Cog):
 
         try:
             await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+        except discord.Forbidden as e:
+            print(f"deletion of message {ctx.channel.id}/{ctx.message.id} failed")
+            print(e)
 
 
 async def setup(bot):

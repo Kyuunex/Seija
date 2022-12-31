@@ -1,4 +1,4 @@
-VERSION = "3.0.0d2"
+VERSION = "3.0.0d3"
 
 CONTRIBUTORS = [
     {

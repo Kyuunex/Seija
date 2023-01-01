@@ -27,7 +27,7 @@ setup(
         'beautifulsoup4',
         'psutil',
         'aioosuapi @ git+https://github.com/Kyuunex/aioosuapi.git@1.4.1',
-        'aioosuwebapi @ git+https://github.com/Kyuunex/aioosuapi.git@2.0.0-dev9',
+        'aioosuwebapi @ git+https://github.com/Kyuunex/aioosuapi.git@2.0.dev10',
         'python-dateutil',
         'appdirs'
     ],

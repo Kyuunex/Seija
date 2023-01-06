@@ -1,4 +1,5 @@
 import random
+import time
 
 import discord
 from discord.ext import commands
@@ -562,8 +563,9 @@ class MemberVerification(commands.Cog):
             print(e)
 
     def is_new_user(self, user):
-        user_creation_ago = datetime.datetime.utcnow() - user.created_at
-        if abs(user_creation_ago).total_seconds() / 2592000 <= 1 and user.avatar is None:
+        # Why do I have 2 different parts of code to do the same thing? You don't, this is for Discord account age.
+
+        if ((int(time.time()) - int(user.created_at.timestamp())) / 86400 <= 30) and user.avatar is None:
             return True
         else:
             return False

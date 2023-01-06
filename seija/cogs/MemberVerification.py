@@ -193,6 +193,7 @@ class MemberVerification(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
+        print(time.strftime("%Y/%m/%d %H:%M:%S %Z") + f" | {member} ({str(member.id)}) has joined {member.guild.name}")
         for verify_channel_id in self.verify_channel_list:
             if member.guild.id != int(verify_channel_id[1]):
                 continue

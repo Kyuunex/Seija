@@ -480,6 +480,12 @@ class MemberVerification(commands.Cog):
                                embed=await exceptions.embed_exception(e))
             return
 
+        if not fresh_osu_data:
+            await channel.send(f"Welcome {member.mention}! We have a verification system in this server "
+                               "so we can give you appropriate roles and keep raids/spam out. \n"
+                               "Please post a link to your osu! profile and I will verify you instantly.")
+            return
+
         if self.autodetect_profile_proven(member, fresh_osu_data):
             profile_id = member.name
             await channel.send(f"Welcome {member.mention}! We have a verification system in this server "

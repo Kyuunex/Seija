@@ -505,12 +505,13 @@ class MemberVerification(commands.Cog):
                                "Please post a link to your osu! profile and I will verify you instantly.")
 
     def autodetect_profile_proven(self, member, fresh_osu_data):
-        try:
-            if fresh_osu_data['discord']:
-                if str(member) == str(fresh_osu_data['discord']):
-                    return True
-        except KeyError:
-            pass
+        if not fresh_osu_data:
+            return False
+
+        if fresh_osu_data.get('discord'):
+            if str(member) == str(fresh_osu_data.get('discord')):
+                return True
+
         return False
 
     def autodetect_profile_inquiry_conditions(self, fresh_osu_data, member):

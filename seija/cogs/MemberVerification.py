@@ -280,8 +280,12 @@ class MemberVerification(commands.Cog):
             if osu_id:
                 try:
                     fresh_osu_data = await self.bot.osuweb.get_user_array(osu_id[0])
-                    embed = await osuwebembed.small_user_array(fresh_osu_data, 0xffffff, "User left")
-                    member_name = fresh_osu_data["username"]
+                    if fresh_osu_data:
+                        embed = await osuwebembed.small_user_array(fresh_osu_data, 0xffffff, "User left")
+                        member_name = fresh_osu_data["username"]
+                    else:
+                        embed = None
+                        member_name = member.name
                 except aioosuwebapi_exceptions.HTTPException:
                     print("Connection issues?")
                     embed = None

@@ -20,7 +20,6 @@ setup(
         'discord.py[voice]==2.2.2',
         'upsidedown',
         'pycountry',
-        'Pillow',
         'aiosqlite',
         'bs4',
         'aiohttp',

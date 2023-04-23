@@ -2,9 +2,7 @@ discord.py[voice]==2.2.2
 upsidedown
 pycountry
 aiosqlite
-bs4
 aiohttp
-beautifulsoup4
 psutil
 git+https://github.com/Kyuunex/aioosuapi.git@1.4.1
 git+https://github.com/Kyuunex/aioosuapi.git@2.0.dev10

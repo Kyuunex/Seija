@@ -1,5 +1,4 @@
 discord.py[voice]==2.2.2
-upsidedown
 pycountry
 aiosqlite
 psutil

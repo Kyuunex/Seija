@@ -18,7 +18,6 @@ setup(
     url='https://github.com/Kyuunex/Seija',
     install_requires=[
         'discord.py[voice]==2.2.2',
-        'upsidedown',
         'pycountry',
         'aiosqlite',
         'psutil',

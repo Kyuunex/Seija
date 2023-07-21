@@ -17,7 +17,7 @@ setup(
     author_email='kyuunex@protonmail.ch',
     url='https://github.com/Kyuunex/Seija',
     install_requires=[
-        'discord.py[voice]==2.2.3',
+        'discord.py[voice]==2.3.1',
         'pycountry',
         'aiosqlite',
         'psutil',

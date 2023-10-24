@@ -1,5 +1,6 @@
 from seija.modules import permissions
 from seija.reusables import get_member_helpers
+from seija.reusables import send_large_message
 import discord
 from discord.ext import commands
 
@@ -40,6 +41,39 @@ class QueueMaintenance(commands.Cog):
 
         await self.on_member_join(member)
         await ctx.send("done")
+
+    @commands.command(name="detach_queue", brief="Detach this queue from this bot.")
+    @commands.check(permissions.is_admin)
+    @commands.check(permissions.is_not_ignored)
+    @commands.guild_only()
+    async def detach_queue(self, ctx):
+        """
+        Detach this queue from this bot.
+        """
+
+        async with self.bot.db.execute("SELECT * FROM queues WHERE channel_id = ? AND guild_id = ?",
+                                       [int(ctx.channel.id), int(ctx.guild.id)]) as cursor:
+            is_a_queue = await cursor.fetchall()
+
+        if not is_a_queue:
+            await ctx.send("This channel is not a queue")
+            return
+
+        await self.bot.db.execute("DELETE FROM queues WHERE channel_id = ? AND guild_id = ?",
+                                  [int(ctx.channel.id), int(ctx.guild.id)])
+        await self.bot.db.commit()
+
+        await ctx.send(f"done.")
+
+        buffer = ""
+        for entry in is_a_queue:
+            buffer += f"{str(entry)}\n"
+
+        embed = discord.Embed(color=0xadff2f)
+        embed.set_author(name="the values in this box can be used to restore this channel as a queue in the future, "
+                              "consider not deleting this message just in case")
+
+        await send_large_message.send_large_embed(ctx.channel, embed, buffer)
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, deleted_channel):

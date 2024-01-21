@@ -157,8 +157,10 @@ async def ensure_tables(db):
     )
     """)
 
-    await db.execute("INSERT OR IGNORE INTO member_goodbye_messages VALUES (?)", ["%s is going for loved"])
-    await db.execute("INSERT OR IGNORE INTO member_goodbye_messages VALUES (?)",
-                     ["%s was told to remap one too many times"])
+    async with await db.execute("SELECT COUNT(*) FROM member_goodbye_messages ") as cursor:
+        amount_of_goodbye_messages = await cursor.fetchone()
+
+    if int(amount_of_goodbye_messages[0]) == 0:
+        await db.execute("INSERT OR IGNORE INTO member_goodbye_messages VALUES (?)", ["%s has left"])
 
     await db.commit()

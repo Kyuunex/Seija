@@ -24,6 +24,7 @@ setup(
         'aioosuapi @ git+https://github.com/Kyuunex/aioosuapi.git@1.4.1',
         'aioosuwebapi @ git+https://github.com/Kyuunex/aioosuapi.git@2.0.dev10',
         'python-dateutil',
-        'appdirs'
+        'appdirs',
+        'beautifulsoup4'
     ],
 )

@@ -4,6 +4,7 @@ NOTE: This is not recommended for production use. Instead, try [docker method](i
 ### Requirements:
 + `git`
 + `python3` (version 3.10 minimum)
++ `python3-venv`
 
 ### Intents
 [Visit this page](https://discord.com/developers/applications/), locate your bot and enable 
@@ -26,30 +27,24 @@ supply them via environment variables. if you do both, env vars will be used
 | client_secret.txt | SEIJA_CLIENT_SECRET   | [register a new app on your account edit page](https://osu.ppy.sh/home/account/edit) |
 
 ### Installation for production use
-Head over to the Releases section, pick the latest release, 
-and in its description you will see an installation command. 
-Open the Terminal, paste that in and press enter.
-
-To install the latest unstable version, type the following in the Terminal instead 
-```bash
-python3 -m pip install git+https://github.com/Kyuunex/Seija.git@master --upgrade
-```
-
-To run the bot, type `python3 -m seija` in the command line
-
-### All these amount to the following
-
 ```sh
-python3 -m pip install git+https://github.com/Kyuunex/Seija.git@master --upgrade
 mkdir -p $HOME/.local/share/Seija
-# wget -O $HOME/.local/share/Seija/maindb.sqlite3 REPLACE_THIS_WITH_DIRECT_FILE_LINK # optional database backup restore
+python3 -m venv $HOME/.local/share/Seija/venv
+source $HOME/.local/share/Seija/venv/bin/activate
+python3 -m pip install git+https://github.com/Kyuunex/Seija.git@master --upgrade  # You can replace this with a release if you want
+```
+Repeat the commands 3 and 4 for upgrading.
+
+### Bot Configuration
+```sh
+# wget -O $HOME/.local/share/Seija/maindb.sqlite3 REPLACE_THIS_WITH_DIRECT_FILE_LINK  # optional database backup restore
 echo "REPLACE_THIS_WITH_BOT_TOKEN" | tee $HOME/.local/share/Seija/token.txt
 echo "REPLACE_THIS_WITH_OSU_API_KEY" | tee $HOME/.local/share/Seija/osu_api_key.txt
 echo "REPLACE_THIS_WITH_CLIENT_ID" | tee $HOME/.local/share/Seija/client_id.txt
 echo "REPLACE_THIS_WITH_CLIENT_SECRET" | tee $HOME/.local/share/Seija/client_secret.txt
 ```
 
-### Installing the bot as a systemd service
+### Configuring the bot as a systemd service
 The purpose of this is to make the bot start automatically on boot, useful for example after a power outage.  
 
 Create the following file: `/lib/systemd/system/seija.service`  
@@ -65,7 +60,7 @@ Restart=always
 RestartSec=5
 User=pi
 Type=simple
-ExecStart=/usr/bin/python3 -m seija
+ExecStart=/home/pi/.local/share/Seija/venv/bin/python3 -m seija
 
 [Install]
 WantedBy=multi-user.target

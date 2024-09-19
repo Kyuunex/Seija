@@ -503,18 +503,20 @@ class MemberVerification(commands.Cog):
             await self.profile_id_verification(channel, member, profile_id, True)
             return
 
-        if self.autodetect_profile_inquiry_conditions(fresh_osu_data, member):
-            # await channel.send(content=f"Welcome {member.mention}! We have a verification system in this server "
-            #                            "so we can give you appropriate roles and keep raids/spam out. \n"
-            #                            "Is this your osu! profile? "
-            #                            "If yes, type `yes`, if not, post a link to your profile.",
-            #                    embed=await osuwebembed.small_user_array(fresh_osu_data))
-            return
-        else:
-            await channel.send(f"Welcome {member.mention}! We have a verification system in this server "
-                               "so we can give you appropriate roles and keep raids/spam out. \n"
-                               "Please post a link to your osu! profile and I will verify you instantly.")
+        #if self.autodetect_profile_inquiry_conditions(fresh_osu_data, member):
+        #    # await channel.send(content=f"Welcome {member.mention}! We have a verification system in this server "
+        #    #                            "so we can give you appropriate roles and keep raids/spam out. \n"
+        #    #                            "Is this your osu! profile? "
+        #    #                            "If yes, type `yes`, if not, post a link to your profile.",
+        #    #                    embed=await osuwebembed.small_user_array(fresh_osu_data))
+        #    return
+        #else:
 
+        await channel.send(f"Welcome {member.mention}! We have a verification system in this server "
+                           "so we can give you appropriate roles and keep raids/spam out. \n"
+                           "Please post a link to your osu! profile and I will verify you instantly.")
+        return
+    
     def autodetect_profile_proven(self, member, fresh_osu_data):
         if not fresh_osu_data:
             return False

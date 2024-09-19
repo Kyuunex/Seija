@@ -497,8 +497,8 @@ class MemberVerification(commands.Cog):
                                "so we can give you appropriate roles and keep raids/spam out. \n"
                                "To make verification faster, I have looked up your discord username on osu "
                                "and found this profile. \n"
-                               "Since you have specified your Discord account on osu and the 4 digits also match, "
-                               "I'll link you to that profile. "
+                               "Since you have specified your Discord username on your osu profile, "
+                               "everything is all set, and you are automatically verified! "
                                "If something is incorrect, let us know.")
             await self.profile_id_verification(channel, member, profile_id, True)
             return

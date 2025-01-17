@@ -231,6 +231,10 @@ class MemberVerification(commands.Cog):
                 # await self.profile_id_verification(message.channel, message.author, profile_id)
                 return
 
+            if message.content.startswith("!verify") or message.content.startswith("/verify"):
+                await message.channel.send("Hi! Verification is done by posting your osu profile link in this channel!")
+                return
+
             return
 
     def grab_osu_profile_id_from_text(self, text):

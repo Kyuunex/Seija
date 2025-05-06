@@ -226,10 +226,10 @@ class MemberVerification(commands.Cog):
                 await self.profile_id_verification(message.channel, message.author, profile_id)
                 return
 
-            if message.content.lower() == "yes" and self.is_new_user(message.author) is False:
-                # profile_id = message.author.name
-                # await self.profile_id_verification(message.channel, message.author, profile_id)
-                return
+            # if message.content.lower() == "yes" and self.is_new_user(message.author) is False:
+            #     profile_id = message.author.name
+            #     await self.profile_id_verification(message.channel, message.author, profile_id)
+            #     return
 
             if message.content.startswith("!verify") or message.content.startswith("/verify"):
                 await message.channel.send("Hi! Verification is done by posting your osu profile link in this channel!")

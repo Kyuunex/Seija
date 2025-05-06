@@ -337,6 +337,16 @@ class MemberVerification(commands.Cog):
                                    "link any of your recently uploaded maps (ranked with the latest name preferred)")
             return
 
+        join_date = dateutil.parser.parse(fresh_osu_data['join_date'])
+        if self.osu_account_is_new(join_date):
+            await channel.send(f"Hi {member.mention}! "
+                               f"Your osu account https://osu.ppy.sh/users/{fresh_osu_data['id']} is too new, "
+                               f"so I will reject your verification. "
+                               f"This automated check exists to reduce spam/scams. "
+                               f"If you are a legit osu player or mapper, you can try again in new days "
+                               f"or talk to a manager to manually inspect your profile for scores and maps.")
+            return
+
         ranked_amount = fresh_osu_data["ranked_and_approved_beatmapset_count"]
         role = await verification_reusables.get_role_based_on_reputation(self, member.guild, ranked_amount)
 
@@ -403,7 +413,6 @@ class MemberVerification(commands.Cog):
         embed_color = self.get_correct_embed_trust_color(member, fresh_osu_data)
         embed = await osuwebembed.user_array(fresh_osu_data, color=embed_color)
 
-        join_date = dateutil.parser.parse(fresh_osu_data['join_date'])
         join_date_int = int(join_date.timestamp())
 
         confirmed2 = 0
@@ -659,6 +668,13 @@ class MemberVerification(commands.Cog):
         if seconds_since_last_visit / 60 / 60 / 24 > day_amount:
             return True
 
+        return False
+
+    def osu_account_is_new(self, join_date):
+        account_age_seconds = datetime.datetime.now().timestamp() - join_date.timestamp()
+        account_age_days = account_age_seconds / 60 / 60 / 24
+        if account_age_days < 7:
+            return True
         return False
 
 

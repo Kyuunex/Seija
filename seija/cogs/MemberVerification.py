@@ -547,28 +547,28 @@ class MemberVerification(commands.Cog):
 
         return False
 
-    def autodetect_profile_inquiry_conditions(self, fresh_osu_data, member):
-        if self.is_new_user(member):
-            return False
-
-        if not fresh_osu_data:
-            return False
-
-        if fresh_osu_data['last_visit']:
-            last_visit = dateutil.parser.parse(fresh_osu_data['last_visit'])
-
-            user_creation_ago = datetime.datetime.now().timestamp() - last_visit.timestamp()
-            if user_creation_ago / 60 / 60 / 24 > 30:
-                return False
-
-        if fresh_osu_data["statistics"]:
-            if float(fresh_osu_data["statistics"]["pp"]) < 100:
-                return False
-
-        if str(member.name).lower() != str(fresh_osu_data["username"]).lower():
-            return False
-
-        return True
+    # def autodetect_profile_inquiry_conditions(self, fresh_osu_data, member):
+    #     if self.is_new_user(member):
+    #         return False
+    #
+    #     if not fresh_osu_data:
+    #         return False
+    #
+    #     if fresh_osu_data['last_visit']:
+    #         last_visit = dateutil.parser.parse(fresh_osu_data['last_visit'])
+    #
+    #         user_creation_ago = datetime.datetime.now().timestamp() - last_visit.timestamp()
+    #         if user_creation_ago / 60 / 60 / 24 > 30:
+    #             return False
+    #
+    #     if fresh_osu_data["statistics"]:
+    #         if float(fresh_osu_data["statistics"]["pp"]) < 100:
+    #             return False
+    #
+    #     if str(member.name).lower() != str(fresh_osu_data["username"]).lower():
+    #         return False
+    #
+    #     return True
 
     async def count_ranked_beatmapsets(self, beatmapsets):
         try:

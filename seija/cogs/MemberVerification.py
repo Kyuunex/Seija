@@ -668,7 +668,7 @@ class MemberVerification(commands.Cog):
     def osu_account_is_new(self, join_date):
         account_age_seconds = datetime.datetime.now().timestamp() - join_date.timestamp()
         account_age_days = account_age_seconds / 60 / 60 / 24
-        if account_age_days < 7:
+        if account_age_days < 3:
             return True
         return False
 

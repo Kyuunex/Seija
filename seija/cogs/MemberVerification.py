@@ -80,7 +80,7 @@ class MemberVerification(commands.Cog):
         confirmed2 = 0
         try:
             if fresh_osu_data['discord']:
-                if str(member) == str(fresh_osu_data['discord']):
+                if str(member.name) == str(fresh_osu_data['discord']).lower():
                     confirmed2 = 1
         except KeyError as e:
             print("in verify, can't find key discord")
@@ -352,7 +352,7 @@ class MemberVerification(commands.Cog):
 
         try:
             if fresh_osu_data['discord']:
-                if str(member) == str(fresh_osu_data['discord']):
+                if str(member.name) == str(fresh_osu_data['discord']).lower():
                     confirmed = True
         except KeyError as e:
             print("in profile_id_verification, in can't find discord")
@@ -418,7 +418,7 @@ class MemberVerification(commands.Cog):
         confirmed2 = 0
         try:
             if fresh_osu_data['discord']:
-                if str(member) == str(fresh_osu_data['discord']):
+                if str(member.name) == str(fresh_osu_data['discord']).lower():
                     confirmed2 = 1
         except KeyError:
             pass
@@ -535,7 +535,7 @@ class MemberVerification(commands.Cog):
             return False
 
         if fresh_osu_data.get('discord'):
-            if str(member) == str(fresh_osu_data.get('discord')):
+            if str(member.name) == str(fresh_osu_data.get('discord')).lower():
                 return True
 
         return False
@@ -625,7 +625,7 @@ class MemberVerification(commands.Cog):
     def get_correct_embed_trust_color(self, member, fresh_osu_data):
         try:
             if fresh_osu_data['discord']:
-                if str(member) == str(fresh_osu_data['discord']):
+                if str(member.name) == str(fresh_osu_data['discord']).lower():
                     return 0x00ff00
         except KeyError:
             pass
@@ -635,7 +635,7 @@ class MemberVerification(commands.Cog):
 
         try:
             if fresh_osu_data['discord']:
-                if str(member) != str(fresh_osu_data['discord']):
+                if str(member.name) != str(fresh_osu_data['discord']).lower():
                     return 0xff5500
         except KeyError:
             pass

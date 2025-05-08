@@ -561,11 +561,6 @@ class MemberVerification(commands.Cog):
         if str(member.name).lower() != str(fresh_osu_data["username"]).lower():
             return False
 
-        # if fresh_osu_data['discord']:
-        #     if "#" in fresh_osu_data['discord']:
-        #         if str(member.discriminator) == str(((fresh_osu_data['discord']).split("#"))[-1]):
-        #             return True
-
         return True
 
     async def count_ranked_beatmapsets(self, beatmapsets):

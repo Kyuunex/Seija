@@ -316,6 +316,13 @@ class MemberVerification(commands.Cog):
                 await channel.send(goodbye_message[0] % f"**{escaped_member_name}**", embed=embed)
 
     async def profile_id_verification(self, channel, member, osu_id, confirmed=False):
+        if self.discord_account_is_new(member):
+            await channel.send(f"Hi {member.mention}! "
+                               f"Your discord account is too new, so I will reject your verification. "
+                               f"This automated check exists to reduce spam/scams. "
+                               f"What happens now is, we'll manually check your profile "
+                               f"and use common sense in deciding to let you in or not. It may take a while. ")
+            return
 
         try:
             fresh_osu_data = await self.bot.osuweb.get_user_array(osu_id)
@@ -669,6 +676,13 @@ class MemberVerification(commands.Cog):
         account_age_seconds = datetime.datetime.now().timestamp() - join_date.timestamp()
         account_age_days = account_age_seconds / 60 / 60 / 24
         if account_age_days < 3:
+            return True
+        return False
+
+    def discord_account_is_new(self, user):
+        account_age_seconds = datetime.datetime.now().timestamp() - user.created_at.timestamp()
+        account_age_days = account_age_seconds / 60 / 60 / 24
+        if account_age_days < 7:
             return True
         return False
 

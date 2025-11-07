@@ -1,5 +1,4 @@
-# Installation on Linux
-NOTE: This is not recommended for production use. Instead, try [docker method](installation-docker.md) instead.
+# Installation on Linux (Non-docker)
 
 ### Requirements:
 + `git`
@@ -12,7 +11,7 @@ NOTE: This is not recommended for production use. Instead, try [docker method](i
 - MESSAGE CONTENT INTENT
 
 ### Where is the bot's data folder
-`/home/username/.local/share/Seija`  
+`/home/user/.local/share/Seija`  
 If you are restoring a database backup, it goes into this folder.
 
 ### API keys and tokens
@@ -29,8 +28,8 @@ supply them via environment variables. if you do both, env vars will be used
 ### Installation for production use
 ```sh
 mkdir -p $HOME/.local/share/Seija
-python3 -m venv $HOME/.local/share/Seija/venv
-source $HOME/.local/share/Seija/venv/bin/activate
+python3 -m venv $HOME/.local/share/Seija/.venv
+source $HOME/.local/share/Seija/.venv/bin/activate
 python3 -m pip install git+https://github.com/Kyuunex/Seija.git@master --upgrade  # You can replace this with a release if you want
 ```
 Repeat the commands 3 and 4 for upgrading.
@@ -57,16 +56,16 @@ StartLimitIntervalSec=0
 
 [Service]
 Restart=always
-RestartSec=5
-User=pi
+RestartSec=10
+User=user
 Type=simple
-ExecStart=/home/pi/.local/share/Seija/venv/bin/python3 -m seija
+ExecStart=/home/user/.local/share/Seija/venv/bin/python3 -m seija
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-The above assumes `pi` as a username of the user the bot will be run under. Change it if it's different. 
+The above assumes `user` as a username of the user the bot will be run under. Change it if it's different. 
 Make sure this is run under the same user the pip3 command was ran as.  
 If you want, you can add env vars in this file in the `[Service]` section as per this example
 ```ini

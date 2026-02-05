@@ -46,7 +46,7 @@ echo "REPLACE_THIS_WITH_CLIENT_SECRET" | tee $HOME/.local/share/Seija/client_sec
 ### Configuring the bot as a systemd service
 The purpose of this is to make the bot start automatically on boot, useful for example after a power outage.  
 
-Create the following file: `/lib/systemd/system/seija.service`  
+Create the following file: `/etc/systemd/system/seija.service`  
 Inside it, put the following:
 ```ini
 [Unit]

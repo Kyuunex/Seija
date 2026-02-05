@@ -59,7 +59,7 @@ Restart=always
 RestartSec=10
 User=user
 Type=simple
-ExecStart=/home/user/.local/share/Seija/venv/bin/python3 -m seija
+ExecStart=/home/user/.local/share/Seija/.venv/bin/python3 -m seija
 
 [Install]
 WantedBy=multi-user.target
